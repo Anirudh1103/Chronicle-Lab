@@ -12,53 +12,94 @@ model User {
   email     String   @unique
   password  String
   name      String
-  role      String   @default("VIEWER") // ADMIN, EDITOR, VIEWER
-  posts     Post[]
+  role      String   @default("VIEWER")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  posts     Post[]
 }
 
 model Post {
-  id              String    @id @default(cuid())
-  title           String
-  subtitle        String?
-  slug            String    @unique
-  content         String    // JSON string from TipTap
-  coverImage      String?
-  published       Boolean   @default(false)
-  featured        Boolean   @default(false)
-  author          User      @relation(fields: [authorId], references: [id])
-  authorId        String
-  category        Category? @relation(fields: [categoryId], references: [id])
-  categoryId      String?
-  tags            Tag[]
-  views           Int       @default(0)
-  likes           Int       @default(0)
-  seoTitle        String?
-  seoDescription  String?
-  readingTime     Int?
-  publishedAt     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                String     @id @default(cuid())
+  title             String
+  subtitle          String?
+  slug              String     @unique
+  excerpt           String?
+  status            String     @default("DRAFT")
+  featured          Boolean    @default(false)
+  coverImage        String?
+  coverImageAlt     String?
+  coverImageCaption String?
+  views             Int        @default(0)
+  likes             Int        @default(0)
+  readingTime       Int        @default(0)
+  wordCount         Int        @default(0)
+  authorId          String
+  categoryId        String?
+  seoTitle          String?
+  seoDescription    String?
+  seoKeywords       String?
+  canonicalUrl      String?
+  ogTitle           String?
+  ogDescription     String?
+  ogImage           String?
+  twitterImage      String?
+  schemaType        String     @default("Article")
+  robotsIndex       Boolean    @default(true)
+  publishedAt       DateTime?
+  scheduledAt       DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  blocks            Block[]
+  category          Category?  @relation(fields: [categoryId], references: [id])
+  author            User       @relation(fields: [authorId], references: [id])
+  revisions         Revision[]
+  tags              Tag[]      @relation("PostToTag")
+
+  @@index([slug])
+  @@index([status])
+}
+
+model Block {
+  id         String   @id @default(cuid())
+  postId     String
+  type       String
+  content    String
+  orderIndex Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([orderIndex])
+}
+
+model Revision {
+  id        String   @id @default(cuid())
+  postId    String
+  snapshot  String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
 }
 
 model Category {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  slug        String    @unique
-  icon        String?
-  color       String?
-  posts       Post[]
-  parentId    String?
-  parent      Category? @relation("SubCategories", fields: [parentId], references: [id])
+  id            String     @id @default(cuid())
+  name          String     @unique
+  slug          String     @unique
+  icon          String?
+  color         String?
+  parentId      String?
+  parent        Category?  @relation("SubCategories", fields: [parentId], references: [id])
   subCategories Category[] @relation("SubCategories")
+  posts         Post[]
 }
 
 model Tag {
   id    String @id @default(cuid())
   name  String @unique
   slug  String @unique
-  posts Post[]
+  posts Post[] @relation("PostToTag")
 }
 
 model Media {

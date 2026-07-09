@@ -15,7 +15,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     (req as any).user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, role: true },
+      select: { id: true, role: true, name: true, email: true },
     });
     next();
   } catch (error) {
@@ -24,9 +24,15 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 };
 
 export const admin = (req: Request, res: Response, next: NextFunction) => {
-  if ((req as any).user && (req as any).user.role === 'ADMIN') {
+  const user = (req as any).user;
+
+  // Strict check: Only user with ADMIN role AND specifically named Anirudh can pass
+  // You can also use a specific email address for 100% certainty
+  if (user && user.role === 'ADMIN' && (user.name === 'Anirudh' || user.email === 'anirudh@example.com')) {
     next();
   } else {
-    res.status(403).json({ message: 'Not authorized as an admin' });
+    res.status(403).json({
+      message: 'Access Denied: You are not authorized to perform this action. Only Anirudh has write permissions.'
+    });
   }
 };

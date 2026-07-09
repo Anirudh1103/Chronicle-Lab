@@ -1,42 +1,46 @@
 import React from 'react';
-import { Github, Twitter, Linkedin, Mail } from 'lucide-react';
+import { Github, Twitter, Linkedin, Mail, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function Footer() {
   return (
-    <footer className="border-t py-20 px-6 bg-muted/30">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+    <footer className="border-t py-20 px-6 bg-slate-50 dark:bg-slate-900/50">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 text-slate-800 dark:text-slate-200">
         <div className="space-y-6">
           <Link to="/" className="text-2xl font-black tracking-tighter">
-            TECH<span className="text-primary/50">.BLOG</span>
+            CHRONICLE<span className="text-primary/50">.LAB</span>
           </Link>
           <p className="text-muted-foreground leading-relaxed">
-            Building the future of the web, one block at a time. A premium space for modern developers.
+            Where History Meets Technology. A premium space for exploring modern architecture and historical narratives.
           </p>
           <div className="flex gap-4">
-            <a href="#" className="p-2 hover:bg-muted rounded-full transition-colors"><Twitter size={20} /></a>
-            <a href="#" className="p-2 hover:bg-muted rounded-full transition-colors"><Github size={20} /></a>
-            <a href="#" className="p-2 hover:bg-muted rounded-full transition-colors"><Linkedin size={20} /></a>
+            <a href="https://www.linkedin.com/in/anirudh-c-m-01931624a/" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-muted rounded-full transition-colors"><Linkedin size={20} /></a>
+            <a href="https://www.instagram.com/anirudh_c_m/" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-muted rounded-full transition-colors"><Instagram size={20} /></a>
+            <a href="https://github.com/Anirudh1103" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-muted rounded-full transition-colors"><Github size={20} /></a>
           </div>
         </div>
 
         <div>
-          <h4 className="font-bold mb-6">Explore</h4>
-          <ul className="space-y-4 text-muted-foreground">
+          <h4 className="font-bold mb-6">Quick Links</h4>
+          <ul className="space-y-4 text-muted-foreground font-medium">
             <li><Link to="/" className="hover:text-primary transition-colors">Home</Link></li>
-            <li><Link to="/categories" className="hover:text-primary transition-colors">Categories</Link></li>
-            <li><Link to="/featured" className="hover:text-primary transition-colors">Featured</Link></li>
-            <li><Link to="/newsletter" className="hover:text-primary transition-colors">Newsletter</Link></li>
+            <li><Link to="/about" className="hover:text-primary transition-colors">The Story</Link></li>
+            <li><Link to="/categories" className="hover:text-primary transition-colors">All Chronicles</Link></li>
+            <li><Link to="/feedback" className="hover:text-primary transition-colors">Share Feedback</Link></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="font-bold mb-6">Resources</h4>
-          <ul className="space-y-4 text-muted-foreground">
-            <li><a href="#" className="hover:text-primary transition-colors">Documentation</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Style Guide</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">UI Kit</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Components</a></li>
+          <h4 className="font-bold mb-6">Contact</h4>
+          <ul className="space-y-4 text-muted-foreground font-medium">
+            <li className="flex items-center gap-2 italic">
+              <Mail size={16} className="text-primary" />
+              anirudh@chroniclelab.com
+            </li>
+            <li className="text-xs leading-relaxed mt-4 opacity-70">
+              Based in India. <br />
+              Exploring the intersection of History and Code.
+            </li>
           </ul>
         </div>
 
@@ -55,8 +59,8 @@ export function Footer() {
           </div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto mt-20 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-        <p>© 2024 TECH.BLOG. All rights reserved.</p>
+        <div className="max-w-7xl mx-auto mt-20 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500 dark:text-slate-400 font-bold">
+        <p>© {new Date().getFullYear()} CHRONICLE LAB. All rights reserved.</p>
         <div className="flex gap-8">
           <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
           <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>

@@ -36,7 +36,7 @@ export function PostCard({ post, index }: PostCardProps) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <span className="font-black text-4xl opacity-10 tracking-tighter">TECH.BLOG</span>
+              <span className="font-black text-4xl opacity-10 tracking-tighter uppercase">Chronicle.Lab</span>
             </div>
           )}
           <div className="absolute top-6 left-6">
