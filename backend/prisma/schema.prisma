@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("VIEWER") // ADMIN, EDITOR, VIEWER
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id              String    @id @default(cuid())
+  title           String
+  subtitle        String?
+  slug            String    @unique
+  content         String    // JSON string from TipTap
+  coverImage      String?
+  published       Boolean   @default(false)
+  featured        Boolean   @default(false)
+  author          User      @relation(fields: [authorId], references: [id])
+  authorId        String
+  category        Category? @relation(fields: [categoryId], references: [id])
+  categoryId      String?
+  tags            Tag[]
+  views           Int       @default(0)
+  likes           Int       @default(0)
+  seoTitle        String?
+  seoDescription  String?
+  readingTime     Int?
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  icon        String?
+  color       String?
+  posts       Post[]
+  parentId    String?
+  parent      Category? @relation("SubCategories", fields: [parentId], references: [id])
+  subCategories Category[] @relation("SubCategories")
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  slug  String @unique
+  posts Post[]
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  filename  String
+  path      String
+  mimetype  String
+  size      Int
+  createdAt DateTime @default(now())
+}
