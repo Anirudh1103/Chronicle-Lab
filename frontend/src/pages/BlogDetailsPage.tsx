@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { blogApi } from '../api/blog.api';
 import { Clock, User, Calendar, ChevronLeft, Share2 } from 'lucide-react';
-import { TableOfContents } from '../components/editor/TableOfContents';
+import { ReadingNavigator } from '../components/blog/ReadingNavigator';
 import { cn } from '../utils/cn';
 
 export const BlogDetailsPage: React.FC = () => {
@@ -36,6 +36,7 @@ export const BlogDetailsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32">
+      <ReadingNavigator blocks={post.blocks} />
       {/* Article Progress Bar would go here */}
 
       {/* Hero Header */}
@@ -98,8 +99,6 @@ export const BlogDetailsPage: React.FC = () => {
 
       <main className="max-w-4xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_250px] gap-12">
         <div className="space-y-8">
-          <TableOfContents blocks={post.blocks} />
-
           <div className="prose prose-slate lg:prose-xl dark:prose-invert max-w-none font-medium">
             {post.blocks.map((block: any) => (
               <div key={block.id} id={block.id} className="mb-8">
@@ -208,6 +207,21 @@ function renderBlock(block: any) {
               ))}
            </ol>
         </div>
+      );
+
+    case 'list':
+      const ListTag = content.type === 'bullet' ? 'ul' : 'ol';
+      return (
+        <ListTag className={cn(
+          "space-y-4 my-8",
+          content.type === 'bullet' ? "list-disc pl-6" : "list-decimal pl-6"
+        )}>
+          {content.items.map((item: string, i: number) => (
+            <li key={i} className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
+              {item}
+            </li>
+          ))}
+        </ListTag>
       );
 
     default:

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, Star, ScrollText } from 'lucide-react';
 import { PostCard } from '../components/PostCard';
-import { QuotesCarousel } from '../components/QuotesCarousel';
+import { HeroSection } from '../components/hero/HeroSection';
 import { blogApi } from '../api/blog.api';
 
 export function Home() {
@@ -29,53 +29,22 @@ export function Home() {
 
   return (
     <div className="space-y-32 pb-32">
-      {/* Premium Hero Section */}
-      <section className="relative min-h-[70vh] flex flex-col items-center justify-center text-center px-4 overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 10, repeat: Infinity }}
-            className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]"
-          />
-        </div>
+      <HeroSection />
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="space-y-8 max-w-5xl"
-        >
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full glass border-white/10 text-xs font-black uppercase tracking-[0.2em] text-primary">
-            <Sparkles size={14} /> The Future of Tech Blogging
-          </div>
-
-          <h1 className="text-7xl md:text-9xl font-black tracking-tighter leading-[0.85] text-balance">
-            Design. Code. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary/80 to-primary/40">
-              Innovate.
-            </span>
-          </h1>
-
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
-            A premium space for modern developers to explore software architecture,
-            high-end UI design, and the evolving digital landscape.
-          </p>
-        </motion.div>
-      </section>
-
-      <QuotesCarousel />
-
-      {/* Section 1: Featured Chronicles (Only if tagged featured) */}
+      {/* Section 1: Featured Chronicles */}
       {featuredPosts.length > 0 && (
-        <section className="space-y-16 px-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-amber-500/10 text-amber-500 rounded-2xl">
-              <Star size={24} fill="currentColor" />
+        <section id="featured-chronicles" className="space-y-16 px-6 max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-amber-500">
+                <Star size={20} fill="currentColor" />
+                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Editor's Choice</span>
+              </div>
+              <h2 className="text-5xl font-black tracking-tighter">Featured Chronicles</h2>
             </div>
-            <div>
-              <h2 className="text-4xl font-black tracking-tighter">Featured Chronicles</h2>
-              <p className="text-muted-foreground font-medium">Handpicked stories worth your time.</p>
-            </div>
+            <p className="text-muted-foreground font-medium max-w-xs leading-relaxed border-l-2 border-primary/20 pl-4">
+              Handpicked deep-dives into topics that define our world.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
@@ -86,34 +55,40 @@ export function Home() {
         </section>
       )}
 
-      {/* Section 2: Horizontal Scroll All Blogs */}
-      <section className="space-y-12">
-        <div className="px-6 flex items-center justify-between">
+      {/* Section 2: All Blogs */}
+      <section id="recent-chronicles" className="space-y-16 pt-20">
+        <div className="px-6 max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 text-primary rounded-2xl">
-              <ScrollText size={24} />
+            <div className="p-4 bg-primary/10 text-primary rounded-[1.5rem]">
+              <ScrollText size={28} />
             </div>
             <div>
               <h2 className="text-4xl font-black tracking-tighter">Recent Explorations</h2>
-              <p className="text-muted-foreground font-medium">Browse the full library.</p>
+              <p className="text-muted-foreground font-medium uppercase tracking-[0.2em] text-[10px] mt-1">Full Library</p>
             </div>
           </div>
+          <p className="text-slate-400 text-sm italic font-medium">Swipe to explore →</p>
         </div>
 
-        <div className="relative group">
-          <div className="flex overflow-x-auto gap-8 px-6 pb-12 no-scrollbar snap-x scroll-smooth">
+        <div className="relative group overflow-hidden">
+          <div className="flex overflow-x-auto gap-10 px-[max(1.5rem,calc((100vw-1280px)/2))] pb-20 no-scrollbar snap-x scroll-smooth">
             {allPosts.map((post, index) => (
-              <div key={post.id} className="min-w-[350px] md:min-w-[450px] snap-start">
+              <div key={post.id} className="min-w-[320px] md:min-w-[480px] snap-center">
                 <PostCard post={post} index={index} />
               </div>
             ))}
             {allPosts.length === 0 && !loading && (
-              <p className="text-slate-400 italic py-20 text-center w-full">No chronicles found yet...</p>
+              <div className="w-full py-32 flex flex-col items-center justify-center text-slate-400 gap-4">
+                <div className="w-16 h-[1px] bg-slate-200 dark:bg-slate-800" />
+                <p className="italic font-medium">The laboratory is currently empty...</p>
+                <div className="w-16 h-[1px] bg-slate-200 dark:bg-slate-800" />
+              </div>
             )}
           </div>
 
-          {/* Subtle gradient indicators for scroll */}
-          <div className="absolute right-0 top-0 bottom-12 w-20 bg-gradient-to-l from-background to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+          {/* Premium Edge Gradients */}
+          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background to-transparent pointer-events-none z-10 opacity-0 md:group-hover:opacity-100 transition-opacity duration-700" />
+          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent pointer-events-none z-10 opacity-0 md:group-hover:opacity-100 transition-opacity duration-700" />
         </div>
       </section>
 

@@ -9,6 +9,7 @@ import { CalloutBlock } from './blocks/CalloutBlock';
 import { FAQBlock } from './blocks/FAQBlock';
 import { TimelineBlock } from './blocks/TimelineBlock';
 import { ReferenceBlock } from './blocks/ReferenceBlock';
+import { ListBlock } from './blocks/ListBlock';
 
 interface BlockRendererProps {
   block: EditorBlock;
@@ -34,6 +35,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
       return <TimelineBlock id={block.id} content={block.content} />;
     case 'reference':
       return <ReferenceBlock id={block.id} content={block.content} />;
+    case 'list':
+      return <ListBlock id={block.id} content={block.content} />;
     default:
       return (
         <div className="p-4 bg-slate-100 rounded text-slate-500 text-sm">

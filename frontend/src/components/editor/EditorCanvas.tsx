@@ -51,6 +51,7 @@ export const EditorCanvas: React.FC = () => {
     { type: 'faq', label: 'FAQ' },
     { type: 'timeline', label: 'Timeline' },
     { type: 'reference', label: 'Citations' },
+    { type: 'list', label: 'List' },
   ];
 
   return (

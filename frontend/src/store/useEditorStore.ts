@@ -171,6 +171,8 @@ function getInitialContent(type: BlockType) {
       return { items: [{ date: '', title: '', description: '' }] };
     case 'reference':
       return { items: [{ id: '1', citation: '', url: '' }] };
+    case 'list':
+      return { type: 'bullet', items: [''] };
     default:
       return {};
   }

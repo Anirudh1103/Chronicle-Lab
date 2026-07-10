@@ -198,6 +198,21 @@ function renderBlockPreview(block: EditorBlock) {
         </div>
       );
 
+    case 'list':
+      const ListTag = content.type === 'bullet' ? 'ul' : 'ol';
+      return (
+        <ListTag className={cn(
+          "space-y-2 my-6",
+          content.type === 'bullet' ? "list-disc pl-6" : "list-decimal pl-6"
+        )}>
+          {content.items.map((item: string, i: number) => (
+            <li key={i} className="text-slate-700 dark:text-slate-300 leading-relaxed">
+              {item}
+            </li>
+          ))}
+        </ListTag>
+      );
+
     default:
       return <div className="p-4 bg-slate-50 rounded italic text-slate-400 text-xs text-center">Block preview not available</div>;
   }

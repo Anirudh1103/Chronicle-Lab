@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 
 export function Footer() {
   return (
-    <footer className="border-t py-20 px-6 bg-slate-50 dark:bg-slate-900/50">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 text-slate-800 dark:text-slate-200">
+    <footer className="relative z-10 border-t py-20 px-6 bg-white dark:bg-slate-950">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 text-slate-900 dark:text-slate-100">
         <div className="space-y-6">
           <Link to="/" className="text-2xl font-black tracking-tighter">
             CHRONICLE<span className="text-primary/50">.LAB</span>
