@@ -38,7 +38,6 @@ export function Footer() {
               anirudh@chroniclelab.com
             </li>
             <li className="text-xs leading-relaxed mt-4 opacity-70">
-              Based in India. <br />
               Exploring the intersection of History and Code.
             </li>
           </ul>

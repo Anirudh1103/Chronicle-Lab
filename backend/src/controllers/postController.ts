@@ -26,7 +26,8 @@ export const updatePost = async (req: Request, res: Response) => {
 
 export const getPosts = async (req: Request, res: Response) => {
   try {
-    const posts = await PostService.getAllPosts();
+    const { status } = req.query;
+    const posts = await PostService.getAllPosts(status === 'PUBLISHED');
     res.json(posts);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch posts' });
@@ -85,5 +86,14 @@ export const reactToPost = async (req: Request, res: Response) => {
     res.json(post);
   } catch (error) {
     res.status(500).json({ error: 'Failed to react to post' });
+  }
+};
+
+export const getStats = async (req: Request, res: Response) => {
+  try {
+    const stats = await PostService.getStats();
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
   }
 };

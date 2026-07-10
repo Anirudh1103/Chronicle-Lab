@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FileText, FolderTree, Tag, MessageSquare, Settings, Plus, LogOut, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { EditorPage } from './EditorPage';
 import { MediaLibrary } from './MediaLibrary';
 import { useAuth } from '../hooks/useAuth';
+import { blogApi } from '../api/blog.api';
+import { cn } from '../utils/cn';
 
 export function AdminDashboard() {
   const location = useLocation();
@@ -110,12 +112,22 @@ export function AdminDashboard() {
 }
 
 function Overview() {
-  const stats = [
-    { label: 'Total Posts', value: '24', change: '+12%' },
-    { label: 'Total Views', value: '45.2k', change: '+25%' },
-    { label: 'Comments', value: '892', change: '+5%' },
-    { label: 'Subscribers', value: '1,204', change: '+18%' },
-  ];
+  const [stats, setStats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await blogApi.getStats();
+        setStats(data);
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
   return (
     <div className="space-y-12 pb-10">
@@ -125,17 +137,23 @@ function Overview() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <div key={stat.label} className="glass p-8 rounded-3xl space-y-4">
-            <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-            <div className="flex items-end justify-between">
-              <h3 className="text-4xl font-black">{stat.value}</h3>
-              <span className="text-emerald-500 font-bold text-sm bg-emerald-500/10 px-2 py-1 rounded-lg">
-                {stat.change}
-              </span>
+        {loading ? (
+          [1, 2, 3, 4].map(i => (
+            <div key={i} className="glass p-8 rounded-3xl h-32 animate-pulse bg-slate-100 dark:bg-slate-800" />
+          ))
+        ) : (
+          stats.map((stat) => (
+            <div key={stat.label} className="glass p-8 rounded-3xl space-y-4">
+              <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+              <div className="flex items-end justify-between">
+                <h3 className="text-4xl font-black">{stat.value}</h3>
+                <span className="text-emerald-500 font-bold text-sm bg-emerald-500/10 px-2 py-1 rounded-lg">
+                  {stat.change}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -151,6 +169,24 @@ function Overview() {
 }
 
 function PostsList() {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const data = await blogApi.getAllPosts();
+        setPosts(data);
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPosts();
+  }, []);
+
   return (
     <div className="space-y-8 pb-10">
       <h1 className="text-4xl font-black">All Posts</h1>
@@ -165,20 +201,43 @@ function PostsList() {
             </tr>
           </thead>
           <tbody>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <tr key={i} className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer group">
-                <td className="px-8 py-6 font-bold group-hover:text-primary transition-colors">
-                  The Future of Web Development in 2024
+            {loading ? (
+              [1, 2, 3].map(i => (
+                <tr key={i} className="animate-pulse">
+                  <td colSpan={4} className="px-8 py-6 h-16 bg-slate-50/50 dark:bg-slate-800/50" />
+                </tr>
+              ))
+            ) : posts.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-8 py-12 text-center text-muted-foreground italic">
+                  No posts found. Start by creating your first chronicle!
                 </td>
-                <td className="px-8 py-6">
-                  <span className="bg-emerald-500/10 text-emerald-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
-                    Published
-                  </span>
-                </td>
-                <td className="px-8 py-6 text-muted-foreground font-medium">1,234</td>
-                <td className="px-8 py-6 text-muted-foreground font-medium">Mar 12, 2024</td>
               </tr>
-            ))}
+            ) : (
+              posts.map((post) => (
+                <tr
+                  key={post.id}
+                  onClick={() => navigate(`/admin/editor/${post.id}`)}
+                  className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer group"
+                >
+                  <td className="px-8 py-6 font-bold group-hover:text-primary transition-colors">
+                    {post.title}
+                  </td>
+                  <td className="px-8 py-6">
+                    <span className={cn(
+                      "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest",
+                      post.status === 'PUBLISHED' ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
+                    )}>
+                      {post.status}
+                    </span>
+                  </td>
+                  <td className="px-8 py-6 text-muted-foreground font-medium">{post.views}</td>
+                  <td className="px-8 py-6 text-muted-foreground font-medium">
+                    {new Date(post.createdAt).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

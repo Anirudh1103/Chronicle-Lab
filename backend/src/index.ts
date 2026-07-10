@@ -6,6 +6,7 @@ import path from 'path';
 import postRoutes from './routes/postRoutes';
 import authRoutes from './routes/authRoutes';
 import mediaRoutes from './routes/mediaRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

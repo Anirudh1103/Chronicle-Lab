@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { createPost, getPosts, getPostBySlug, getPostById, updatePost, searchPosts, reactToPost } from '../controllers/postController';
+import { createPost, getPosts, getPostBySlug, getPostById, updatePost, searchPosts, reactToPost, getStats } from '../controllers/postController';
 
 const router = Router();
 
 router.post('/', createPost);
+router.get('/stats', getStats);
 router.put('/:id', updatePost);
 router.get('/', getPosts);
 router.get('/search', searchPosts);

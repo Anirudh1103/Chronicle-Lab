@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useEditorStore } from '../../store/useEditorStore';
 import api from '../../api/client';
+import { blogApi } from '../../api/blog.api';
 import {
   Settings,
   Search,
@@ -21,7 +22,20 @@ export const EditorSidebar: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'settings' | 'seo' | 'social'>('settings');
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await blogApi.getCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleUpload = async (file: File) => {
     setIsUploading(true);
@@ -95,12 +109,15 @@ export const EditorSidebar: React.FC = () => {
                </div>
                <select
                 className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none dark:bg-slate-800 dark:border-slate-700"
-                value={metadata.categoryId}
-                onChange={(e) => setMetadata({ categoryId: e.target.value })}
+                value={metadata.categoryId || ''}
+                onChange={(e) => setMetadata({ categoryId: e.target.value || undefined })}
                >
                  <option value="">Select Category</option>
-                 <option value="tech">Technology</option>
-                 <option value="history">History</option>
+                 {categories.map((category) => (
+                   <option key={category.id} value={category.id}>
+                     {category.name}
+                   </option>
+                 ))}
                </select>
             </section>
 

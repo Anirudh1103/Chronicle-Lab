@@ -100,3 +100,37 @@ export const getMe = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const subscribe = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const subscriber = await prisma.subscriber.upsert({
+      where: { email },
+      update: {},
+      create: { email },
+    });
+
+    res.status(201).json({ message: 'Successfully subscribed', subscriber });
+  } catch (error) {
+    res.status(500).json({ message: 'Subscription failed' });
+  }
+};
+
+export const submitFeedback = async (req: Request, res: Response) => {
+  try {
+    const { name, email, message, type } = req.body;
+    if (!name || !email || !message) {
+      return res.status(400).json({ message: 'Name, email and message are required' });
+    }
+
+    const feedback = await prisma.feedback.create({
+      data: { name, email, message, type: type || 'love' },
+    });
+
+    res.status(201).json({ message: 'Feedback received', feedback });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to submit feedback' });
+  }
+};

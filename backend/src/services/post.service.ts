@@ -54,7 +54,7 @@ function calculateStats(blocks: BlockInput[]) {
 
 export class PostService {
   static async createPost(data: PostInput) {
-    const { blocks, tagIds, ...postData } = data;
+    const { blocks, tagIds, categoryId, ...postData } = data;
     const { wordCount, readingTime } = calculateStats(blocks);
 
     return await prisma.$transaction(async (tx) => {
@@ -62,9 +62,10 @@ export class PostService {
       const post = await tx.post.create({
         data: {
           ...postData,
+          categoryId: categoryId || null,
           wordCount,
           readingTime,
-          tags: tagIds ? { connect: tagIds.map(id => ({ id })) } : undefined,
+          tags: tagIds && tagIds.length > 0 ? { connect: tagIds.map(id => ({ id })) } : undefined,
           blocks: {
             create: blocks.map(block => ({
               type: block.type,
@@ -94,7 +95,7 @@ export class PostService {
   }
 
   static async updatePost(postId: string, data: PostInput) {
-    const { blocks, tagIds, ...postData } = data;
+    const { blocks, tagIds, categoryId, ...postData } = data;
     const { wordCount, readingTime } = calculateStats(blocks);
 
     return await prisma.$transaction(async (tx) => {
@@ -103,6 +104,7 @@ export class PostService {
         where: { id: postId },
         data: {
           ...postData,
+          categoryId: categoryId || null,
           wordCount,
           readingTime,
           tags: tagIds ? { set: tagIds.map(id => ({ id })) } : undefined,
@@ -166,14 +168,31 @@ export class PostService {
     });
   }
 
-  static async getAllPosts() {
+  static async getAllPosts(onlyPublished = false) {
     return await prisma.post.findMany({
+      where: onlyPublished ? { status: 'PUBLISHED' } : {},
       include: {
         category: true,
         author: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
+  }
+
+  static async getStats() {
+    const [totalPosts, totalViews, comments, subscribers] = await Promise.all([
+      prisma.post.count(),
+      prisma.post.aggregate({ _sum: { views: true } }),
+      prisma.feedback.count(), // Using feedback as a proxy for comments/engagement for now
+      prisma.subscriber.count(),
+    ]);
+
+    return [
+      { label: 'Total Posts', value: totalPosts.toString(), change: '+0%' },
+      { label: 'Total Views', value: (totalViews._sum.views || 0).toString(), change: '+0%' },
+      { label: 'Feedback', value: comments.toString(), change: '+0%' },
+      { label: 'Subscribers', value: subscribers.toString(), change: '+0%' },
+    ];
   }
 
   static async searchPosts(query: string) {

@@ -29,8 +29,8 @@ export const blogApi = {
     return response.data;
   },
 
-  getAllPosts: async () => {
-    const response = await api.get('/posts');
+  getAllPosts: async (status?: string) => {
+    const response = await api.get(`/posts${status ? `?status=${status}` : ''}`);
     return response.data;
   },
 
@@ -41,6 +41,26 @@ export const blogApi = {
 
   reactToPost: async (id: string, type: string) => {
     const response = await api.post(`/posts/${id}/react`, { type });
+    return response.data;
+  },
+
+  getStats: async () => {
+    const response = await api.get('/posts/stats');
+    return response.data;
+  },
+
+  getCategories: async () => {
+    const response = await api.get('/categories');
+    return response.data;
+  },
+
+  subscribe: async (email: string) => {
+    const response = await api.post('/auth/subscribe', { email });
+    return response.data;
+  },
+
+  submitFeedback: async (data: { name: string; email: string; message: string; type: string }) => {
+    const response = await api.post('/auth/feedback', data);
     return response.data;
   },
 };

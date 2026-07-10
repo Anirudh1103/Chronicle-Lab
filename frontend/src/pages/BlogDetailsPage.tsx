@@ -130,16 +130,6 @@ export const BlogDetailsPage: React.FC = () => {
           </p>
 
           <div className="flex flex-wrap items-center gap-4 md:gap-8 pt-4 border-t border-slate-100 dark:border-slate-800 pt-6 md:pt-8">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500 text-sm md:text-base">
-                {post.author.name[0]}
-              </div>
-              <div>
-                <p className="text-[10px] md:text-xs font-black uppercase tracking-widest">{post.author.name}</p>
-                <p className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest">Lead Investigator</p>
-              </div>
-            </div>
-
             <div className="flex flex-wrap items-center gap-4 md:gap-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400">
               <span className="flex items-center gap-1.5"><Calendar size={12} className="md:w-3.5 md:h-3.5" /> {new Date(post.createdAt).toLocaleDateString()}</span>
               <span className="flex items-center gap-1.5"><Clock size={12} className="md:w-3.5 md:h-3.5" /> {post.readingTime} Min Read</span>

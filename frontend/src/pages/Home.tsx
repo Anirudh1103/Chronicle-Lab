@@ -9,11 +9,24 @@ export function Home() {
   const [featuredPosts, setFeaturedPosts] = useState<any[]>([]);
   const [allPosts, setAllPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = async () => {
+    if (!email) return;
+    try {
+      await blogApi.subscribe(email);
+      setSubscribed(true);
+      setEmail('');
+    } catch (error) {
+      console.error('Subscription failed:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const posts = await blogApi.getAllPosts();
+        const posts = await blogApi.getAllPosts('PUBLISHED');
         // Section 1: Only "featured" tagged blogs
         setFeaturedPosts(posts.filter((p: any) => p.featured));
         // Section 2: All blogs
@@ -95,20 +108,31 @@ export function Home() {
       {/* Newsletter Section */}
       <section className="mx-6 glass rounded-[4rem] p-16 md:p-24 text-center space-y-10 border-white/5 relative overflow-hidden">
         <div className="max-w-2xl mx-auto space-y-6">
-          <h2 className="text-5xl font-black tracking-tighter">Stay Ahead of the Curve</h2>
+          <h2 className="text-5xl font-black tracking-tighter">
+            {subscribed ? 'You\'re on the list!' : 'Stay Ahead of the Curve'}
+          </h2>
           <p className="text-xl text-muted-foreground font-medium">
-            Join 10,000+ developers receiving curated insights.
+            {subscribed
+              ? 'Welcome to the lab. You\'ll receive the next chronicle directly in your inbox.'
+              : 'Get the latest chronicles and technical insights delivered directly to you.'}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 pt-6">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 bg-muted/50 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:ring-2 ring-primary/20 transition-all font-medium"
-            />
-            <button className="bg-primary text-primary-foreground px-8 py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-xl shadow-primary/20">
-              Subscribe
-            </button>
-          </div>
+          {!subscribed && (
+            <div className="flex flex-col sm:flex-row gap-4 pt-6">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="flex-1 bg-muted/50 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:ring-2 ring-primary/20 transition-all font-medium"
+              />
+              <button
+                onClick={handleSubscribe}
+                className="bg-primary text-primary-foreground px-8 py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-xl shadow-primary/20"
+              >
+                Subscribe
+              </button>
+            </div>
+          )}
         </div>
       </section>
     </div>

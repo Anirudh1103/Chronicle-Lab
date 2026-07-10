@@ -113,3 +113,18 @@ model Media {
   size      Int
   createdAt DateTime @default(now())
 }
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  type      String   @default("love")
+  message   String
+  createdAt DateTime @default(now())
+}

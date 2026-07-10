@@ -49,9 +49,6 @@ export function PostCard({ post, index }: PostCardProps) {
         <div className="space-y-3 px-2">
           <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-widest text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <User size={12} className="text-primary" /> {post.author.name}
-            </div>
-            <div className="flex items-center gap-1.5">
               <Clock size={12} className="text-primary" /> {post.readingTime || 5} min read
             </div>
           </div>
