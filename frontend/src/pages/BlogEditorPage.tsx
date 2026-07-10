@@ -85,8 +85,36 @@ export const BlogEditorPage: React.FC = () => {
     }
   }, [id]);
 
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    const updates: any = { title: newTitle };
+
+    // Auto-generate slug if it's currently empty
+    if (!metadata.slug) {
+      updates.slug = newTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
+
+    setMetadata(updates);
+  };
+
   const handleSave = async (publish: boolean = false) => {
     if ((!isDirty && !publish) || isLoading) return;
+
+    // Final slug validation
+    if (!metadata.slug && metadata.title) {
+      metadata.slug = metadata.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
+
+    if (!metadata.slug) {
+      alert('A slug is required to save the post.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -237,7 +265,7 @@ export const BlogEditorPage: React.FC = () => {
             <input
               type="text"
               value={metadata.title}
-              onChange={(e) => setMetadata({ title: e.target.value })}
+              onChange={handleTitleChange}
               placeholder="Post Title"
               className="w-full bg-transparent text-5xl font-black outline-none placeholder:text-slate-200 dark:text-white dark:placeholder:text-slate-800"
             />
