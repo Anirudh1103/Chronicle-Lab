@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -19,11 +19,16 @@ import { useEditorStore } from '../../store/useEditorStore';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockRenderer } from './BlockRenderer';
 import { TableOfContents } from './TableOfContents';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { BlockType } from '../../types/editor';
+import api from '../../api/client';
+import { cn } from '../../utils/cn';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export const EditorCanvas: React.FC = () => {
   const { blocks, moveBlock, addBlock } = useEditorStore();
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -37,6 +42,37 @@ export const EditorCanvas: React.FC = () => {
 
     if (over && active.id !== over.id) {
       moveBlock(active.id as string, over.id as string);
+    }
+  };
+
+  const handleFileDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingFile(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+
+    if (imageFiles.length > 0) {
+      setIsUploading(true);
+      try {
+        for (const file of imageFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          const { data } = await api.post('/media/upload', formData);
+          const url = `http://localhost:5000/uploads/${data.path}`;
+
+          addBlock('image', undefined, {
+            url,
+            alt: file.name,
+            caption: '',
+            alignment: 'center'
+          });
+        }
+      } catch (error) {
+        console.error('File upload failed:', error);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -55,7 +91,43 @@ export const EditorCanvas: React.FC = () => {
   ];
 
   return (
-    <div className="mx-auto max-w-4xl px-12 py-20">
+    <div
+      className="mx-auto max-w-4xl px-12 py-20 min-h-[50vh] relative"
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes('Files')) {
+          e.preventDefault();
+          setIsDraggingFile(true);
+        }
+      }}
+      onDragLeave={() => setIsDraggingFile(false)}
+      onDrop={handleFileDrop}
+    >
+      <AnimatePresence>
+        {isDraggingFile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-blue-500/10 backdrop-blur-[2px] border-4 border-dashed border-blue-500 m-4 rounded-[2rem] flex flex-col items-center justify-center pointer-events-none"
+          >
+            <Upload size={48} className="text-blue-500 animate-bounce mb-4" />
+            <p className="text-xl font-black text-blue-600 uppercase tracking-tighter">Drop images to add blocks</p>
+          </motion.div>
+        )}
+
+        {isUploading && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[70] bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 font-bold"
+          >
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            Processing Media Assets...
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <TableOfContents blocks={blocks} />
 
       <DndContext

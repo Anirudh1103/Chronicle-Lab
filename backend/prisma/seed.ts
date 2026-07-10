@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -15,16 +16,24 @@ function calculateStats(blocks: any[]) {
 }
 
 async function main() {
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
   const anirudh = await prisma.user.upsert({
     where: { email: 'anirudh@chroniclelab.com' },
-    update: {},
+    update: {
+      password: hashedPassword,
+      role: 'ADMIN',
+      name: 'Anirudh CM'
+    },
     create: {
       email: 'anirudh@chroniclelab.com',
-      password: 'password123',
+      password: hashedPassword,
       name: 'Anirudh CM',
       role: 'ADMIN',
     },
   });
+
+  console.log('Admin user verified:', anirudh.email);
 
   const tech = await prisma.category.upsert({ where: { slug: 'technology' }, update: {}, create: { name: 'Technology', slug: 'technology' } });
   const history = await prisma.category.upsert({ where: { slug: 'history' }, update: {}, create: { name: 'History', slug: 'history' } });

@@ -7,7 +7,8 @@ import {
   Check,
   ArrowUp,
   Share2,
-  Trophy
+  Trophy,
+  X
 } from 'lucide-react';
 import { HeadingNode } from '../../types/navigator';
 import { useReadingProgress } from '../../hooks/useReadingProgress';
@@ -22,6 +23,7 @@ interface ReadingNavigatorProps {
 export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) => {
   const { tree, activeId, scrollProgress, completedIds, totalHeadings } = useReadingProgress(blocks);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
@@ -227,14 +229,63 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
         )}
       </AnimatePresence>
 
-      {/* Mobile Floating Button */}
-      <div className="fixed bottom-6 left-6 z-[100] xl:hidden">
+      {/* Mobile Floating Progress Button */}
+      <div className="fixed bottom-6 left-6 z-[200] xl:hidden flex flex-col items-start gap-4">
+         <AnimatePresence>
+           {isMobileMenuOpen && (
+             <motion.div
+               initial={{ opacity: 0, scale: 0.9, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+               className="w-72 max-h-[60vh] glass rounded-3xl p-4 overflow-y-auto no-scrollbar shadow-2xl border border-white/20 mb-2"
+             >
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                  <span className="text-[10px] font-black uppercase tracking-widest">Chronicle Map</span>
+                  <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400">
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {tree.map(node => (
+                    <div key={node.id} className="space-y-2">
+                       <button
+                        onClick={() => { scrollTo(node.id); setIsMobileMenuOpen(false); }}
+                        className={cn(
+                          "text-xs font-bold text-left block w-full truncate",
+                          activeId === node.id ? "text-primary" : "text-slate-500"
+                        )}
+                       >
+                         {node.text}
+                       </button>
+                       {node.children.map(child => (
+                         <button
+                          key={child.id}
+                          onClick={() => { scrollTo(child.id); setIsMobileMenuOpen(false); }}
+                          className={cn(
+                            "text-[10px] font-medium text-left block w-full truncate pl-4",
+                            activeId === child.id ? "text-primary" : "text-slate-400"
+                          )}
+                         >
+                           {child.text}
+                         </button>
+                       ))}
+                    </div>
+                  ))}
+                </div>
+             </motion.div>
+           )}
+         </AnimatePresence>
+
          <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-12 h-12 rounded-full bg-primary text-white shadow-xl flex items-center justify-center relative overflow-hidden"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="w-14 h-14 rounded-2xl bg-slate-900/80 backdrop-blur-md text-white shadow-2xl flex items-center justify-center relative overflow-hidden border border-white/10"
          >
-            <div className="absolute inset-0 bg-white/20" style={{ transform: `translateY(${100 - scrollProgress}%)` }} />
-            <span className="relative z-10 text-[10px] font-black">{Math.round(scrollProgress)}%</span>
+            <div className="absolute inset-0 bg-primary/20" style={{ height: `${scrollProgress}%`, top: 'auto', bottom: 0 }} />
+            <div className="relative z-10 flex flex-col items-center">
+              <span className="text-[10px] font-black leading-none">{Math.round(scrollProgress)}%</span>
+              <div className="h-px w-4 bg-white/20 my-1" />
+              <Maximize2 size={12} className={cn("transition-transform", isMobileMenuOpen && "rotate-45")} />
+            </div>
          </button>
       </div>
     </>

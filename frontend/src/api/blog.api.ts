@@ -33,4 +33,14 @@ export const blogApi = {
     const response = await api.get('/posts');
     return response.data;
   },
+
+  searchPosts: async (query: string) => {
+    const response = await api.get(`/posts/search?q=${query}`);
+    return response.data;
+  },
+
+  reactToPost: async (id: string, type: string) => {
+    const response = await api.post(`/posts/${id}/react`, { type });
+    return response.data;
+  },
 };

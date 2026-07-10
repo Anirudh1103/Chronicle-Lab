@@ -25,8 +25,10 @@ export function AdminDashboard() {
     { icon: <Settings size={20} />, label: 'Settings', path: '/admin/settings' },
   ];
 
-  const isEditor = location.pathname.includes('/admin/new') || location.pathname.includes('/admin/edit');
+  // No longer needed as we use BlogEditorPage via App.tsx routing
+  // const isEditor = location.pathname.includes('/admin/new') || location.pathname.includes('/admin/edit');
 
+  /*
   if (isEditor) {
     return (
       <main className="min-h-screen bg-background pt-24">
@@ -37,6 +39,7 @@ export function AdminDashboard() {
       </main>
     );
   }
+  */
 
   return (
     <div className="flex min-h-screen -mx-6 -mt-24">
@@ -55,7 +58,7 @@ export function AdminDashboard() {
             </div>
 
             <Link
-              to="/admin/new"
+              to="/admin/editor"
               className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground py-4 rounded-[1.25rem] font-black hover:opacity-90 transition-all shadow-lg shadow-primary/20"
             >
               <Plus size={20} /> New Post

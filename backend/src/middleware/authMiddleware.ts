@@ -26,13 +26,12 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 export const admin = (req: Request, res: Response, next: NextFunction) => {
   const user = (req as any).user;
 
-  // Strict check: Only user with ADMIN role AND specifically named Anirudh can pass
-  // You can also use a specific email address for 100% certainty
-  if (user && user.role === 'ADMIN' && (user.name === 'Anirudh' || user.email === 'anirudh@example.com')) {
+  if (user && user.role === 'ADMIN') {
     next();
   } else {
+    console.warn('Admin Access Denied for user:', user);
     res.status(403).json({
-      message: 'Access Denied: You are not authorized to perform this action. Only Anirudh has write permissions.'
+      message: 'Access Denied: You are not authorized to perform this action.'
     });
   }
 };

@@ -7,9 +7,10 @@ import { useAuthStore } from '../store/authStore';
 interface NavbarProps {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  onSearchClick: () => void;
 }
 
-export function Navbar({ theme, toggleTheme }: NavbarProps) {
+export function Navbar({ theme, toggleTheme, onSearchClick }: NavbarProps) {
   const { user } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -30,8 +31,12 @@ export function Navbar({ theme, toggleTheme }: NavbarProps) {
 
           <div className="h-4 w-px bg-border mx-2" />
 
-          <button className="p-2.5 hover:bg-muted rounded-xl transition-colors">
+          <button
+            onClick={onSearchClick}
+            className="p-2.5 hover:bg-muted rounded-xl transition-colors group flex items-center gap-2"
+          >
             <Search size={20} />
+            <span className="hidden lg:block text-[10px] font-black bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-400 group-hover:text-primary transition-colors">⌘K</span>
           </button>
 
           <button

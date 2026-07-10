@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const WORDS = ["Questions.", "Research.", "Understanding."];
-const FINAL_WORD = "Chronicle Lab.";
 
 interface AnimatedWordSequenceProps {
   onComplete: () => void;
@@ -10,45 +9,52 @@ interface AnimatedWordSequenceProps {
 
 export const AnimatedWordSequence: React.FC<AnimatedWordSequenceProps> = ({ onComplete }) => {
   const [index, setIndex] = useState(0);
-  const [showFinal, setShowFinal] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
 
   useEffect(() => {
-    if (index < WORDS.length) {
+    if (index < WORDS.length - 1) {
       const timer = setTimeout(() => {
         setIndex((prev) => prev + 1);
-      }, 2000); // Duration for each word including pause
+      }, 1200); // More deliberate cycle
       return () => clearTimeout(timer);
     } else {
-      setShowFinal(true);
-      onComplete();
+      const timer = setTimeout(() => {
+        setIsFinished(true);
+        onComplete();
+      }, 1200);
+      return () => clearTimeout(timer);
     }
   }, [index, onComplete]);
 
   return (
-    <div className="h-32 md:h-40 lg:h-52 flex items-center relative">
-      <AnimatePresence mode="wait">
-        {!showFinal ? (
-          <motion.h1
-            key={WORDS[index]}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -30 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-slate-900 dark:text-white leading-none whitespace-nowrap"
-          >
-            {WORDS[index]}
-          </motion.h1>
-        ) : (
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-slate-900 dark:text-white leading-none whitespace-nowrap"
-          >
-            {FINAL_WORD}
-          </motion.h1>
-        )}
-      </AnimatePresence>
+    <div className="flex flex-col items-start gap-4">
+      {/* Small cycling status */}
+      <div className="h-8 overflow-hidden">
+        <AnimatePresence mode="wait">
+          {!isFinished && (
+            <motion.span
+              key={WORDS[index]}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="text-xs md:text-sm font-black uppercase tracking-[0.4em] text-primary block"
+            >
+              {WORDS[index]}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Main Brand Title */}
+      <motion.h1
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-slate-900 dark:text-white leading-none whitespace-nowrap"
+      >
+        Chronicle Lab.
+      </motion.h1>
     </div>
   );
 };

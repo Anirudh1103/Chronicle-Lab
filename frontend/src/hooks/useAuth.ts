@@ -11,7 +11,7 @@ export function useAuth() {
     queryKey: ['me'],
     queryFn: async () => {
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get('auth/me');
         return data;
       } catch (error) {
         return null;
@@ -30,7 +30,7 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: any) => {
-      const { data } = await api.post('/auth/login', credentials);
+      const { data } = await api.post('auth/login', credentials);
       return data;
     },
     onSuccess: (data) => {
@@ -41,7 +41,7 @@ export function useAuth() {
 
   const registerMutation = useMutation({
     mutationFn: async (userData: any) => {
-      const { data } = await api.post('/auth/register', userData);
+      const { data } = await api.post('auth/register', userData);
       return data;
     },
     onSuccess: (data) => {
@@ -52,7 +52,7 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await api.post('/auth/logout');
+      await api.post('auth/logout');
     },
     onSuccess: () => {
       setUser(null);

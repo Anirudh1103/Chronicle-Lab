@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 
 export const uploadMedia = async (req: Request, res: Response) => {
   try {
+    console.log('Upload Request Received:', { file: req.file?.originalname, size: req.file?.size });
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
@@ -22,7 +23,8 @@ export const uploadMedia = async (req: Request, res: Response) => {
 
     res.status(201).json(media);
   } catch (error) {
-    res.status(500).json({ message: 'Upload failed' });
+    console.error('Upload Controller Error:', error);
+    res.status(500).json({ message: 'Upload failed', error: error instanceof Error ? error.message : String(error) });
   }
 };
 

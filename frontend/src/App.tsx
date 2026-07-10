@@ -15,12 +15,25 @@ import { FeedbackPage } from './pages/FeedbackPage';
 import { BlogDetailsPage } from './pages/BlogDetailsPage';
 
 import { BlogEditorPage } from './pages/BlogEditorPage';
+import { CommandCenter } from './components/CommandCenter';
 
 function App() {
   const [showIntro, setShowIntro] = useState(() => {
     // Show intro only once per session
     return !sessionStorage.getItem('hasSeenIntro');
   });
+  const [isCommandCenterOpen, setIsCommandCenterOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandCenterOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleIntroComplete = () => {
     sessionStorage.setItem('hasSeenIntro', 'true');
@@ -72,7 +85,13 @@ function App() {
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col min-h-screen"
           >
-            <Navbar theme={theme} toggleTheme={toggleTheme} />
+            <CommandCenter
+              isOpen={isCommandCenterOpen}
+              onClose={() => setIsCommandCenterOpen(false)}
+              toggleTheme={toggleTheme}
+              theme={theme}
+            />
+            <Navbar theme={theme} toggleTheme={toggleTheme} onSearchClick={() => setIsCommandCenterOpen(true)} />
 
             <main className="pt-24 px-6 max-w-7xl mx-auto flex-1 w-full">
               <Routes>
@@ -82,6 +101,7 @@ function App() {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/feedback" element={<FeedbackPage />} />
                 <Route path="/blog/:slug" element={<BlogDetailsPage />} />
+                <Route path="/admin/editor/:id?" element={<ProtectedRoute><BlogEditorPage /></ProtectedRoute>} />
                 <Route
                   path="/admin/*"
                   element={
@@ -90,7 +110,6 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route path="/admin/editor/:id?" element={<ProtectedRoute><BlogEditorPage /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

@@ -5,6 +5,7 @@ import { EditorSidebar } from '../components/editor/EditorSidebar';
 import { PreviewModal } from '../components/editor/PreviewModal';
 import { useEditorStore } from '../store/useEditorStore';
 import { blogApi } from '../api/blog.api';
+import { useAuthStore } from '../store/authStore';
 import {
   Save,
   Eye,
@@ -21,6 +22,7 @@ import { cn } from '../utils/cn';
 export const BlogEditorPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [showSidebar, setShowSidebar] = useState(true);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const {
@@ -83,19 +85,20 @@ export const BlogEditorPage: React.FC = () => {
     }
   }, [id]);
 
-  const handleSave = async () => {
-    if (!isDirty || isLoading) return;
+  const handleSave = async (publish: boolean = false) => {
+    if ((!isDirty && !publish) || isLoading) return;
 
     setLoading(true);
     try {
       const payload = {
         ...metadata,
         ...seo,
+        status: publish ? 'PUBLISHED' : metadata.status,
         blocks: blocks.map((b, index) => ({
           ...b,
           orderIndex: index
         })),
-        authorId: 'clw1234567890', // TODO: Get from auth store
+        authorId: user?.id,
       };
 
       if (id) {
@@ -105,6 +108,9 @@ export const BlogEditorPage: React.FC = () => {
         navigate(`/admin/editor/${newPost.id}`, { replace: true });
       }
       setLastSaved(new Date());
+      if (publish) {
+        setMetadata({ status: 'PUBLISHED' });
+      }
     } catch (error) {
       console.error('Failed to save:', error);
     } finally {
@@ -143,7 +149,10 @@ export const BlogEditorPage: React.FC = () => {
       {/* Editor Header */}
       <header className="sticky top-0 z-[60] flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
         <div className="flex items-center gap-4">
-          <button className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100">
+          <button
+            onClick={() => navigate('/admin/posts')}
+            className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
+          >
             <ChevronLeft size={20} />
           </button>
           <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
@@ -179,20 +188,33 @@ export const BlogEditorPage: React.FC = () => {
           </button>
 
           <button
-            onClick={handleSave}
+            onClick={() => handleSave(false)}
             disabled={!isDirty || isLoading}
             className={cn(
-            "flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-bold transition-all shadow-lg shadow-blue-500/20",
+            "flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-bold transition-all",
             isDirty
-              ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
-              : "bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800"
+              ? "bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 active:scale-95"
+              : "bg-slate-50 text-slate-300 cursor-not-allowed dark:bg-slate-900/50"
           )}>
             {isLoading ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900 border-t-transparent dark:border-white" />
             ) : (
               <Save size={18} />
             )}
             {isLoading ? 'Saving...' : 'Save Draft'}
+          </button>
+
+          <button
+            onClick={() => handleSave(true)}
+            disabled={isLoading}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-black transition-all shadow-lg shadow-blue-500/20",
+              metadata.status === 'PUBLISHED'
+                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
+            )}
+          >
+            {metadata.status === 'PUBLISHED' ? 'Update Live' : 'Publish Post'}
           </button>
 
           <button

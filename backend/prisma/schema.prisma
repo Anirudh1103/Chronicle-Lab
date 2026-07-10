@@ -31,6 +31,9 @@ model Post {
   coverImageCaption String?
   views             Int        @default(0)
   likes             Int        @default(0)
+  reactionHistoric  Int        @default(0)
+  reactionBrilliant Int        @default(0)
+  reactionInsightful Int       @default(0)
   readingTime       Int        @default(0)
   wordCount         Int        @default(0)
   authorId          String

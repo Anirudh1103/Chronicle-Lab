@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useEditorStore } from '../../store/useEditorStore';
+import api from '../../api/client';
 import {
   Settings,
   Search,
@@ -8,7 +9,9 @@ import {
   Globe,
   Share2,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  X,
+  Upload
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { GooglePreview } from './GooglePreview';
@@ -16,6 +19,26 @@ import { GooglePreview } from './GooglePreview';
 export const EditorSidebar: React.FC = () => {
   const { metadata, seo, setMetadata, setSEO } = useEditorStore();
   const [activeTab, setActiveTab] = useState<'settings' | 'seo' | 'social'>('settings');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (file: File) => {
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const { data } = await api.post('media/upload', formData);
+      const url = `http://localhost:5000/uploads/${data.path}`;
+      setMetadata({ coverImage: url });
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <aside className="w-80 border-l border-slate-200 bg-white overflow-y-auto dark:border-slate-800 dark:bg-slate-900 h-[calc(100vh-64px)] sticky top-16">
@@ -87,22 +110,74 @@ export const EditorSidebar: React.FC = () => {
                   <ImageIcon size={16} />
                   Cover Image
                </div>
-               {metadata.coverImage ? (
-                 <div className="relative rounded-lg overflow-hidden group">
-                    <img src={metadata.coverImage} className="w-full aspect-video object-cover" />
-                    <button
-                      onClick={() => setMetadata({ coverImage: '' })}
-                      className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold"
-                    >
-                      Remove
-                    </button>
-                 </div>
-               ) : (
-                 <button className="w-full py-8 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-colors flex flex-col items-center">
-                    <ImageIcon size={24} className="mb-2" />
-                    <span className="text-xs">Add Cover Image</span>
-                 </button>
-               )}
+
+               <div
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                  onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleUpload(file);
+                  }}
+                  className={cn(
+                    "relative transition-all",
+                    isDragging && "scale-[1.02] ring-2 ring-blue-500 ring-offset-2"
+                  )}
+               >
+                 {metadata.coverImage ? (
+                   <div className="relative rounded-lg overflow-hidden group">
+                      <img src={metadata.coverImage} className="w-full aspect-video object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="bg-white text-black px-3 py-1.5 rounded-md text-xs font-bold hover:bg-slate-100 transition-colors"
+                        >
+                          Change
+                        </button>
+                        <button
+                          onClick={() => setMetadata({ coverImage: '' })}
+                          className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-md text-xs font-bold hover:opacity-90 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                   </div>
+                 ) : (
+                   <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className={cn(
+                      "w-full py-8 border-2 border-dashed rounded-lg transition-colors flex flex-col items-center justify-center gap-2",
+                      isUploading ? "bg-slate-50 border-slate-100" : "border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300"
+                    )}
+                   >
+                      {isUploading ? (
+                        <div className="flex flex-col items-center gap-2">
+                           <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                           <span className="text-[10px] font-bold uppercase">Uploading...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <ImageIcon size={24} />
+                          <span className="text-xs font-bold">Add Cover Image</span>
+                          <span className="text-[10px]">or drag and drop</span>
+                        </>
+                      )}
+                   </button>
+                 )}
+                 <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleUpload(file);
+                  }}
+                  className="hidden"
+                  accept="image/*"
+                 />
+               </div>
             </section>
           </>
         )}

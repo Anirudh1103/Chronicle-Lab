@@ -33,7 +33,7 @@ export const QuoteCard: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 1, delay: 4 }} // Fades in after main animation
+      transition={{ duration: 1, delay: 1 }} // Faster entry
       className="relative w-full max-w-[400px]"
     >
       <motion.div

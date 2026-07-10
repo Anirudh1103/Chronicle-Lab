@@ -62,3 +62,28 @@ export const getPostById = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch post' });
   }
 };
+
+export const searchPosts = async (req: Request, res: Response) => {
+  try {
+    const { q } = req.query;
+    if (typeof q !== 'string') return res.json([]);
+    const posts = await PostService.searchPosts(q);
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to search posts' });
+  }
+};
+
+export const reactToPost = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { type } = req.body;
+    if (!['Historic', 'Brilliant', 'Insightful'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid reaction type' });
+    }
+    const post = await PostService.reactToPost(id, type);
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to react to post' });
+  }
+};

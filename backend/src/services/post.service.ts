@@ -175,4 +175,33 @@ export class PostService {
       orderBy: { createdAt: 'desc' }
     });
   }
+
+  static async searchPosts(query: string) {
+    return await prisma.post.findMany({
+      where: {
+        OR: [
+          { title: { contains: query } },
+          { subtitle: { contains: query } },
+          { excerpt: { contains: query } },
+          { blocks: { some: { content: { contains: query } } } }
+        ],
+        status: 'PUBLISHED'
+      },
+      include: {
+        category: true,
+        author: { select: { name: true } }
+      },
+      take: 10
+    });
+  }
+
+  static async reactToPost(postId: string, type: 'Historic' | 'Brilliant' | 'Insightful') {
+    const field = `reaction${type}` as 'reactionHistoric' | 'reactionBrilliant' | 'reactionInsightful';
+    return await prisma.post.update({
+      where: { id: postId },
+      data: {
+        [field]: { increment: 1 }
+      }
+    });
+  }
 }

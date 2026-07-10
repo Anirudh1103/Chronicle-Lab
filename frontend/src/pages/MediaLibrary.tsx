@@ -17,11 +17,12 @@ export function MediaLibrary() {
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
 
   const { data: media = [], isLoading } = useQuery<MediaFile[]>({
     queryKey: ['media'],
     queryFn: async () => {
-      const { data } = await api.get('/media');
+      const { data } = await api.get('media');
       return data;
     },
   });
@@ -30,18 +31,21 @@ export function MediaLibrary() {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
-      const { data } = await api.post('/media/upload', formData);
+      const { data } = await api.post('media/upload', formData);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['media'] });
       setIsUploading(false);
     },
+    onError: () => {
+      setIsUploading(false);
+    }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/media/${id}`);
+      await api.delete(`media/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['media'] });
@@ -56,6 +60,16 @@ export function MediaLibrary() {
     }
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setIsUploading(true);
+      uploadMutation.mutate(file);
+    }
+  };
+
   const filteredMedia = media.filter(m =>
     m.filename.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -63,7 +77,28 @@ export function MediaLibrary() {
   const getFullUrl = (filename: string) => `http://localhost:5000/uploads/${filename}`;
 
   return (
-    <div className="space-y-10 pb-20">
+    <div
+      className="space-y-10 pb-20 min-h-[60vh]"
+      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={handleDrop}
+    >
+      <AnimatePresence>
+        {isDragging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-primary/20 backdrop-blur-sm border-4 border-dashed border-primary m-6 rounded-[3rem] flex items-center justify-center pointer-events-none"
+          >
+            <div className="bg-background p-8 rounded-[2rem] shadow-2xl flex flex-col items-center gap-4">
+              <Upload size={48} className="text-primary animate-bounce" />
+              <p className="text-2xl font-black uppercase tracking-tighter">Drop to upload</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-1">
           <h1 className="text-4xl font-black tracking-tight">Media Library</h1>
