@@ -7,6 +7,7 @@ import postRoutes from './routes/postRoutes';
 import authRoutes from './routes/authRoutes';
 import mediaRoutes from './routes/mediaRoutes';
 import categoryRoutes from './routes/categoryRoutes';
+import settingsRoutes from './routes/settingsRoutes';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

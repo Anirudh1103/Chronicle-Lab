@@ -8,14 +8,18 @@ import { blogApi } from '../api/blog.api';
 import { useAuthStore } from '../store/authStore';
 import {
   Save,
-  Eye,
   Settings,
   Check,
   Clock,
   BarChart3,
   ChevronLeft,
   PanelRightClose,
-  PanelRightOpen
+  PanelRightOpen,
+  Trash2,
+  RotateCcw,
+  Globe,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 
@@ -146,6 +150,43 @@ export const BlogEditorPage: React.FC = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!id) return;
+    if (!confirm('CAUTION: This will permanently purge this chronicle from the laboratory. Proceed?')) return;
+
+    setLoading(true);
+    try {
+      await blogApi.deletePost(id);
+      navigate('/admin/posts');
+    } catch (error) {
+      console.error('Failed to delete:', error);
+      alert('Security Protocol: Failed to delete chronicle.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleVisibility = async () => {
+    if (!id) return;
+    const isNowHidden = metadata.status === 'PUBLISHED';
+    const confirmMsg = isNowHidden
+      ? 'Hide this chronicle? It will no longer be visible to the public.'
+      : 'Make this chronicle public?';
+
+    if (!confirm(confirmMsg)) return;
+
+    setLoading(true);
+    try {
+      const { status: newStatus } = await blogApi.togglePostVisibility(id);
+      setMetadata({ status: newStatus });
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Failed to toggle visibility:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -236,14 +277,50 @@ export const BlogEditorPage: React.FC = () => {
             onClick={() => handleSave(true)}
             disabled={isLoading}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-black transition-all shadow-lg shadow-blue-500/20",
+              "flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-black transition-all shadow-lg",
               metadata.status === 'PUBLISHED'
-                ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
+                ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-500/20"
+                : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/20 active:scale-95"
             )}
           >
-            {metadata.status === 'PUBLISHED' ? 'Update Live' : 'Publish Post'}
+            {metadata.status === 'PUBLISHED' ? (
+              <>
+                <Globe size={18} /> Published
+              </>
+            ) : (
+              'Publish'
+            )}
           </button>
+
+          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+
+          {id && (
+            <>
+              <button
+                onClick={handleToggleVisibility}
+                title={metadata.status === 'PUBLISHED' ? "Hide from Public" : "Show to Public"}
+                className={cn(
+                  "p-2 rounded-lg transition-all flex items-center gap-2 px-3",
+                  metadata.status === 'PUBLISHED'
+                    ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10"
+                    : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                )}
+              >
+                {metadata.status === 'PUBLISHED' ? <Eye size={20} /> : <EyeOff size={20} />}
+                <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">
+                  {metadata.status === 'PUBLISHED' ? 'Public' : 'Hidden'}
+                </span>
+              </button>
+
+              <button
+                onClick={handleDelete}
+                title="Delete Permanently"
+                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-all"
+              >
+                <Trash2 size={20} />
+              </button>
+            </>
+          )}
 
           <button
             onClick={() => setShowSidebar(!showSidebar)}

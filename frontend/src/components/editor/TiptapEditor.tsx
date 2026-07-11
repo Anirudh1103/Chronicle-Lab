@@ -3,12 +3,14 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
+import Highlight from '@tiptap/extension-highlight';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MediaPicker } from './MediaPicker';
 import {
-  Bold, Italic, List, ListOrdered, Quote,
+  Bold, Italic, Underline as UnderlineIcon, Highlighter, List, ListOrdered, Quote,
   Code, Image as ImageIcon, Link as LinkIcon,
   Heading1, Heading2, Undo, Redo
 } from 'lucide-react';
@@ -27,6 +29,10 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     extensions: [
       StarterKit.configure({
         codeBlock: false,
+      }),
+      Underline,
+      Highlight.configure({
+        multicolor: true,
       }),
       Image.configure({
         HTMLAttributes: {
@@ -70,6 +76,17 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           onClick={() => editor.chain().focus().toggleItalic().run()}
           active={editor.isActive('italic')}
           icon={<Italic size={18} />}
+        />
+        <MenuButton
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          active={editor.isActive('underline')}
+          icon={<UnderlineIcon size={18} />}
+        />
+        <MenuButton
+          onClick={() => editor.chain().focus().toggleHighlight({ color: '#3b82f633' }).run()}
+          active={editor.isActive('highlight')}
+          icon={<Highlighter size={18} />}
+          title="Premium Highlight"
         />
         <div className="w-px h-6 bg-border mx-1 my-auto" />
         <MenuButton

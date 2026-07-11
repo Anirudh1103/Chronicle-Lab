@@ -1,6 +1,7 @@
 import React from 'react';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { Plus, Trash2, HelpCircle } from 'lucide-react';
+import { RichTextEditor } from '../RichTextEditor';
 
 interface FAQItem {
   question: string;
@@ -51,19 +52,17 @@ export const FAQBlock: React.FC<FAQBlockProps> = ({ id, content }) => {
             >
               <Trash2 size={14} />
             </button>
-            <input
-              type="text"
-              value={item.question}
-              onChange={(e) => updateItem(index, 'question', e.target.value)}
+            <RichTextEditor
+              content={item.question}
+              onChange={(html) => updateItem(index, 'question', html)}
               placeholder="Question..."
               className="w-full bg-transparent font-bold text-slate-700 outline-none placeholder:text-slate-300 mb-2"
             />
-            <textarea
-              value={item.answer}
-              onChange={(e) => updateItem(index, 'answer', e.target.value)}
+            <RichTextEditor
+              content={item.answer}
+              onChange={(html) => updateItem(index, 'answer', html)}
               placeholder="Answer..."
-              className="w-full bg-transparent text-sm text-slate-500 outline-none placeholder:text-slate-200 resize-none"
-              rows={2}
+              className="w-full bg-transparent text-sm text-slate-500 outline-none placeholder:text-slate-200"
             />
           </div>
         ))}

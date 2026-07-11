@@ -129,7 +129,7 @@ export const BlogDetailsPage: React.FC = () => {
             {post.subtitle}
           </p>
 
-          <div className="flex flex-wrap items-center gap-4 md:gap-8 pt-4 border-t border-slate-100 dark:border-slate-800 pt-6 md:pt-8">
+        <div className="flex flex-wrap items-center gap-4 md:gap-8 pt-4 border-t border-slate-100 dark:border-slate-800 pt-6 md:pt-8">
             <div className="flex flex-wrap items-center gap-4 md:gap-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400">
               <span className="flex items-center gap-1.5"><Calendar size={12} className="md:w-3.5 md:h-3.5" /> {new Date(post.createdAt).toLocaleDateString()}</span>
               <span className="flex items-center gap-1.5"><Clock size={12} className="md:w-3.5 md:h-3.5" /> {post.readingTime} Min Read</span>
@@ -140,15 +140,6 @@ export const BlogDetailsPage: React.FC = () => {
             </button>
           </div>
         </div>
-
-        {post.coverImage && (
-          <div className="mt-8 md:mt-12 rounded-2xl md:rounded-[3rem] overflow-hidden shadow-2xl">
-            <img src={post.coverImage} className="w-full h-auto object-cover max-h-[400px] md:max-h-[600px]" alt={post.coverImageAlt || post.title} />
-            {post.coverImageCaption && (
-              <p className="py-3 md:py-4 px-4 text-center text-xs md:text-sm text-slate-400 italic leading-relaxed">{post.coverImageCaption}</p>
-            )}
-          </div>
-        )}
       </header>
       )}
 
@@ -202,11 +193,18 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
     case 'heading':
       const Tag = `h${content.level}` as any;
       const classes = {
-        1: 'text-3xl sm:text-4xl md:text-5xl font-black mb-6 md:mb-8',
-        2: 'text-2xl sm:text-3xl md:text-4xl font-bold mb-4 md:mb-6 pt-6 md:pt-8',
-        3: 'text-xl sm:text-2xl md:text-3xl font-bold mb-3 md:mb-4 pt-3 md:pt-4',
+        1: 'text-3xl sm:text-4xl md:text-5xl font-black mb-2 md:mb-3',
+        2: 'text-2xl sm:text-3xl md:text-4xl font-bold mb-2 md:mb-3 pt-6 md:pt-8',
+        3: 'text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 pt-3 md:pt-4',
       }[content.level as 1 | 2 | 3] || 'text-lg font-bold';
-      return <Tag className={cn(classes, "font-editorial italic")}>{content.text}</Tag>;
+      return (
+        <div className="mb-8">
+          <Tag className={cn(classes, "font-editorial italic")} dangerouslySetInnerHTML={{ __html: content.text }} />
+          {content.subtext && (
+            <p className="text-lg md:text-xl text-muted-foreground font-medium border-l-2 border-primary/20 pl-4 py-1" dangerouslySetInnerHTML={{ __html: content.subtext }} />
+          )}
+        </div>
+      );
 
     case 'paragraph':
       return <div className="text-base sm:text-lg md:text-xl leading-relaxed mb-6" dangerouslySetInnerHTML={{ __html: content.text }} />;
@@ -285,11 +283,35 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
           content.type === 'bullet' ? "list-disc pl-6" : "list-decimal pl-6"
         )}>
           {content.items.map((item: string, i: number) => (
-            <li key={i} className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed pl-2">
-              {item}
-            </li>
+            <li key={i} className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed pl-2" dangerouslySetInnerHTML={{ __html: item }} />
           ))}
         </ListTag>
+      );
+
+    case 'table':
+      return (
+        <div className="my-12 overflow-x-auto glass rounded-[2rem] border border-white/5 shadow-2xl">
+          <table className="w-full border-collapse">
+            {content.headers && (
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-900/50">
+                  {content.headers.map((header, i) => (
+                    <th key={i} className="p-6 border-b border-r border-slate-100 dark:border-white/5 text-left font-black text-xs uppercase tracking-widest text-primary" dangerouslySetInnerHTML={{ __html: header }} />
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {content.rows.map((row, ri) => (
+                <tr key={ri}>
+                  {row.map((cell, ci) => (
+                    <td key={ci} className="p-6 border-b border-r border-slate-100 dark:border-white/5 text-lg text-slate-700 dark:text-slate-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: cell }} />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       );
 
     default:

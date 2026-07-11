@@ -12,7 +12,8 @@ import {
   ChevronRight,
   ChevronDown,
   X,
-  Upload
+  Upload,
+  Star
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { GooglePreview } from './GooglePreview';
@@ -119,6 +120,25 @@ export const EditorSidebar: React.FC = () => {
                    </option>
                  ))}
                </select>
+
+               <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5 mt-4">
+                  <div className="flex items-center gap-2">
+                    <Star className={cn("transition-colors", metadata.featured ? "text-amber-500 fill-amber-500" : "text-slate-400")} size={16} />
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Featured Article</span>
+                  </div>
+                  <button
+                    onClick={() => setMetadata({ featured: !metadata.featured })}
+                    className={cn(
+                      "w-10 h-6 rounded-full relative transition-colors duration-200",
+                      metadata.featured ? "bg-primary" : "bg-slate-300 dark:bg-slate-700"
+                    )}
+                  >
+                    <div className={cn(
+                      "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200",
+                      metadata.featured && "translate-x-4"
+                    )} />
+                  </button>
+               </div>
             </section>
 
             {/* Cover Image Settings */}
