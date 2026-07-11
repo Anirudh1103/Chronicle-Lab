@@ -128,3 +128,16 @@ model Feedback {
   message   String
   createdAt DateTime @default(now())
 }
+
+model Quote {
+  id        String   @id @default(cuid())
+  text      String
+  author    String
+  category  String
+  createdAt DateTime @default(now())
+}
+
+model SiteConfig {
+  key   String @id
+  value String
+}

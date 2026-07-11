@@ -27,7 +27,7 @@ export const AnimatedWordSequence: React.FC<AnimatedWordSequenceProps> = ({ onCo
   }, [index, onComplete]);
 
   return (
-    <div className="flex flex-col items-start gap-4">
+    <div className="flex flex-col items-start gap-6">
       {/* Small cycling status */}
       <div className="h-8 overflow-hidden">
         <AnimatePresence mode="wait">
@@ -51,7 +51,7 @@ export const AnimatedWordSequence: React.FC<AnimatedWordSequenceProps> = ({ onCo
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter text-slate-900 dark:text-white leading-none whitespace-nowrap"
+        className="max-w-[850px] text-[clamp(4rem,8vw,8rem)] font-black leading-[0.9] tracking-tighter text-slate-900 dark:text-white"
       >
         Chronicle Lab.
       </motion.h1>

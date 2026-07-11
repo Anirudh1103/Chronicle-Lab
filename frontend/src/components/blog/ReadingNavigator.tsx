@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronRight,
@@ -8,39 +8,33 @@ import {
   ArrowUp,
   Share2,
   Trophy,
-  X
+  X,
+  Navigation
 } from 'lucide-react';
 import { HeadingNode } from '../../types/navigator';
 import { useReadingProgress } from '../../hooks/useReadingProgress';
 import { EditorBlock } from '../../types/editor';
 import { cn } from '../../utils/cn';
-import { ProgressTooltip } from './ProgressTooltip';
 
 interface ReadingNavigatorProps {
   blocks: EditorBlock[];
 }
 
 export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) => {
-  const { tree, activeId, scrollProgress, completedIds, totalHeadings } = useReadingProgress(blocks);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { tree, activeId, scrollProgress, completedIds } = useReadingProgress(blocks);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-
-  const toggleSection = (id: string) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
+      const offset = 100;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = el.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
       window.scrollTo({
-        top: el.getBoundingClientRect().top + window.pageYOffset - 100,
+        top: offsetPosition,
         behavior: 'smooth'
       });
     }
@@ -50,159 +44,65 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
 
   return (
     <>
-      {/* Desktop Navigator */}
-      <aside
-        className={cn(
-          "fixed left-8 top-1/2 -translate-y-1/2 z-[100] transition-all duration-500 hidden xl:block",
-          isExpanded ? "w-80" : "w-12"
-        )}
-      >
-        <div className="relative p-2 rounded-[2rem] bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
-          {/* Progress Rail Background */}
-          <div className="absolute left-6 top-12 bottom-12 w-[1px] bg-slate-200 dark:bg-slate-800" />
+      {/* Desktop Full-Length Navigator */}
+      <aside className="fixed right-8 top-0 bottom-0 z-[100] w-1 hidden xl:flex flex-col items-center justify-center py-20 group hover:w-48 transition-all duration-500">
+        <div className="h-full w-[2px] bg-slate-100 dark:bg-white/5 relative rounded-full">
+           {/* Progress Fill */}
+           <motion.div
+            className="absolute top-0 w-full bg-primary origin-top shadow-[0_0_15px_rgba(59,130,246,0.5)] rounded-full"
+            style={{ height: `${scrollProgress}%` }}
+           />
 
-          {/* Animated Progress Fill */}
-          <motion.div
-            className="absolute left-6 top-12 w-[2px] bg-primary origin-top shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-            initial={{ height: 0 }}
-            animate={{ height: `calc(${scrollProgress}% - 48px)` }}
-            style={{ maxHeight: 'calc(100% - 96px)' }}
-          />
+           {/* Chapter Dots */}
+           <div className="absolute inset-0 pointer-events-none">
+              {tree.map((node) => {
+                const el = document.getElementById(node.id);
+                const pos = el ? (el.offsetTop / document.documentElement.scrollHeight) * 100 : 0;
 
-          <div className="relative z-10 py-4 px-1">
-            {/* Header / Mode Toggle */}
-            <div className="flex items-center justify-between mb-8 px-2">
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-colors"
-              >
-                {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-              </button>
-              {isExpanded && (
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Navigator</span>
-              )}
-            </div>
-
-            {/* Nodes Tree */}
-            <div className="space-y-6 max-h-[60vh] overflow-y-auto no-scrollbar py-2">
-              {tree.map(node => (
-                <div key={node.id} className="space-y-4">
-                  <div className="flex items-center gap-3 group relative">
-                    <NodeCircle
-                      node={node}
-                      activeId={activeId}
-                      completedIds={completedIds}
-                      onHover={setHoveredId}
+                return (
+                  <div
+                    key={node.id}
+                    className="absolute w-full flex items-center justify-center transition-all duration-500"
+                    style={{ top: el ? `${pos}%` : '0' }}
+                  >
+                    <button
                       onClick={() => scrollTo(node.id)}
-                    />
-
-                    {isExpanded && (
-                      <button
-                        onClick={() => scrollTo(node.id)}
-                        className={cn(
-                          "text-sm font-bold transition-all text-left truncate flex-1",
-                          activeId === node.id ? "text-primary" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                        )}
-                      >
-                        {node.text}
-                      </button>
-                    )}
-
-                    {node.children.length > 0 && isExpanded && (
-                      <button
-                        onClick={() => toggleSection(node.id)}
-                        className="p-1 text-slate-300 hover:text-primary transition-colors"
-                      >
-                        <ChevronRight
-                          size={14}
-                          className={cn("transition-transform", expandedSections.has(node.id) && "rotate-90")}
-                        />
-                      </button>
-                    )}
-
-                    {hoveredId === node.id && (
-                      <ProgressTooltip
-                        title={node.text}
-                        sectionNumber={node.index + 1}
-                        totalSections={totalHeadings}
-                        progress={scrollProgress}
-                        isCompleted={completedIds.has(node.id)}
-                      />
-                    )}
+                      className={cn(
+                        "pointer-events-auto w-3 h-3 rounded-full border-2 transition-all duration-500 relative z-20 hover:scale-150 shadow-sm",
+                        activeId === node.id
+                          ? "bg-primary border-primary scale-125 shadow-[0_0_10px_rgba(59,130,246,0.8)]"
+                          : completedIds.has(node.id)
+                            ? "bg-primary/40 border-primary/40"
+                            : "bg-background border-slate-300 dark:border-slate-700"
+                      )}
+                    >
+                       <span className="absolute right-6 top-1/2 -translate-y-1/2 px-3 py-1.5 glass rounded-lg text-[10px] font-black uppercase tracking-widest opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 pointer-events-none">
+                          {node.text}
+                       </span>
+                    </button>
                   </div>
-
-                  {/* Children (H3) */}
-                  <AnimatePresence>
-                    {(expandedSections.has(node.id) || !isExpanded) && node.children.length > 0 && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="pl-6 space-y-4 relative"
-                      >
-                        {/* Branch line */}
-                        <div className="absolute left-[3px] top-0 bottom-4 w-[1px] bg-slate-100 dark:bg-slate-800" />
-
-                        {node.children.map(child => (
-                          <div key={child.id} className="flex items-center gap-3 group relative">
-                            <NodeCircle
-                              node={child}
-                              activeId={activeId}
-                              completedIds={completedIds}
-                              onHover={setHoveredId}
-                              onClick={() => scrollTo(child.id)}
-                            />
-                            {isExpanded && (
-                              <button
-                                onClick={() => scrollTo(child.id)}
-                                className={cn(
-                                  "text-xs font-semibold transition-all text-left truncate flex-1",
-                                  activeId === child.id ? "text-primary" : "text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                                )}
-                              >
-                                {child.text}
-                              </button>
-                            )}
-
-                            {hoveredId === child.id && (
-                              <ProgressTooltip
-                                title={child.text}
-                                sectionNumber={child.index + 1}
-                                totalSections={totalHeadings}
-                                progress={scrollProgress}
-                                isCompleted={completedIds.has(child.id)}
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
-            </div>
-
-            {/* Footer / Scroll Top */}
-            <div className="mt-8 px-2 flex justify-center">
-               <button
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary transition-all hover:scale-110"
-               >
-                 <ArrowUp size={16} />
-               </button>
-            </div>
-          </div>
+                );
+              })}
+           </div>
         </div>
+
+        {/* Scroll to Top Button */}
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="mt-8 p-3 rounded-full glass border border-white/10 text-slate-400 hover:text-primary hover:scale-110 transition-all shadow-xl"
+        >
+          <ArrowUp size={16} />
+        </button>
       </aside>
 
-      {/* Completion Celebration (Bottom Right) */}
+      {/* Completion Celebration */}
       <AnimatePresence>
         {scrollProgress > 98 && (
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-8 right-8 z-[110] p-6 glass rounded-[2.5rem] border border-emerald-500/30 shadow-[0_20px_50px_rgba(16,185,129,0.2)] flex flex-col items-center gap-4 text-center max-w-xs"
+            className="fixed bottom-8 right-24 z-[110] p-6 glass rounded-[2.5rem] border border-emerald-500/30 shadow-[0_20px_50px_rgba(16,185,129,0.2)] flex flex-col items-center gap-4 text-center max-w-xs"
           >
             <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-2xl relative">
                <Trophy size={32} />
@@ -214,62 +114,38 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
             </div>
             <div>
               <h3 className="text-lg font-black tracking-tight">Chronicle Completed</h3>
-              <p className="text-xs text-slate-500 font-medium">You've successfully explored this library entry.</p>
-            </div>
-            <div className="flex gap-2 w-full">
-               <button className="flex-1 py-2 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-opacity">Share</button>
-               <button
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="flex-1 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors"
-               >
-                 Top
-               </button>
+              <p className="text-xs text-slate-500 font-medium">Knowledge archived successfully.</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Mobile Floating Progress Button */}
-      <div className="fixed bottom-6 left-6 z-[200] xl:hidden flex flex-col items-start gap-4">
+      {/* Mobile Menu */}
+      <div className="fixed bottom-6 left-6 z-[200] xl:hidden">
          <AnimatePresence>
            {isMobileMenuOpen && (
              <motion.div
                initial={{ opacity: 0, scale: 0.9, y: 20 }}
                animate={{ opacity: 1, scale: 1, y: 0 }}
                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-               className="w-72 max-h-[60vh] glass rounded-3xl p-4 overflow-y-auto no-scrollbar shadow-2xl border border-white/20 mb-2"
+               className="w-72 max-h-[60vh] glass rounded-3xl p-6 overflow-y-auto no-scrollbar shadow-2xl border border-white/20 mb-4"
              >
-                <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
-                  <span className="text-[10px] font-black uppercase tracking-widest">Chronicle Map</span>
-                  <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400">
-                    <X size={16} />
-                  </button>
+                <div className="flex items-center justify-between mb-6 pb-2 border-b border-white/10">
+                  <span className="text-[10px] font-black uppercase tracking-widest opacity-50">Map</span>
+                  <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400"><X size={16} /></button>
                 </div>
                 <div className="space-y-4">
                   {tree.map(node => (
-                    <div key={node.id} className="space-y-2">
-                       <button
-                        onClick={() => { scrollTo(node.id); setIsMobileMenuOpen(false); }}
-                        className={cn(
-                          "text-xs font-bold text-left block w-full truncate",
-                          activeId === node.id ? "text-primary" : "text-slate-500"
-                        )}
-                       >
-                         {node.text}
-                       </button>
-                       {node.children.map(child => (
-                         <button
-                          key={child.id}
-                          onClick={() => { scrollTo(child.id); setIsMobileMenuOpen(false); }}
-                          className={cn(
-                            "text-[10px] font-medium text-left block w-full truncate pl-4",
-                            activeId === child.id ? "text-primary" : "text-slate-400"
-                          )}
-                         >
-                           {child.text}
-                         </button>
-                       ))}
-                    </div>
+                    <button
+                      key={node.id}
+                      onClick={() => { scrollTo(node.id); setIsMobileMenuOpen(false); }}
+                      className={cn(
+                        "text-xs font-bold text-left block w-full truncate transition-all",
+                        activeId === node.id ? "text-primary translate-x-2" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                      )}
+                    >
+                      {node.text}
+                    </button>
                   ))}
                 </div>
              </motion.div>
@@ -278,66 +154,12 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
 
          <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="w-14 h-14 rounded-2xl bg-slate-900/80 backdrop-blur-md text-white shadow-2xl flex items-center justify-center relative overflow-hidden border border-white/10"
+          className="w-14 h-14 rounded-2xl bg-slate-900/90 backdrop-blur-md text-white shadow-2xl flex items-center justify-center relative overflow-hidden border border-white/10"
          >
-            <div className="absolute inset-0 bg-primary/20" style={{ height: `${scrollProgress}%`, top: 'auto', bottom: 0 }} />
-            <div className="relative z-10 flex flex-col items-center">
-              <span className="text-[10px] font-black leading-none">{Math.round(scrollProgress)}%</span>
-              <div className="h-px w-4 bg-white/20 my-1" />
-              <Maximize2 size={12} className={cn("transition-transform", isMobileMenuOpen && "rotate-45")} />
-            </div>
+            <div className="absolute bottom-0 left-0 right-0 bg-primary/30 transition-all duration-500" style={{ height: `${scrollProgress}%` }} />
+            <Navigation size={18} className={cn("relative z-10 transition-transform", isMobileMenuOpen && "rotate-45")} />
          </button>
       </div>
     </>
-  );
-};
-
-const NodeCircle: React.FC<{
-  node: HeadingNode;
-  activeId: string | null;
-  completedIds: Set<string>;
-  onHover: (id: string | null) => void;
-  onClick: () => void;
-}> = ({ node, activeId, completedIds, onHover, onClick }) => {
-  const isActive = activeId === node.id;
-  const isCompleted = completedIds.has(node.id);
-  const size = node.level === 2 ? (isActive ? 16 : 10) : (isActive ? 12 : 6);
-
-  return (
-    <div
-      className="relative flex items-center justify-center w-8 h-8 cursor-pointer"
-      onMouseEnter={() => onHover(node.id)}
-      onMouseLeave={() => onHover(null)}
-      onClick={onClick}
-    >
-      <motion.div
-        layout
-        animate={{
-          scale: isActive ? 1.2 : 1,
-          backgroundColor: isActive ? '#3b82f6' : (isCompleted ? '#3b82f6' : 'transparent'),
-          borderColor: isActive ? '#3b82f6' : (isCompleted ? '#3b82f6' : 'rgba(148, 163, 184, 0.5)')
-        }}
-        style={{
-          width: size,
-          height: size,
-          borderWidth: isCompleted || isActive ? 0 : 2
-        }}
-        className={cn(
-          "rounded-full transition-all duration-300",
-          isActive && "shadow-[0_0_15px_rgba(59,130,246,0.8)]",
-          isCompleted && !isActive && "opacity-60"
-        )}
-      />
-      {isActive && node.level === 2 && (
-        <motion.div
-          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute w-6 h-6 rounded-full border border-primary/30"
-        />
-      )}
-      {isCompleted && !isActive && (
-        <Check size={8} className="absolute text-white" />
-      )}
-    </div>
   );
 };

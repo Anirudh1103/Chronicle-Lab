@@ -2,6 +2,7 @@ import React from 'react';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { List, ListOrdered, Plus, Trash2 } from 'lucide-react';
 import { cn } from '../../../utils/cn';
+import { RichTextEditor } from '../RichTextEditor';
 
 interface ListBlockProps {
   id: string;
@@ -25,59 +26,61 @@ export const ListBlock: React.FC<ListBlockProps> = ({ id, content }) => {
   };
 
   const removeItem = (index: number) => {
-    if (content.items.length <= 1) return;
+    if (content.items.length <= 1) {
+      updateItem(0, '');
+      return;
+    }
     updateBlock(id, { ...content, items: content.items.filter((_, i) => i !== index) });
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
+    <div className="space-y-4 py-4">
+      <div className="flex gap-2 mb-6">
         <button
           onClick={() => updateBlock(id, { ...content, type: 'bullet' })}
           className={cn(
-            "p-2 rounded-lg transition-colors",
-            content.type === 'bullet' ? "bg-primary text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+            "p-2.5 rounded-xl transition-all",
+            content.type === 'bullet'
+              ? "bg-primary text-white shadow-lg shadow-primary/20"
+              : "bg-slate-50 dark:bg-slate-900/50 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
           )}
         >
-          <List size={16} />
+          <List size={18} />
         </button>
         <button
           onClick={() => updateBlock(id, { ...content, type: 'number' })}
           className={cn(
-            "p-2 rounded-lg transition-colors",
-            content.type === 'number' ? "bg-primary text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+            "p-2.5 rounded-xl transition-all",
+            content.type === 'number'
+              ? "bg-primary text-white shadow-lg shadow-primary/20"
+              : "bg-slate-50 dark:bg-slate-900/50 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
           )}
         >
-          <ListOrdered size={16} />
+          <ListOrdered size={18} />
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {content.items.map((item, index) => (
-          <div key={index} className="flex items-start gap-3 group">
-            <span className="mt-3 w-6 text-sm font-bold text-slate-400 text-right">
-              {content.type === 'bullet' ? '•' : `${index + 1}.`}
-            </span>
-            <input
-              type="text"
-              value={item}
-              onChange={(e) => updateItem(index, e.target.value)}
-              placeholder="List item..."
-              className="flex-1 py-2 bg-transparent outline-none border-b border-transparent focus:border-primary/20 transition-colors"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addItem();
-                }
-                if (e.key === 'Backspace' && item === '' && content.items.length > 1) {
-                  e.preventDefault();
-                  removeItem(index);
-                }
-              }}
-            />
+          <div key={index} className="flex items-start gap-4 group/item">
+            <div className="mt-2.5 w-6 flex-shrink-0 flex justify-end">
+               <span className="text-sm font-black text-primary/40 group-hover/item:text-primary transition-colors">
+                {content.type === 'bullet' ? '•' : `${index + 1}.`}
+              </span>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <RichTextEditor
+                content={item}
+                onChange={(html) => updateItem(index, html)}
+                placeholder="Enter list item..."
+                className="text-base md:text-lg font-medium leading-relaxed py-1"
+              />
+            </div>
+
             <button
               onClick={() => removeItem(index)}
-              className="mt-2 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="mt-2 p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-all hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg"
             >
               <Trash2 size={14} />
             </button>
@@ -87,9 +90,9 @@ export const ListBlock: React.FC<ListBlockProps> = ({ id, content }) => {
 
       <button
         onClick={addItem}
-        className="flex items-center gap-2 text-xs font-bold uppercase text-slate-400 hover:text-primary transition-colors ml-9"
+        className="flex items-center gap-2 px-4 py-2 mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all ml-10"
       >
-        <Plus size={14} /> Add Item
+        <Plus size={16} /> Add Next Point
       </button>
     </div>
   );

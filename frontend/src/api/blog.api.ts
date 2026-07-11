@@ -18,6 +18,16 @@ export const blogApi = {
     const response = await api.put(`/posts/${id}`, data);
     return response.data;
   },
+  togglePostVisibility: async (id: string) => {
+    const response = await api.patch(`/posts/${id}/visibility`);
+    return response.data;
+  },
+
+
+  deletePost: async (id: string) => {
+    const response = await api.delete(`/posts/${id}`);
+    return response.data;
+  },
 
   getPost: async (id: string) => {
     const response = await api.get(`/posts/id/${id}`);
@@ -61,6 +71,32 @@ export const blogApi = {
 
   submitFeedback: async (data: { name: string; email: string; message: string; type: string }) => {
     const response = await api.post('/auth/feedback', data);
+    return response.data;
+  },
+
+  // Settings & Config
+  getQuotes: async () => {
+    const response = await api.get('/settings/quotes');
+    return response.data;
+  },
+
+  addQuote: async (data: { text: string; author: string; category: string }) => {
+    const response = await api.post('/settings/quotes', data);
+    return response.data;
+  },
+
+  deleteQuote: async (id: string) => {
+    const response = await api.delete(`/settings/quotes/${id}`);
+    return response.data;
+  },
+
+  getConfig: async () => {
+    const response = await api.get('/settings/config');
+    return response.data;
+  },
+
+  updateConfig: async (configs: Record<string, string>) => {
+    const response = await api.post('/settings/config', configs);
     return response.data;
   },
 };

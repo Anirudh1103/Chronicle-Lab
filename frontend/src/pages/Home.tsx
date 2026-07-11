@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, Star, ScrollText } from 'lucide-react';
 import { PostCard } from '../components/PostCard';
 import { HeroSection } from '../components/hero/HeroSection';
+import { QuotesCarousel } from '../components/QuotesCarousel';
 import { blogApi } from '../api/blog.api';
 
 export function Home() {
@@ -51,7 +52,7 @@ export function Home() {
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-amber-500">
                 <Star size={20} fill="currentColor" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Editor's Choice</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Author's Choice</span>
               </div>
               <h2 className="text-5xl font-black tracking-tighter">Featured Chronicles</h2>
             </div>
@@ -104,6 +105,8 @@ export function Home() {
           <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent pointer-events-none z-10 opacity-0 md:group-hover:opacity-100 transition-opacity duration-700" />
         </div>
       </section>
+
+      <QuotesCarousel />
 
       {/* Newsletter Section */}
       <section className="mx-6 glass rounded-[4rem] p-16 md:p-24 text-center space-y-10 border-white/5 relative overflow-hidden">

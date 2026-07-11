@@ -24,6 +24,16 @@ export const updatePost = async (req: Request, res: Response) => {
   }
 };
 
+export const togglePostVisibility = async (req: Request, res: Response) => {
+  try {
+    const post = await PostService.toggleVisibility(req.params.id);
+    res.json(post);
+  } catch (error) {
+    console.error('Toggle Post Visibility Error:', error);
+    res.status(500).json({ error: 'Failed to update post visibility' });
+  }
+};
+
 export const getPosts = async (req: Request, res: Response) => {
   try {
     const { status } = req.query;
@@ -95,5 +105,16 @@ export const getStats = async (req: Request, res: Response) => {
     res.json(stats);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+};
+
+export const deletePost = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await PostService.deletePost(id);
+    res.json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('Delete Post Error:', error);
+    res.status(500).json({ error: 'Failed to delete post' });
   }
 };

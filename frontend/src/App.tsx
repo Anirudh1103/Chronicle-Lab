@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Navbar } from './components/Navbar';
 import { Home } from './pages/Home';
@@ -72,6 +72,9 @@ function App() {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin');
+
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col overflow-x-hidden">
       <AnimatePresence mode="wait">
@@ -114,7 +117,7 @@ function App() {
               </Routes>
             </main>
 
-            <Footer />
+            {!isAdminPath && <Footer />}
           </motion.div>
         )}
       </AnimatePresence>

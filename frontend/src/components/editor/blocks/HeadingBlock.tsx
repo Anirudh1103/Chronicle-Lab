@@ -1,12 +1,14 @@
 import React from 'react';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { cn } from '../../../utils/cn';
+import { RichTextEditor } from '../RichTextEditor';
 
 interface HeadingBlockProps {
   id: string;
   content: {
     level: number;
     text: string;
+    subtext?: string;
   };
 }
 
@@ -21,44 +23,48 @@ export const HeadingBlock: React.FC<HeadingBlockProps> = ({ id, content }) => {
     updateBlock(id, { ...content, level });
   };
 
-  const getHeadingClass = (level: number) => {
-    switch (level) {
-      case 1: return 'text-4xl font-black';
-      case 2: return 'text-3xl font-bold';
-      case 3: return 'text-2xl font-bold';
-      case 4: return 'text-xl font-semibold';
-      default: return 'text-lg font-semibold';
-    }
-  };
-
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        {[1, 2, 3, 4].map((l) => (
-          <button
-            key={l}
-            onClick={() => handleLevelChange(l)}
-            className={cn(
-              'px-2 py-1 text-xs rounded border transition-colors',
-              content.level === l
-                ? 'bg-blue-500 border-blue-500 text-white'
-                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-            )}
-          >
-            H{l}
-          </button>
-        ))}
+    <div className="space-y-4 group/heading">
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+          {[1, 2, 3, 4].map((l) => (
+            <button
+              key={l}
+              onClick={() => handleLevelChange(l)}
+              className={cn(
+                'px-2.5 py-1 text-[10px] font-black rounded-md transition-all',
+                content.level === l
+                  ? 'bg-white dark:bg-slate-700 shadow-sm text-primary'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+              )}
+            >
+              H{l}
+            </button>
+          ))}
+        </div>
       </div>
-      <input
-        type="text"
-        value={content.text}
-        onChange={handleChange}
-        placeholder={`H${content.level} Heading`}
-        className={cn(
-          'w-full bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-slate-300',
-          getHeadingClass(content.level)
-        )}
-      />
+
+      <div className="space-y-2">
+        <RichTextEditor
+          content={content.text}
+          onChange={(html) => updateBlock(id, { ...content, text: html })}
+          placeholder={`H${content.level} Heading`}
+          className={cn(
+            'w-full bg-transparent font-black tracking-tighter leading-tight italic font-editorial',
+            content.level === 1 && 'text-5xl md:text-6xl',
+            content.level === 2 && 'text-4xl md:text-5xl',
+            content.level === 3 && 'text-3xl md:text-4xl',
+            content.level === 4 && 'text-2xl md:text-3xl'
+          )}
+        />
+
+        <RichTextEditor
+          content={content.subtext || ''}
+          onChange={(html) => updateBlock(id, { ...content, subtext: html })}
+          placeholder="Add a subheading or description..."
+          className="text-lg md:text-xl text-muted-foreground font-medium border-l-2 border-primary/20 pl-4 py-1"
+        />
+      </div>
     </div>
   );
 };

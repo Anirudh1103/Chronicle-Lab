@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { EditorBlock } from '../types/editor';
 import { HeadingNode } from '../types/navigator';
 
@@ -7,8 +7,11 @@ export function useReadingProgress(blocks: EditorBlock[]) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
 
-  // Build hierarchy
-  const headings = blocks.filter(b => b.type === 'heading' && b.content.level > 1);
+  // Memoize headings to prevent effect loop
+  const headings = React.useMemo(() =>
+    blocks.filter(b => b.type === 'heading' && b.content.level > 1),
+    [blocks]
+  );
 
   const tree = useCallback(() => {
     const root: HeadingNode[] = [];
@@ -17,7 +20,7 @@ export function useReadingProgress(blocks: EditorBlock[]) {
     headings.forEach((h, i) => {
       const node: HeadingNode = {
         id: h.id,
-        text: h.content.text,
+        text: h.content.text.replace(/<[^>]*>/g, ''), // Clean HTML tags for the navigator
         level: h.content.level,
         index: i,
         children: [],
@@ -41,33 +44,38 @@ export function useReadingProgress(blocks: EditorBlock[]) {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Calculate scroll progress
-      const winScroll = document.documentElement.scrollTop;
-      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      const scrolled = (winScroll / height) * 100;
+      // Precise scroll progress calculation
+      const winScroll = window.scrollY;
+      const height = document.documentElement.scrollHeight - window.innerHeight;
+      const scrolled = Math.min(100, Math.max(0, (winScroll / height) * 100));
       setScrollProgress(scrolled);
 
-      // Determine active section and completed sections
-      const headingElements = headings.map(h => document.getElementById(h.id)).filter(Boolean) as HTMLElement[];
+      // Determine active section
+      const headingElements = headings
+        .map(h => ({ id: h.id, el: document.getElementById(h.id) }))
+        .filter(h => h.el);
 
       let currentActiveId = null;
       const newCompletedIds = new Set<string>();
 
-      headingElements.forEach((el, idx) => {
-        const rect = el.getBoundingClientRect();
-        // Section is active if it's near the top of the viewport
-        if (rect.top <= 150) {
-          currentActiveId = headings[idx].id;
-          newCompletedIds.add(headings[idx].id);
+      headingElements.forEach((item) => {
+        const rect = item.el!.getBoundingClientRect();
+        // Section is active if it has crossed the 200px threshold from top
+        if (rect.top <= 200) {
+          currentActiveId = item.id;
+          newCompletedIds.add(item.id);
         }
       });
 
-      setActiveId(currentActiveId);
-      setCompletedIds(newCompletedIds);
+      setActiveId(prev => prev !== currentActiveId ? currentActiveId : prev);
+      setCompletedIds(prev => {
+        if (prev.size !== newCompletedIds.size) return newCompletedIds;
+        return prev;
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial check
+    handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, [headings]);

@@ -10,21 +10,12 @@ import { Mark, mergeAttributes } from '@tiptap/core';
 
 const Highlight = Mark.create({
   name: 'highlight',
-  addAttributes() {
-    return {
-      color: {
-        default: 'var(--highlight-color, #fbbf24)',
-        parseHTML: element => element.getAttribute('data-color'),
-        renderHTML: attributes => ({ 'data-color': attributes.color, style: `background-color: ${attributes.color}; color: inherit; padding: 0.1em 0.3em; border-radius: 0.2em; font-weight: 500;` }),
-      },
-    }
-  },
   parseHTML() { return [{ tag: 'mark' }] },
   renderHTML({ HTMLAttributes }) { return ['mark', mergeAttributes(HTMLAttributes), 0] },
   addCommands() {
     return {
-      setHighlight: attributes => ({ commands }) => commands.setMark(this.name, attributes),
-      toggleHighlight: attributes => ({ commands }) => commands.toggleMark(this.name, attributes),
+      setHighlight: () => ({ commands }) => commands.setMark(this.name),
+      toggleHighlight: () => ({ commands }) => commands.toggleMark(this.name),
       unsetHighlight: () => ({ commands }) => commands.unsetMark(this.name),
     }
   },
@@ -98,7 +89,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
             <UnderlineIcon size={14} />
           </button>
           <button
-            onClick={() => editor.chain().focus().toggleHighlight({ color: 'rgba(59, 130, 246, 0.2)' }).run()}
+            onClick={() => editor.chain().focus().toggleHighlight().run()}
             className={cn("p-1.5 rounded-lg transition-colors", editor.isActive('highlight') ? "bg-primary text-white" : "text-slate-400 hover:bg-white/10")}
           >
             <Highlighter size={14} />

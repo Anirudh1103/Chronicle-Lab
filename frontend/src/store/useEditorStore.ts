@@ -152,7 +152,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 function getInitialContent(type: BlockType) {
   switch (type) {
     case 'heading':
-      return { level: 2, text: '' };
+      return { level: 2, text: '', subtext: '' };
     case 'paragraph':
       return { text: '' };
     case 'image':
@@ -164,7 +164,7 @@ function getInitialContent(type: BlockType) {
     case 'callout':
       return { type: 'info', text: '' };
     case 'table':
-      return { rows: [['', ''], ['', '']] };
+      return { rows: [['', ''], ['', '']], headers: ['', ''] };
     case 'faq':
       return { items: [{ question: '', answer: '' }] };
     case 'timeline':

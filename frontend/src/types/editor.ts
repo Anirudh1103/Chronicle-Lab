@@ -25,7 +25,7 @@ export interface EditorBlock {
   isCollapsed?: boolean;
 }
 
-export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'PRIVATE';
+export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'PRIVATE' | 'HIDDEN';
 
 export interface PostMetadata {
   title: string;

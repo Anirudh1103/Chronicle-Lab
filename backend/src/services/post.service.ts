@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'PRIVATE';
+export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'PRIVATE' | 'HIDDEN';
 
 export interface BlockInput {
   id?: string;
@@ -156,9 +156,19 @@ export class PostService {
     });
   }
 
+  static async toggleVisibility(id: string) {
+    const post = await prisma.post.findUnique({ where: { id }, select: { status: true } });
+    if (!post) throw new Error('Post not found');
+
+    return prisma.post.update({
+      where: { id },
+      data: { status: post.status === 'HIDDEN' ? 'PUBLISHED' : 'HIDDEN' }
+    });
+  }
+
   static async getPostBySlug(slug: string) {
-    return await prisma.post.findUnique({
-      where: { slug },
+    return await prisma.post.findFirst({
+      where: { slug, status: 'PUBLISHED' },
       include: {
         blocks: { orderBy: { orderIndex: 'asc' } },
         tags: true,
@@ -183,7 +193,7 @@ export class PostService {
     const [totalPosts, totalViews, comments, subscribers] = await Promise.all([
       prisma.post.count(),
       prisma.post.aggregate({ _sum: { views: true } }),
-      prisma.feedback.count(), // Using feedback as a proxy for comments/engagement for now
+      prisma.feedback.count(),
       prisma.subscriber.count(),
     ]);
 
@@ -221,6 +231,12 @@ export class PostService {
       data: {
         [field]: { increment: 1 }
       }
+    });
+  }
+
+  static async deletePost(id: string) {
+    return await prisma.post.delete({
+      where: { id }
     });
   }
 }
