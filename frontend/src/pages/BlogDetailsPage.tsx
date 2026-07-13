@@ -184,10 +184,13 @@ export const BlogDetailsPage: React.FC = () => {
         !isFocusMode ? "xl:pl-32 xl:pr-12" : "max-w-3xl py-12 md:py-20"
       )}>
         <div className="space-y-12">
-          <div className={cn(
-            "prose prose-xl md:prose-2xl dark:prose-invert max-w-none transition-all duration-500 font-medium",
-            fontTheme === 'serif' ? "font-editorial" : "font-sans leading-relaxed"
-          )}>
+          <div
+            id="chronicle-content"
+            className={cn(
+              "prose prose-xl md:prose-2xl dark:prose-invert max-w-none transition-all duration-500 font-medium",
+              fontTheme === 'serif' ? "font-editorial" : "font-sans leading-relaxed"
+            )}
+          >
             {post.blocks.map((block: any) => (
               <div key={block.id} id={block.id} className="mb-12 scroll-mt-32">
                 {renderBlock(block, setActiveImage)}

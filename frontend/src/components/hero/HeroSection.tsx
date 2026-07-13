@@ -61,7 +61,7 @@ export const HeroSection: React.FC = () => {
                   onClick={scrollToContent}
                   className="bg-primary text-primary-foreground px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center gap-3"
                 >
-                  Start Exploring <ArrowRight size={16} />
+                  Featured blogs <ArrowRight size={16} />
                 </button>
                 <button
                   onClick={() => document.getElementById('recent-chronicles')?.scrollIntoView({ behavior: 'smooth' })}

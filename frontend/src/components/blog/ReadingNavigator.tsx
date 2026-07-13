@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
 import {
   Check,
   ArrowUp,
+  X,
   Navigation,
-  X
+  Target,
+  List
 } from 'lucide-react';
 import { useReadingProgress } from '../../hooks/useReadingProgress';
 import { EditorBlock } from '../../types/editor';
@@ -15,119 +18,177 @@ interface ReadingNavigatorProps {
 }
 
 export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) => {
-  const { tree, activeId, scrollProgress, completedIds } = useReadingProgress(blocks);
+  const { tree, activeId, completedIds } = useReadingProgress(blocks);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Use useMemo for dotPositions to prevent the infinite update depth error
-  const dotPositions = useMemo(() => {
-    return tree.map(node => {
-      const el = document.getElementById(node.id);
-      if (!el) return { id: node.id, pos: 0 };
+  const { scrollYProgress } = useScroll({
+    offset: ["start start", "end end"]
+  });
 
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      // Use offsetTop relative to the top of the body for accurate absolute positioning
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = el.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
-
-      const pos = (elementPosition / document.documentElement.scrollHeight) * 100;
-      return { id: node.id, pos: Math.min(100, Math.max(0, pos)) };
-    });
-  }, [tree]); // Only recalculate when tree (headings) change
+  const scrollProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
-      const offset = 100;
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = el.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
-      const offsetPosition = elementPosition - offset;
-
       window.scrollTo({
-        top: offsetPosition,
+        top: el.offsetTop - 120,
         behavior: 'smooth'
       });
     }
   };
 
   if (tree.length === 0) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <>
-      {/* Premium Vertical Navigator - Fixed Left */}
-      <aside className="fixed left-6 top-0 bottom-0 z-[100] hidden xl:flex flex-col items-center w-12 py-32 group">
-        <div className="h-full w-[2px] bg-slate-100 dark:bg-white/5 relative rounded-full">
-           {/* Animated Progress Fill */}
-           <motion.div
-            className="absolute top-0 left-0 w-full bg-primary origin-top shadow-[0_0_15px_rgba(59,130,246,0.5)] rounded-full"
-            animate={{ height: `${scrollProgress}%` }}
-            transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-           />
-
-           {/* Chapter Dots */}
-           <div className="absolute inset-0 pointer-events-none">
-              {dotPositions.map((data, i) => (
-                <div
-                  key={data.id}
-                  className="absolute w-full flex items-center justify-center transition-all duration-500"
-                  style={{ top: `${data.pos}%` }}
-                >
-                  <button
-                    onClick={() => scrollTo(data.id)}
-                    className={cn(
-                      "pointer-events-auto w-3 h-3 rounded-full border-2 transition-all duration-500 relative z-20 hover:scale-[1.8] bg-background",
-                      activeId === data.id
-                        ? "bg-primary border-primary scale-[2] shadow-[0_0_15px_rgba(59,130,246,0.8)]"
-                        : completedIds.has(data.id)
-                          ? "bg-primary/40 border-primary/40 scale-110"
-                          : "bg-background border-slate-300 dark:border-slate-700"
-                    )}
-                  >
-                     <span className="absolute left-8 top-1/2 -translate-y-1/2 px-4 py-2 glass rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap border border-white/10 pointer-events-none shadow-2xl">
-                        {tree[i].text}
-                     </span>
-                  </button>
-                </div>
-              ))}
-           </div>
-        </div>
-
-        {/* Scroll Top Portal */}
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="mt-8 p-3 rounded-2xl glass border border-white/10 text-slate-400 hover:text-primary hover:scale-110 transition-all shadow-xl active:scale-95"
-          title="Return to Origin"
+      {/* Premium Viewport-Anchored Navigator */}
+      <aside
+        className={cn(
+          "fixed left-8 top-1/2 -translate-y-1/2 z-[10000] hidden xl:flex flex-col transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          isExpanded ? "w-80" : "w-16"
+        )}
+      >
+        <div
+          className="relative flex flex-col items-center bg-slate-950/60 backdrop-blur-2xl border border-white/10 rounded-[3rem] p-4 py-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] group overflow-hidden"
+          style={{ height: '70vh' }}
+          onMouseEnter={() => setIsExpanded(true)}
+          onMouseLeave={() => setIsExpanded(false)}
         >
-          <ArrowUp size={20} />
-        </button>
+          {/* Header Identity */}
+          <div className="flex flex-col items-center gap-2 mb-10 shrink-0">
+             <div className="w-9 h-9 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                <List size={18} />
+             </div>
+             {isExpanded && (
+               <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400"
+               >
+                 Table of Contents
+               </motion.span>
+             )}
+          </div>
+
+          <div className="relative flex-1 w-full">
+            {/* CENTRAL RAIL - Mathematically centered in the component */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-[2px] bg-white/5 rounded-full z-0" />
+
+            {/* PROGRESS SIGNAL - Liquid flow passing EXACTLY through center of dots */}
+            <motion.div
+              className="absolute left-1/2 -translate-x-1/2 top-0 w-[2px] bg-gradient-to-b from-primary via-blue-400 to-primary shadow-[0_0_15px_rgba(59,130,246,0.6)] origin-top rounded-full z-10"
+              style={{ height: useTransform(scrollProgress, [0, 1], ["0%", "100%"]) }}
+            />
+
+            {/* INTERACTIVE NODES */}
+            <div className="relative flex flex-col justify-between h-full w-full py-2 z-20">
+              {tree.map((node) => {
+                const isActive = activeId === node.id;
+                const isRead = completedIds.has(node.id) && !isActive;
+
+                return (
+                  <div key={node.id} className="relative flex items-center w-full group/node h-10">
+                    {/* Node Dot - Centered exactly on the rail line */}
+                    <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center w-10 h-10">
+                        {isActive && (
+                            <motion.div
+                            layoutId="scanner-ring"
+                            className="absolute inset-0 rounded-full border-2 border-primary/40"
+                            animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            />
+                        )}
+
+                        <button
+                            onClick={() => scrollTo(node.id)}
+                            className={cn(
+                                "w-4 h-4 rounded-full border-2 transition-all duration-500 flex items-center justify-center bg-slate-900 z-30",
+                                isActive
+                                ? "bg-primary border-primary scale-[1.5] shadow-[0_0_20px_rgba(59,130,246,0.8)]"
+                                : isRead
+                                    ? "bg-primary border-primary"
+                                    : "border-white/10 group-hover/node:border-primary group-hover/node:scale-125"
+                            )}
+                        >
+                            {isRead && <Check size={10} className="text-white" strokeWidth={4} />}
+                            {isActive && <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />}
+                        </button>
+                    </div>
+
+                    {/* TOC LABEL - Positioned strictly to the RIGHT of the dots */}
+                    <div className="absolute left-[calc(50%+24px)] right-0 overflow-hidden">
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.button
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -10 }}
+                              onClick={() => scrollTo(node.id)}
+                              className={cn(
+                                "text-[10px] font-black uppercase tracking-[0.2em] text-left truncate w-full transition-all duration-300 pr-4",
+                                isActive
+                                  ? "text-primary translate-x-2"
+                                  : "text-slate-500 group-hover/node:text-white"
+                              )}
+                            >
+                              {node.text}
+                            </motion.button>
+                          )}
+                        </AnimatePresence>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Dock Footer */}
+          <div className="w-full flex justify-center mt-10 border-t border-white/5 pt-8 shrink-0">
+             <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="p-3.5 rounded-[1.25rem] bg-white/5 text-slate-500 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 shadow-xl"
+             >
+               <ArrowUp size={20} />
+             </button>
+          </div>
+        </div>
       </aside>
 
       {/* Mobile Menu */}
-      <div className="fixed bottom-6 left-6 z-[200] xl:hidden">
+      <div className="fixed bottom-6 left-6 z-[10000] xl:hidden">
          <AnimatePresence>
            {isMobileMenuOpen && (
              <motion.div
                initial={{ opacity: 0, scale: 0.9, y: 20 }}
                animate={{ opacity: 1, scale: 1, y: 0 }}
                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-               className="w-72 max-h-[60vh] glass rounded-[2.5rem] p-6 overflow-y-auto no-scrollbar shadow-2xl border border-white/20 mb-4"
+               className="w-80 max-h-[60vh] glass rounded-[2.5rem] p-8 overflow-y-auto no-scrollbar shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] border border-white/20 mb-4"
              >
-                <div className="flex items-center justify-between mb-6 pb-2 border-b border-white/10">
-                  <span className="text-[10px] font-black uppercase tracking-widest opacity-50">Map</span>
-                  <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400"><X size={16} /></button>
+                <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-xl text-primary"><List size={16} /></div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em]">Table of Contents</span>
+                  </div>
+                  <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 p-2"><X size={20} /></button>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {tree.map(node => (
                     <button
                       key={node.id}
                       onClick={() => { scrollTo(node.id); setIsMobileMenuOpen(false); }}
                       className={cn(
-                        "text-xs font-bold text-left block w-full truncate transition-all",
+                        "text-[10px] font-black uppercase tracking-widest text-left flex items-center gap-4 w-full transition-all",
                         activeId === node.id ? "text-primary translate-x-2" : "text-slate-500"
                       )}
                     >
-                      {node.text}
+                      <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                      <span className="flex-1 truncate">{node.text}</span>
                     </button>
                   ))}
                 </div>
@@ -137,12 +198,19 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
 
          <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="w-14 h-14 rounded-2xl bg-slate-900/90 backdrop-blur-md text-white shadow-2xl flex items-center justify-center relative overflow-hidden border border-white/10"
+          className="w-16 h-16 rounded-[2rem] bg-slate-950/90 backdrop-blur-xl text-white shadow-2xl flex items-center justify-center relative overflow-hidden border border-white/10 group active:scale-90 transition-transform"
          >
-            <div className="absolute bottom-0 left-0 right-0 bg-primary/30 transition-all duration-500" style={{ height: `${scrollProgress}%` }} />
-            <Navigation size={20} className={cn("relative z-10 transition-transform", isMobileMenuOpen && "rotate-45")} />
+            <motion.div
+              className="absolute bottom-0 left-0 right-0 bg-primary/40"
+              style={{ height: useTransform(scrollYProgress, [0, 1], ["0%", "100%"]) }}
+            />
+            <div className="relative z-10 flex flex-col items-center gap-0.5">
+               <span className="text-[9px] font-black">{Math.round(scrollYProgress.get() * 100)}%</span>
+               <Navigation size={22} className={cn("transition-transform duration-500", isMobileMenuOpen && "rotate-45")} />
+            </div>
          </button>
       </div>
-    </>
+    </>,
+    document.body
   );
 };

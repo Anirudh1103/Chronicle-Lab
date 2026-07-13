@@ -1,91 +1,72 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { EditorBlock } from '../types/editor';
 import { HeadingNode } from '../types/navigator';
 
 export function useReadingProgress(blocks: EditorBlock[]) {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
 
-  // Memoize headings to prevent effect loop
+  // Focus navigation on significant structural headings for a cleaner TOC
   const headings = useMemo(() =>
     blocks.filter(b => b.type === 'heading' && b.content.level > 1),
     [blocks]
   );
 
   const tree = useMemo(() => {
-    const root: HeadingNode[] = [];
-    const stack: HeadingNode[] = [];
-
-    headings.forEach((h, i) => {
-      const node: HeadingNode = {
-        id: h.id,
-        text: h.content.text.replace(/<[^>]*>/g, ''), // Clean HTML tags for the navigator
-        level: h.content.level,
-        index: i,
-        children: [],
-        type: 'heading' // Adding a type for consistency
-      };
-
-      while (stack.length > 0 && stack[stack.length - 1].level >= node.level) {
-        stack.pop();
-      }
-
-      if (stack.length === 0) {
-        root.push(node);
-      } else {
-        const parent = stack[stack.length - 1];
-        node.parentId = parent.id;
-        parent.children.push(node);
-      }
-      stack.push(node);
-    });
-    return root;
+    return headings.map((h, i) => ({
+      id: h.id,
+      text: h.content.text.replace(/<[^>]*>/g, ''),
+      level: h.content.level,
+      index: i,
+      children: [],
+      type: 'heading'
+    } as HeadingNode));
   }, [headings]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      // Precise scroll progress calculation
-      const winScroll = window.scrollY;
-      const height = document.documentElement.scrollHeight - window.innerHeight;
-      const scrolled = Math.min(100, Math.max(0, (winScroll / height) * 100));
-      setScrollProgress(scrolled);
+    if (headings.length === 0) return;
 
-      // Determine active section
-      const headingElements = headings
-        .map(h => ({ id: h.id, el: document.getElementById(h.id) }))
-        .filter(h => h.el);
+    // Use a more precise observer for "completion" and "active" status
+    const observerOptions = {
+      root: null,
+      rootMargin: '-15% 0px -60% 0px', // Center-weighted viewport area
+      threshold: [0, 0.5, 1.0]
+    };
 
-      let currentActiveId = null;
-      const newCompletedIds = new Set<string>();
+    const callback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        const id = entry.target.id;
 
-      headingElements.forEach((item) => {
-        const rect = item.el!.getBoundingClientRect();
-        // Section is active if it has crossed the 200px threshold from top
-        if (rect.top <= 200) {
-          currentActiveId = item.id;
-          newCompletedIds.add(item.id);
+        // Active detection
+        if (entry.isIntersecting && entry.intersectionRatio > 0.1) {
+          setActiveId(id);
         }
-      });
 
-      setActiveId(prev => prev !== currentActiveId ? currentActiveId : prev);
-      setCompletedIds(prev => {
-        if (prev.size !== newCompletedIds.size) return newCompletedIds;
-        return prev;
+        // Completion detection: Section is considered "read" if it's passed the top threshold
+        const rect = entry.target.getBoundingClientRect();
+        if (rect.top < window.innerHeight * 0.2) {
+            setCompletedIds(prev => {
+                if (prev.has(id)) return prev;
+                const next = new Set(prev);
+                next.add(id);
+                return next;
+            });
+        }
       });
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
+    const observer = new IntersectionObserver(callback, observerOptions);
+    headings.forEach((h) => {
+      const el = document.getElementById(h.id);
+      if (el) observer.observe(el);
+    });
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => observer.disconnect();
   }, [headings]);
 
   return {
     tree,
     activeId,
-    scrollProgress,
-    completedIds,
-    totalHeadings: headings.length
+    completedIds
   };
 }
