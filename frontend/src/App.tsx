@@ -13,6 +13,7 @@ import { IntroScreen } from './components/intro/IntroScreen';
 import { AboutPage } from './pages/AboutPage';
 import { FeedbackPage } from './pages/FeedbackPage';
 import { BlogDetailsPage } from './pages/BlogDetailsPage';
+import { LibraryPage } from './pages/LibraryPage';
 
 import { BlogEditorPage } from './pages/BlogEditorPage';
 import { CommandCenter } from './components/CommandCenter';
@@ -81,13 +82,7 @@ function App() {
         {showIntro ? (
           <IntroScreen key="intro" theme={theme} onComplete={handleIntroComplete} />
         ) : (
-          <motion.div
-            key="content"
-            initial={{ opacity: 0, y: 10, filter: 'blur(10px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col min-h-screen"
-          >
+          <div className="flex flex-col min-h-screen">
             <CommandCenter
               isOpen={isCommandCenterOpen}
               onClose={() => setIsCommandCenterOpen(false)}
@@ -96,29 +91,38 @@ function App() {
             />
             <Navbar theme={theme} toggleTheme={toggleTheme} onSearchClick={() => setIsCommandCenterOpen(true)} />
 
-            <main className="pt-24 px-6 max-w-7xl mx-auto flex-1 w-full">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/feedback" element={<FeedbackPage />} />
-                <Route path="/blog/:slug" element={<BlogDetailsPage />} />
-                <Route path="/admin/editor/:id?" element={<ProtectedRoute><BlogEditorPage /></ProtectedRoute>} />
-                <Route
-                  path="/admin/*"
-                  element={
-                    <ProtectedRoute>
-                      <AdminDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
+            <motion.div
+              key="content"
+              initial={{ opacity: 0, filter: 'blur(10px)' }}
+              animate={{ opacity: 1, filter: 'blur(0px)' }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              className="flex-1 flex flex-col relative z-10"
+            >
+              <main className="pt-24 px-6 max-w-7xl mx-auto flex-1 w-full">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/feedback" element={<FeedbackPage />} />
+                  <Route path="/library" element={<LibraryPage />} />
+                  <Route path="/blog/:slug" element={<BlogDetailsPage />} />
+                  <Route path="/admin/editor/:id?" element={<ProtectedRoute><BlogEditorPage /></ProtectedRoute>} />
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <ProtectedRoute>
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
 
-            {!isAdminPath && <Footer />}
-          </motion.div>
+              {!isAdminPath && <Footer />}
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

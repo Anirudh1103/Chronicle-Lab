@@ -26,6 +26,7 @@ export function Navbar({ theme, toggleTheme, onSearchClick }: NavbarProps) {
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
           <Link to="/" className="text-sm font-bold hover:text-primary transition-colors">Home</Link>
+          <Link to="/library" className="text-sm font-bold hover:text-primary transition-colors text-primary">Library</Link>
           <Link to="/about" className="text-sm font-bold hover:text-primary transition-colors">About</Link>
           <Link to="/feedback" className="text-sm font-bold hover:text-primary transition-colors">Feedback</Link>
           <a

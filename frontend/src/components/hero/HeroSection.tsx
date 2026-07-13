@@ -7,6 +7,15 @@ import { ParticleBackground } from '../intro/ParticleBackground';
 
 export const HeroSection: React.FC = () => {
   const [isSequenceComplete, setIsSequenceComplete] = useState(false);
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
+
+  React.useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const scrollToContent = () => {
     document.getElementById('featured-chronicles')?.scrollIntoView({ behavior: 'smooth' });
@@ -16,7 +25,7 @@ export const HeroSection: React.FC = () => {
     <section className="relative flex min-h-[90vh] items-center px-6 pb-12 pt-8 sm:px-8 lg:px-12 lg:pb-16 lg:pt-0">
       {/* Background Layer */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
-        <ParticleBackground isDark={true} />
+        <ParticleBackground isDark={isDark} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-primary/5 rounded-full blur-[160px]" />
       </div>
 
