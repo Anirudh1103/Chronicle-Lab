@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { EditorBlock } from '../types/editor';
 import { HeadingNode } from '../types/navigator';
 
@@ -8,12 +8,12 @@ export function useReadingProgress(blocks: EditorBlock[]) {
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
 
   // Memoize headings to prevent effect loop
-  const headings = React.useMemo(() =>
+  const headings = useMemo(() =>
     blocks.filter(b => b.type === 'heading' && b.content.level > 1),
     [blocks]
   );
 
-  const tree = useCallback(() => {
+  const tree = useMemo(() => {
     const root: HeadingNode[] = [];
     const stack: HeadingNode[] = [];
 
@@ -24,6 +24,7 @@ export function useReadingProgress(blocks: EditorBlock[]) {
         level: h.content.level,
         index: i,
         children: [],
+        type: 'heading' // Adding a type for consistency
       };
 
       while (stack.length > 0 && stack[stack.length - 1].level >= node.level) {
@@ -81,7 +82,7 @@ export function useReadingProgress(blocks: EditorBlock[]) {
   }, [headings]);
 
   return {
-    tree: tree(),
+    tree,
     activeId,
     scrollProgress,
     completedIds,

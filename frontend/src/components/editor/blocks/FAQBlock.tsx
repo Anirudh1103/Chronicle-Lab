@@ -21,17 +21,19 @@ export const FAQBlock: React.FC<FAQBlockProps> = ({ id, content }) => {
   const updateItem = (index: number, field: keyof FAQItem, value: string) => {
     const newItems = [...content.items];
     newItems[index][field] = value;
-    updateBlock(id, { items: newItems });
+    updateBlock(id, { ...content, items: newItems });
   };
 
   const addItem = () => {
     updateBlock(id, {
+      ...content,
       items: [...content.items, { question: '', answer: '' }]
     });
   };
 
   const removeItem = (index: number) => {
     updateBlock(id, {
+      ...content,
       items: content.items.filter((_, i) => i !== index)
     });
   };

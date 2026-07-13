@@ -2,37 +2,10 @@ import React from 'react';
 import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
+import Highlight from '@tiptap/extension-highlight';
 import { Bold, Italic, Link as LinkIcon, Highlighter, Underline as UnderlineIcon } from 'lucide-react';
 import { cn } from '../../utils/cn';
-
-// We'll define a simple Highlight extension if the official one is missing
-import { Mark, mergeAttributes } from '@tiptap/core';
-
-const Highlight = Mark.create({
-  name: 'highlight',
-  parseHTML() { return [{ tag: 'mark' }] },
-  renderHTML({ HTMLAttributes }) { return ['mark', mergeAttributes(HTMLAttributes), 0] },
-  addCommands() {
-    return {
-      setHighlight: () => ({ commands }) => commands.setMark(this.name),
-      toggleHighlight: () => ({ commands }) => commands.toggleMark(this.name),
-      unsetHighlight: () => ({ commands }) => commands.unsetMark(this.name),
-    }
-  },
-});
-
-const Underline = Mark.create({
-  name: 'underline',
-  parseHTML() { return [{ tag: 'u' }, { style: 'text-decoration: underline' }] },
-  renderHTML({ HTMLAttributes }) { return ['u', mergeAttributes(HTMLAttributes), 0] },
-  addCommands() {
-    return {
-      setUnderline: () => ({ commands }) => commands.setMark(this.name),
-      toggleUnderline: () => ({ commands }) => commands.toggleMark(this.name),
-      unsetUnderline: () => ({ commands }) => commands.unsetMark(this.name),
-    }
-  },
-});
 
 interface RichTextEditorProps {
   content: string;
@@ -45,13 +18,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: false, // We handle headings separately in HeadingBlock
+        heading: false,
       }),
       Link.configure({
         openOnClick: false,
       }),
-      Highlight,
       Underline,
+      Highlight.configure({
+        multicolor: true,
+      }),
     ],
     content: content,
     onUpdate: ({ editor }) => {
@@ -69,7 +44,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
   return (
     <div className="relative group/editor">
       {editor && (
-        <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="flex items-center gap-1 p-1 bg-slate-900 rounded-xl shadow-2xl border border-white/10 overflow-hidden">
+        <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="flex items-center gap-1 p-1 bg-slate-900 rounded-xl shadow-2xl border border-white/10 overflow-hidden z-[200]">
           <button
             onClick={() => editor.chain().focus().toggleBold().run()}
             className={cn("p-1.5 rounded-lg transition-colors", editor.isActive('bold') ? "bg-primary text-white" : "text-slate-400 hover:bg-white/10")}

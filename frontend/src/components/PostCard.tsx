@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, User, ArrowUpRight } from 'lucide-react';
+import { Clock, User, ArrowUpRight, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PostCardProps {
@@ -14,6 +14,7 @@ interface PostCardProps {
     category?: { name: string };
     readingTime?: number;
     createdAt: string;
+    featured?: boolean;
   };
   index: number;
 }
@@ -39,10 +40,15 @@ export function PostCard({ post, index }: PostCardProps) {
               <span className="font-black text-4xl opacity-10 tracking-tighter uppercase">Chronicle.Lab</span>
             </div>
           )}
-          <div className="absolute top-6 left-6">
+          <div className="absolute top-6 left-6 flex items-center gap-2">
             <span className="glass px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-white">
               {post.category?.name || 'Uncategorized'}
             </span>
+            {post.featured && (
+              <div className="bg-amber-500 text-white p-1.5 rounded-full shadow-lg">
+                <Star size={10} fill="currentColor" />
+              </div>
+            )}
           </div>
         </div>
 

@@ -50,7 +50,7 @@ export const Reactions: React.FC<ReactionsProps> = ({ postId, initialCounts }) =
             )}
           >
             <span className="text-lg">{rt.emoji}</span>
-            <span className="text-xs font-bold">{counts[rt.type]}</span>
+            <span className="text-xs font-bold">{counts[rt.type] || 0}</span>
 
             {/* Burst Animation on Click */}
             {reacted === rt.type && (
@@ -63,7 +63,7 @@ export const Reactions: React.FC<ReactionsProps> = ({ postId, initialCounts }) =
 
             {/* Hover Tooltip */}
             {!reacted && (
-              <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 pointer-events-none z-50">
                 {rt.label}
               </span>
             )}
