@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useSpring } from 'framer-motion';
 import { blogApi } from '../api/blog.api';
-import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff } from 'lucide-react';
+import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote } from 'lucide-react';
 import { ReadingNavigator } from '../components/blog/ReadingNavigator';
 import { Lightbox } from '../components/blog/Lightbox';
 import { Copy, Check } from 'lucide-react';
@@ -47,8 +47,15 @@ export const BlogDetailsPage: React.FC = () => {
   const [fontTheme, setFontTheme] = useState<'serif' | 'sans'>('serif');
   const [activeImage, setActiveImage] = useState<{src: string, alt?: string, caption?: string} | null>(null);
 
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
   useEffect(() => {
-    const fetchPost = async () => {
+    const fetchData = async () => {
       try {
         const data = await blogApi.getPostBySlug(slug!);
         setPost({
@@ -58,13 +65,14 @@ export const BlogDetailsPage: React.FC = () => {
             content: typeof b.content === 'string' ? JSON.parse(b.content) : b.content
           }))
         });
+        document.title = `${data.title} | Chronicle Lab`;
       } catch (error) {
         console.error("Error fetching post:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchPost();
+    fetchData();
     window.scrollTo(0, 0);
   }, [slug]);
 
@@ -93,6 +101,12 @@ export const BlogDetailsPage: React.FC = () => {
   return (
     <div className={cn("min-h-screen bg-background pb-32 transition-all duration-700", isFocusMode && "pt-0")}>
       {!isFocusMode && <ReadingNavigator blocks={post.blocks} />}
+
+      {/* Top Progress Bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-1.5 bg-primary origin-left z-[200]"
+        style={{ scaleX }}
+      />
 
       <Lightbox
         src={activeImage?.src || ''}

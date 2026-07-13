@@ -25,6 +25,7 @@ export function Home() {
   };
 
   useEffect(() => {
+    document.title = "Home | Chronicle Lab";
     const fetchPosts = async () => {
       try {
         const posts = await blogApi.getAllPosts('PUBLISHED');
@@ -105,8 +106,6 @@ export function Home() {
           <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent pointer-events-none z-10 opacity-0 md:group-hover:opacity-100 transition-opacity duration-700" />
         </div>
       </section>
-
-      <QuotesCarousel />
 
       {/* Newsletter Section */}
       <section className="mx-6 glass rounded-[4rem] p-16 md:p-24 text-center space-y-10 border-white/5 relative overflow-hidden">

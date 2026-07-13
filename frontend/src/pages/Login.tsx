@@ -212,7 +212,7 @@ export function Login() {
 
         <div className="text-center">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-            System Origin: <span className="text-slate-400">Chronicle Lab V1.0</span>
+            System Origin: <span className="text-slate-400">Chronicle Lab</span>
           </p>
         </div>
       </motion.div>

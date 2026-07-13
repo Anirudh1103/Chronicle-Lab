@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sun, Moon, Search, Menu, PenTool, X } from 'lucide-react';
+import { Sun, Moon, Search, Menu, PenTool, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 
@@ -28,6 +28,14 @@ export function Navbar({ theme, toggleTheme, onSearchClick }: NavbarProps) {
           <Link to="/" className="text-sm font-bold hover:text-primary transition-colors">Home</Link>
           <Link to="/about" className="text-sm font-bold hover:text-primary transition-colors">About</Link>
           <Link to="/feedback" className="text-sm font-bold hover:text-primary transition-colors">Feedback</Link>
+          <a
+            href="https://cmanirudh.netlify.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-bold text-primary flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+          >
+            Portfolio <ExternalLink size={14} />
+          </a>
 
           <div className="h-4 w-px bg-border mx-2" />
 
@@ -116,13 +124,15 @@ export function Navbar({ theme, toggleTheme, onSearchClick }: NavbarProps) {
             >
               Home
             </Link>
-            <Link
-              to="/categories"
+            <a
+              href="https://cmanirudh.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={toggleMobileMenu}
-              className="block text-lg font-bold hover:text-primary transition-colors"
+              className="block text-lg font-bold text-primary transition-colors"
             >
-              Categories
-            </Link>
+              Portfolio
+            </a>
             <Link
               to="/about"
               onClick={toggleMobileMenu}

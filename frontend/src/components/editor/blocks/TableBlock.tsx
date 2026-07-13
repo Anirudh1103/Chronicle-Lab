@@ -114,7 +114,7 @@ export const TableBlock: React.FC<TableBlockProps> = ({ id, content }) => {
 
         <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-white/5 opacity-40">
            <Layout size={14} className="text-slate-400" />
-           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Grid V1.0</span>
+           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Grid</span>
         </div>
       </div>
 
