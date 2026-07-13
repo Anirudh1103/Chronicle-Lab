@@ -14,6 +14,7 @@ import {
   Code, Image as ImageIcon, Link as LinkIcon,
   Heading1, Heading2, Undo, Redo
 } from 'lucide-react';
+import { cn } from '../../utils/cn';
 
 const lowlight = createLowlight(common);
 
@@ -83,7 +84,7 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           icon={<UnderlineIcon size={18} />}
         />
         <MenuButton
-          onClick={() => editor.chain().focus().toggleHighlight({ color: '#3b82f633' }).run()}
+          onClick={() => editor.chain().focus().toggleHighlight().run()}
           active={editor.isActive('highlight')}
           icon={<Highlighter size={18} />}
           title="Premium Highlight"
@@ -152,10 +153,11 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
   );
 }
 
-function MenuButton({ onClick, active, icon }: { onClick: () => void, active?: boolean, icon: React.ReactNode }) {
+function MenuButton({ onClick, active, icon, title }: { onClick: () => void, active?: boolean, icon: React.ReactNode, title?: string }) {
   return (
     <button
       onClick={onClick}
+      title={title}
       className={`p-2.5 rounded-xl transition-all ${
         active
           ? 'bg-primary text-primary-foreground shadow-lg scale-105'
