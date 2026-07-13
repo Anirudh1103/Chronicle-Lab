@@ -1,0 +1,24 @@
+Chronicle Lab
+Copyright (c) 2026 Anirudh CM
+
+Chronicle Lab is an open-source blogging platform focused on
+history, technology, cybersecurity, Android development,
+and educational content.
+
+Source Repository:
+https://github.com/Anirudh1103/Chronicle-Lab
+
+This project is dual-licensed under your choice of either:
+
+- MIT License (see LICENSE-MIT)
+- Apache License, Version 2.0 (see LICENSE-APACHE)
+
+Third-party components used by this project are licensed under
+their respective licenses, including but not limited to:
+
+- React — MIT License
+- Tailwind CSS — MIT License
+- Prisma — Apache License 2.0
+- Lucide React (Icons) — ISC License
+- Framer Motion — MIT License
+- Tiptap — MIT License
