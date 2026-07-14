@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { blogApi } from '../api/blog.api';
-import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote } from 'lucide-react';
+import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote, Flag, Sparkles, Info, Maximize2 } from 'lucide-react';
 import { ReadingNavigator } from '../components/blog/ReadingNavigator';
 import { Lightbox } from '../components/blog/Lightbox';
 import { Copy, Check } from 'lucide-react';
@@ -78,8 +78,8 @@ export const BlogDetailsPage: React.FC = () => {
 
   const handleShare = async () => {
     const shareData = {
-      title: post.title,
-      text: post.subtitle || post.excerpt,
+      title: post?.title,
+      text: post?.subtitle || post?.excerpt,
       url: window.location.href,
     };
 
@@ -97,6 +97,9 @@ export const BlogDetailsPage: React.FC = () => {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-2xl animate-pulse">Loading Chronicle...</div>;
   if (!post) return <div className="min-h-screen flex items-center justify-center font-bold text-2xl">Chronicle not found.</div>;
+
+  const personalInsights = post.blocks.filter((b: any) => b.type === 'personalTouch');
+  const mainContentBlocks = post.blocks.filter((b: any) => b.type !== 'personalTouch');
 
   return (
     <div className={cn("min-h-screen bg-background pb-32 transition-all duration-700", isFocusMode && "pt-0")}>
@@ -191,7 +194,7 @@ export const BlogDetailsPage: React.FC = () => {
               fontTheme === 'serif' ? "font-editorial" : "font-sans leading-relaxed"
             )}
           >
-            {post.blocks.map((block: any) => (
+            {mainContentBlocks.map((block: any) => (
               <div key={block.id} id={block.id} className="mb-12 scroll-mt-32">
                 {renderBlock(block, setActiveImage)}
               </div>
@@ -223,6 +226,21 @@ export const BlogDetailsPage: React.FC = () => {
                     </p>
                  </div>
               </div>
+
+              {/* Personal Insights Sidebar Section */}
+              {personalInsights.length > 0 && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 px-6">
+                    <Sparkles size={14} className="text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Personal Insights</span>
+                  </div>
+                  {personalInsights.map((insight: any) => (
+                    <div key={insight.id} className="p-8 rounded-[2.5rem] bg-slate-900/40 border border-white/5 backdrop-blur-xl shadow-xl">
+                       <p className="text-base text-slate-300 font-medium leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
+                    </div>
+                  ))}
+                </div>
+              )}
            </div>
         </aside>
         )}
@@ -255,16 +273,49 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
 
     case 'image':
       return (
-        <figure className="my-16 md:my-24">
-          <div className="rounded-[2.5rem] md:rounded-[4rem] overflow-hidden shadow-[0_30px_100px_-20px_rgba(0,0,0,0.3)]">
-            <img
-              src={content.url}
-              alt={content.alt}
-              className="w-full h-auto cursor-zoom-in hover:scale-[1.02] transition-transform duration-1000 ease-out"
+        <figure className="my-20 md:my-32 relative group">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="relative"
+          >
+            {/* Soft Glow Background */}
+            <div className="absolute -inset-4 bg-primary/5 blur-3xl rounded-[4rem] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+
+            <div
+              className="relative rounded-[2.5rem] md:rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border border-white/5 cursor-zoom-in"
               onClick={() => onImageClick?.({src: content.url, alt: content.alt, caption: content.caption})}
-            />
-          </div>
-          {content.caption && <figcaption className="mt-8 text-center text-sm md:text-base text-slate-400 italic leading-relaxed px-6 font-medium">/ {content.caption}</figcaption>}
+            >
+              <motion.img
+                src={content.url}
+                alt={content.alt}
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full h-auto"
+              />
+
+              {/* Interactive Overlay */}
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+                <div className="p-5 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 text-white scale-90 group-hover:scale-100 transition-transform duration-500">
+                  <Maximize2 size={32} strokeWidth={1.5} />
+                </div>
+              </div>
+            </div>
+
+            {content.caption && (
+              <div className="mt-8 flex flex-col items-center">
+                <div className="h-px w-12 bg-primary/30 mb-6" />
+                <figcaption className="text-center max-w-2xl px-6">
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary block mb-2 opacity-50">Visual Asset</span>
+                  <p className="text-base md:text-lg text-slate-400 font-editorial italic leading-relaxed">
+                    {content.caption}
+                  </p>
+                </figcaption>
+              </div>
+            )}
+          </motion.div>
         </figure>
       );
 
@@ -312,7 +363,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   <div className="text-base md:text-lg">
-                    <p className="font-bold text-slate-700 dark:text-slate-300 leading-snug" dangerouslySetInnerHTML={{ __html: item.citation }} />
+                    <p className="font-bold text-slate-700 dark:text-slate-300 leading-snug" dangerouslySetInnerHTML={{ __html: content.citation }} />
                     {item.url && <a href={item.url} target="_blank" className="text-primary hover:underline block mt-2 opacity-70 hover:opacity-100 transition-opacity truncate max-w-xl">{item.url}</a>}
                   </div>
                 </li>
@@ -362,18 +413,64 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
         </div>
       );
 
-    case 'faq':
+    case 'divider':
       return (
-        <div className="my-20 space-y-6">
-          {content.items.map((item: any, i: number) => (
-            <div key={i} className="p-12 rounded-[3rem] bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 shadow-sm group hover:shadow-xl transition-all duration-500">
-              <h4 className="text-2xl md:text-3xl font-black mb-6 flex items-start gap-5">
-                 <span className="w-10 h-10 flex-shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-xs font-black">Q</span>
-                 <span dangerouslySetInnerHTML={{ __html: item.question }} />
-              </h4>
-              <div className="pl-14 text-lg md:text-xl text-slate-500 dark:text-slate-400 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: item.answer }} />
+        <div className="py-16 flex items-center justify-center">
+          <div className="w-full h-px bg-slate-100 dark:bg-white/5 relative">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-6">
+              <div className="flex gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/20" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/20" />
+              </div>
             </div>
-          ))}
+          </div>
+        </div>
+      );
+
+    case 'video':
+      const getEmbedUrl = (url: string) => {
+        if (!url) return '';
+        const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/);
+        if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+        const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+        if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+        return url;
+      };
+      const embedUrl = getEmbedUrl(content.url);
+      if (!embedUrl) return null;
+      return (
+        <figure className="my-16 md:my-24 space-y-6">
+          <div className="relative aspect-video rounded-[2.5rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-white/5">
+            <iframe
+              src={embedUrl}
+              className="absolute inset-0 w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          {content.caption && <figcaption className="text-center text-sm text-slate-400 italic">/ {content.caption}</figcaption>}
+        </figure>
+      );
+
+    case 'button':
+      return (
+        <div className={cn(
+          "my-12 flex",
+          content.alignment === 'left' && "justify-start",
+          content.alignment === 'center' && "justify-center",
+          content.alignment === 'right' && "justify-end"
+        )}>
+          <a
+            href={content.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-primary/20 bg-primary text-white"
+            )}
+          >
+            {content.text}
+          </a>
         </div>
       );
 
@@ -382,11 +479,13 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
         <div className="my-20 relative p-16 rounded-[4rem] bg-primary/5 border border-primary/10 group">
            <Quote className="absolute top-10 left-10 text-primary/20 group-hover:scale-110 transition-transform duration-700" size={80} />
            <div className="relative z-10 text-center space-y-8">
-              <p className="text-3xl md:text-5xl font-editorial italic font-black leading-tight tracking-tight text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: content.text }} />
-              <div className="space-y-1">
-                 <p className="text-sm font-black uppercase tracking-[0.4em] text-primary">— {content.author}</p>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{content.source}</p>
-              </div>
+              <p className="text-3xl md:text-5xl font-sans font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: content.text }} />
+              {(content.author || content.source) && (
+                <div className="space-y-1">
+                  {content.author && <p className="text-sm font-black uppercase tracking-[0.4em] text-primary">— <span dangerouslySetInnerHTML={{ __html: content.author }} /></p>}
+                  {content.source && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest" dangerouslySetInnerHTML={{ __html: content.source }} />}
+                </div>
+              )}
            </div>
         </div>
       );
