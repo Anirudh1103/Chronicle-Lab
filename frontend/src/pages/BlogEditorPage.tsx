@@ -192,7 +192,7 @@ export const BlogEditorPage: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        handleSave();
+        handleSave(true);
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
         e.preventDefault();

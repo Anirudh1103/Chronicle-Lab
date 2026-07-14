@@ -55,7 +55,7 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
         )}
       >
         <div
-          className="relative flex flex-col items-center bg-slate-950/60 backdrop-blur-2xl border border-white/10 rounded-[3rem] p-4 py-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] group overflow-hidden"
+          className="relative flex flex-col items-center bg-white/80 dark:bg-slate-950/60 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-[3rem] p-4 py-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] group overflow-hidden"
           style={{ height: '70vh' }}
           onMouseEnter={() => setIsExpanded(true)}
           onMouseLeave={() => setIsExpanded(false)}
@@ -69,7 +69,7 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
                <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400"
+                className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500"
                >
                  Table of Contents
                </motion.span>
@@ -78,7 +78,7 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
 
           <div className="relative flex-1 w-full">
             {/* CENTRAL RAIL - Mathematically centered in the component */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-[2px] bg-white/5 rounded-full z-0" />
+            <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-[2px] bg-slate-100 dark:bg-white/5 rounded-full z-0" />
 
             {/* PROGRESS SIGNAL - Liquid flow passing EXACTLY through center of dots */}
             <motion.div
@@ -108,12 +108,12 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
                         <button
                             onClick={() => scrollTo(node.id)}
                             className={cn(
-                                "w-4 h-4 rounded-full border-2 transition-all duration-500 flex items-center justify-center bg-slate-900 z-30",
+                                "w-4 h-4 rounded-full border-2 transition-all duration-500 flex items-center justify-center bg-white dark:bg-slate-900 z-30",
                                 isActive
                                 ? "bg-primary border-primary scale-[1.5] shadow-[0_0_20px_rgba(59,130,246,0.8)]"
                                 : isRead
                                     ? "bg-primary border-primary"
-                                    : "border-white/10 group-hover/node:border-primary group-hover/node:scale-125"
+                                    : "border-slate-200 dark:border-white/10 group-hover/node:border-primary group-hover/node:scale-125"
                             )}
                         >
                             {isRead && <Check size={10} className="text-white" strokeWidth={4} />}
@@ -134,7 +134,7 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
                                 "text-[10px] font-black uppercase tracking-[0.2em] text-left truncate w-full transition-all duration-300 pr-4",
                                 isActive
                                   ? "text-primary translate-x-2"
-                                  : "text-slate-500 group-hover/node:text-white"
+                                  : "text-slate-400 dark:text-slate-500 group-hover/node:text-slate-900 dark:group-hover/node:text-white"
                               )}
                             >
                               {node.text}
@@ -149,10 +149,10 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
           </div>
 
           {/* Dock Footer */}
-          <div className="w-full flex justify-center mt-10 border-t border-white/5 pt-8 shrink-0">
+          <div className="w-full flex justify-center mt-10 border-t border-slate-100 dark:border-white/5 pt-8 shrink-0">
              <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="p-3.5 rounded-[1.25rem] bg-white/5 text-slate-500 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 shadow-xl"
+              className="p-3.5 rounded-[1.25rem] bg-slate-50 dark:bg-white/5 text-slate-400 dark:text-slate-500 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 shadow-xl"
              >
                <ArrowUp size={20} />
              </button>
@@ -168,12 +168,12 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
                initial={{ opacity: 0, scale: 0.9, y: 20 }}
                animate={{ opacity: 1, scale: 1, y: 0 }}
                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-               className="w-80 max-h-[60vh] glass rounded-[2.5rem] p-8 overflow-y-auto no-scrollbar shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] border border-white/20 mb-4"
+               className="w-80 max-h-[60vh] bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl rounded-[2.5rem] p-8 overflow-y-auto no-scrollbar shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] dark:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] border border-slate-200 dark:border-white/20 mb-4"
              >
-                <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
+                <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 dark:border-white/10">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-xl text-primary"><List size={16} /></div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em]">Table of Contents</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-900 dark:text-white">Table of Contents</span>
                   </div>
                   <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 p-2"><X size={20} /></button>
                 </div>
@@ -184,7 +184,7 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
                       onClick={() => { scrollTo(node.id); setIsMobileMenuOpen(false); }}
                       className={cn(
                         "text-[10px] font-black uppercase tracking-widest text-left flex items-center gap-4 w-full transition-all",
-                        activeId === node.id ? "text-primary translate-x-2" : "text-slate-500"
+                        activeId === node.id ? "text-primary translate-x-2" : "text-slate-400 dark:text-slate-500"
                       )}
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -198,7 +198,7 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
 
          <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="w-16 h-16 rounded-[2rem] bg-slate-950/90 backdrop-blur-xl text-white shadow-2xl flex items-center justify-center relative overflow-hidden border border-white/10 group active:scale-90 transition-transform"
+          className="w-16 h-16 rounded-[2rem] bg-white dark:bg-slate-950/90 backdrop-blur-xl text-slate-900 dark:text-white shadow-2xl flex items-center justify-center relative overflow-hidden border border-slate-200 dark:border-white/10 group active:scale-90 transition-transform"
          >
             <motion.div
               className="absolute bottom-0 left-0 right-0 bg-primary/40"

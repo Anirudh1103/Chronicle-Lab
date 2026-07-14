@@ -78,39 +78,44 @@
   @apply font-editorial italic;
 }
 
-/* Premium Text Highlight */
+/* Premium Text Highlight - Elegant Block Style */
 mark, .premium-highlight {
-  background-color: transparent !important;
+  background-color: rgba(59, 130, 246, 0.2) !important;
   color: inherit !important;
-  padding: 0 4px;
-  position: relative;
+  padding: 0.1em 0.3em;
+  margin: 0 -0.1em;
+  border-radius: 4px;
+  transition: all 0.3s ease;
   display: inline;
-  z-index: 1;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
-mark::before, .premium-highlight::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 2px;
-  height: 45%;
-  background-color: rgba(59, 130, 246, 0.2);
-  border-radius: 2px;
-  z-index: -1;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  transform: skewX(-15deg);
+.dark mark, .dark .premium-highlight {
+  background-color: rgba(59, 130, 246, 0.35) !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
 }
 
-.dark mark::before, .dark .premium-highlight::before {
-  background-color: rgba(59, 130, 246, 0.35);
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+mark:hover, .premium-highlight:hover {
+  background-color: rgba(59, 130, 246, 0.3) !important;
 }
 
-mark:hover::before, .premium-highlight:hover::before {
-  height: 100%;
-  bottom: 0;
-  background-color: rgba(59, 130, 246, 0.25);
+.dark mark:hover, .dark .premium-highlight:hover {
+  background-color: rgba(59, 130, 246, 0.5) !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+/* Enhanced Bold Strength */
+b, strong, .font-bold, .prose strong {
+  font-weight: 950 !important; /* Maximum weight for maximum impact */
+  letter-spacing: -0.015em;
+  color: inherit;
+  filter: drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.1));
+}
+
+.dark b, .dark strong, .dark .prose strong {
+  color: #fff;
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 @layer utilities {
@@ -120,6 +125,24 @@ mark:hover::before, .premium-highlight:hover::before {
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Premium Global Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-50 dark:bg-slate-950;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 dark:bg-slate-800 rounded-full border-2 border-slate-50 dark:border-slate-950 transition-colors;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-300 dark:bg-slate-700;
   }
 }
 
