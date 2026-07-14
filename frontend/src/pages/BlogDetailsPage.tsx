@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { blogApi } from '../api/blog.api';
-import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote, Flag, Sparkles, Info } from 'lucide-react';
+import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote, Sparkles, Maximize2 } from 'lucide-react';
 import { ReadingNavigator } from '../components/blog/ReadingNavigator';
 import { Lightbox } from '../components/blog/Lightbox';
 import { Copy, Check } from 'lucide-react';
@@ -78,8 +78,8 @@ export const BlogDetailsPage: React.FC = () => {
 
   const handleShare = async () => {
     const shareData = {
-      title: post.title,
-      text: post.subtitle || post.excerpt,
+      title: post?.title,
+      text: post?.subtitle || post?.excerpt,
       url: window.location.href,
     };
 
@@ -232,11 +232,11 @@ export const BlogDetailsPage: React.FC = () => {
                 <div className="space-y-6">
                   <div className="flex items-center gap-2 px-6">
                     <Sparkles size={14} className="text-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Personal Insights</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Personal Insights</span>
                   </div>
                   {personalInsights.map((insight: any) => (
-                    <div key={insight.id} className="p-8 rounded-[2.5rem] bg-slate-900/40 border border-white/5 backdrop-blur-xl shadow-xl">
-                       <p className="text-base text-slate-300 font-medium leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
+                    <div key={insight.id} className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-white/5 backdrop-blur-xl shadow-sm dark:shadow-xl">
+                       <p className="text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
                     </div>
                   ))}
                 </div>
@@ -273,16 +273,49 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
 
     case 'image':
       return (
-        <figure className="my-16 md:my-24">
-          <div className="rounded-[2.5rem] md:rounded-[4rem] overflow-hidden shadow-[0_30px_100px_-20px_rgba(0,0,0,0.3)]">
-            <img
-              src={content.url}
-              alt={content.alt}
-              className="w-full h-auto cursor-zoom-in hover:scale-[1.02] transition-transform duration-1000 ease-out"
+        <figure className="my-20 md:my-32 relative group">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="relative"
+          >
+            {/* Soft Glow Background */}
+            <div className="absolute -inset-4 bg-primary/5 blur-3xl rounded-[4rem] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+
+            <div
+              className="relative rounded-[2.5rem] md:rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border border-white/5 cursor-zoom-in"
               onClick={() => onImageClick?.({src: content.url, alt: content.alt, caption: content.caption})}
-            />
-          </div>
-          {content.caption && <figcaption className="mt-8 text-center text-sm md:text-base text-slate-400 italic leading-relaxed px-6 font-medium">/ {content.caption}</figcaption>}
+            >
+              <motion.img
+                src={content.url}
+                alt={content.alt}
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full h-auto"
+              />
+
+              {/* Interactive Overlay */}
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+                <div className="p-5 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 text-white scale-90 group-hover:scale-100 transition-transform duration-500">
+                  <Maximize2 size={32} strokeWidth={1.5} />
+                </div>
+              </div>
+            </div>
+
+            {content.caption && (
+              <div className="mt-8 flex flex-col items-center">
+                <div className="h-px w-12 bg-primary/30 mb-6" />
+                <figcaption className="text-center max-w-2xl px-6">
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary block mb-2 opacity-50">Visual Asset</span>
+                  <p className="text-base md:text-lg text-slate-400 font-editorial italic leading-relaxed">
+                    {content.caption}
+                  </p>
+                </figcaption>
+              </div>
+            )}
+          </motion.div>
         </figure>
       );
 
@@ -380,22 +413,6 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
         </div>
       );
 
-    case 'quote':
-      return (
-        <div className="my-20 relative p-16 rounded-[4rem] bg-primary/5 border border-primary/10 group">
-           <Quote className="absolute top-10 left-10 text-primary/20 group-hover:scale-110 transition-transform duration-700" size={80} />
-           <div className="relative z-10 text-center space-y-8">
-              <p className="text-3xl md:text-5xl font-sans font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: content.text }} />
-              {(content.author || content.source) && (
-                <div className="space-y-1">
-                  {content.author && <p className="text-sm font-black uppercase tracking-[0.4em] text-primary">— <span dangerouslySetInnerHTML={{ __html: content.author }} /></p>}
-                  {content.source && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest" dangerouslySetInnerHTML={{ __html: content.source }} />}
-                </div>
-              )}
-           </div>
-        </div>
-      );
-
     case 'divider':
       return (
         <div className="py-16 flex items-center justify-center">
@@ -457,36 +474,19 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
         </div>
       );
 
-    case 'personalTouch':
+    case 'quote':
       return (
-        <div className="relative my-24 group">
-          {/* Glowing Aura Effect */}
-          <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-blue-500/10 to-primary/20 rounded-[4rem] blur-3xl opacity-50 group-hover:opacity-80 transition-opacity duration-1000" />
-
-          <div className="relative p-12 md:p-20 rounded-[3.5rem] bg-slate-950 border border-white/10 overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
-
-            <div className="relative z-10 flex items-center gap-4 mb-10">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-[0_0_30px_rgba(59,130,246,0.3)]">
-                <Sparkles size={24} />
-              </div>
-              <h4 className="text-[11px] font-black uppercase tracking-[0.5em] text-primary" dangerouslySetInnerHTML={{ __html: content.title || 'PERSONAL INSIGHT' }} />
-            </div>
-
-            <div className="relative z-10 space-y-12">
-              <p className="text-3xl md:text-5xl lg:text-6xl font-sans font-black tracking-tighter leading-[1.05] text-white italic" dangerouslySetInnerHTML={{ __html: content.text }} />
-
-              <div className="flex items-center gap-8 pt-10 border-t border-white/5">
-                 <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                 <p className="text-sm font-black uppercase tracking-[0.3em] text-slate-500 italic" dangerouslySetInnerHTML={{ __html: content.signature }} />
-              </div>
-            </div>
-
-            {/* Ghost Icon Watermark */}
-            <div className="absolute -bottom-12 -right-12 text-white/[0.03] pointer-events-none transform rotate-12">
-               <Info size={240} />
-            </div>
-          </div>
+        <div className="my-20 relative p-16 rounded-[4rem] bg-primary/5 border border-primary/10 group">
+           <Quote className="absolute top-10 left-10 text-primary/20 group-hover:scale-110 transition-transform duration-700" size={80} />
+           <div className="relative z-10 text-center space-y-8">
+              <p className="text-3xl md:text-5xl font-sans font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: content.text }} />
+              {(content.author || content.source) && (
+                <div className="space-y-1">
+                  {content.author && <p className="text-sm font-black uppercase tracking-[0.4em] text-primary">— <span dangerouslySetInnerHTML={{ __html: content.author }} /></p>}
+                  {content.source && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest" dangerouslySetInnerHTML={{ __html: content.source }} />}
+                </div>
+              )}
+           </div>
         </div>
       );
 
