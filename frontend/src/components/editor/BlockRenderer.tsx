@@ -6,10 +6,14 @@ import { CodeBlock } from './blocks/CodeBlock';
 import { ImageBlock } from './blocks/ImageBlock';
 import { TableBlock } from './blocks/TableBlock';
 import { CalloutBlock } from './blocks/CalloutBlock';
-import { FAQBlock } from './blocks/FAQBlock';
+import { QuoteBlock } from './blocks/QuoteBlock';
 import { TimelineBlock } from './blocks/TimelineBlock';
 import { ReferenceBlock } from './blocks/ReferenceBlock';
 import { ListBlock } from './blocks/ListBlock';
+import { DividerBlock } from './blocks/DividerBlock';
+import { VideoBlock } from './blocks/VideoBlock';
+import { ButtonBlock } from './blocks/ButtonBlock';
+import { PersonalTouchBlock } from './blocks/PersonalTouchBlock';
 
 interface BlockRendererProps {
   block: EditorBlock;
@@ -29,14 +33,22 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
       return <TableBlock id={block.id} content={block.content} />;
     case 'callout':
       return <CalloutBlock id={block.id} content={block.content} />;
-    case 'faq':
-      return <FAQBlock id={block.id} content={block.content} />;
+    case 'quote':
+      return <QuoteBlock id={block.id} content={block.content} />;
     case 'timeline':
       return <TimelineBlock id={block.id} content={block.content} />;
     case 'reference':
       return <ReferenceBlock id={block.id} content={block.content} />;
     case 'list':
       return <ListBlock id={block.id} content={block.content} />;
+    case 'divider':
+      return <DividerBlock id={block.id} content={block.content} />;
+    case 'video':
+      return <VideoBlock id={block.id} content={block.content} />;
+    case 'button':
+      return <ButtonBlock id={block.id} content={block.content} />;
+    case 'personalTouch':
+      return <PersonalTouchBlock id={block.id} content={block.content} />;
     default:
       return (
         <div className="p-4 bg-slate-100 rounded text-slate-500 text-sm">

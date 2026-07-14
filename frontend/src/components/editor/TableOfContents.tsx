@@ -2,6 +2,7 @@ import React from 'react';
 import { EditorBlock } from '../../types/editor';
 import { List, ChevronRight } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { stripHtml } from '../../utils/stripHtml';
 
 interface TableOfContentsProps {
   blocks: EditorBlock[];
@@ -9,10 +10,10 @@ interface TableOfContentsProps {
 
 export const TableOfContents: React.FC<TableOfContentsProps> = ({ blocks }) => {
   const headings = blocks
-    .filter((block) => block.type === 'heading' && block.content.text.trim() !== '')
+    .filter((block) => block.type === 'heading' && stripHtml(block.content.text) !== '')
     .map((block) => ({
       id: block.id,
-      text: block.content.text,
+      text: stripHtml(block.content.text),
       level: block.content.level,
     }));
 

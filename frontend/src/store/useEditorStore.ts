@@ -165,14 +165,22 @@ function getInitialContent(type: BlockType) {
       return { type: 'info', text: '' };
     case 'table':
       return { rows: [['', ''], ['', '']], headers: ['', ''] };
-    case 'faq':
-      return { items: [{ question: '', answer: '' }] };
     case 'timeline':
       return { items: [{ date: '', title: '', description: '' }] };
     case 'reference':
       return { items: [{ id: '1', citation: '', url: '' }] };
     case 'list':
       return { type: 'bullet', items: [''] };
+    case 'divider':
+      return { style: 'solid' };
+    case 'video':
+      return { url: '', caption: '' };
+    case 'button':
+      return { text: 'Learn More', url: '', variant: 'primary', alignment: 'center' };
+    case 'personalTouch':
+      return {
+        text: ''
+      };
     default:
       return {};
   }
