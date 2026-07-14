@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { blogApi } from '../api/blog.api';
-import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote } from 'lucide-react';
+import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote, Flag, Sparkles, Info } from 'lucide-react';
 import { ReadingNavigator } from '../components/blog/ReadingNavigator';
 import { Lightbox } from '../components/blog/Lightbox';
 import { Copy, Check } from 'lucide-react';
@@ -98,6 +98,9 @@ export const BlogDetailsPage: React.FC = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-2xl animate-pulse">Loading Chronicle...</div>;
   if (!post) return <div className="min-h-screen flex items-center justify-center font-bold text-2xl">Chronicle not found.</div>;
 
+  const personalInsights = post.blocks.filter((b: any) => b.type === 'personalTouch');
+  const mainContentBlocks = post.blocks.filter((b: any) => b.type !== 'personalTouch');
+
   return (
     <div className={cn("min-h-screen bg-background pb-32 transition-all duration-700", isFocusMode && "pt-0")}>
       {!isFocusMode && <ReadingNavigator blocks={post.blocks} />}
@@ -191,7 +194,7 @@ export const BlogDetailsPage: React.FC = () => {
               fontTheme === 'serif' ? "font-editorial" : "font-sans leading-relaxed"
             )}
           >
-            {post.blocks.map((block: any) => (
+            {mainContentBlocks.map((block: any) => (
               <div key={block.id} id={block.id} className="mb-12 scroll-mt-32">
                 {renderBlock(block, setActiveImage)}
               </div>
@@ -223,6 +226,21 @@ export const BlogDetailsPage: React.FC = () => {
                     </p>
                  </div>
               </div>
+
+              {/* Personal Insights Sidebar Section */}
+              {personalInsights.length > 0 && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 px-6">
+                    <Sparkles size={14} className="text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Personal Insights</span>
+                  </div>
+                  {personalInsights.map((insight: any) => (
+                    <div key={insight.id} className="p-8 rounded-[2.5rem] bg-slate-900/40 border border-white/5 backdrop-blur-xl shadow-xl">
+                       <p className="text-base text-slate-300 font-medium leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
+                    </div>
+                  ))}
+                </div>
+              )}
            </div>
         </aside>
         )}
@@ -362,32 +380,113 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
         </div>
       );
 
-    case 'faq':
-      return (
-        <div className="my-20 space-y-6">
-          {content.items.map((item: any, i: number) => (
-            <div key={i} className="p-12 rounded-[3rem] bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 shadow-sm group hover:shadow-xl transition-all duration-500">
-              <h4 className="text-2xl md:text-3xl font-black mb-6 flex items-start gap-5">
-                 <span className="w-10 h-10 flex-shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-xs font-black">Q</span>
-                 <span dangerouslySetInnerHTML={{ __html: item.question }} />
-              </h4>
-              <div className="pl-14 text-lg md:text-xl text-slate-500 dark:text-slate-400 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: item.answer }} />
-            </div>
-          ))}
-        </div>
-      );
-
     case 'quote':
       return (
         <div className="my-20 relative p-16 rounded-[4rem] bg-primary/5 border border-primary/10 group">
            <Quote className="absolute top-10 left-10 text-primary/20 group-hover:scale-110 transition-transform duration-700" size={80} />
            <div className="relative z-10 text-center space-y-8">
-              <p className="text-3xl md:text-5xl font-editorial italic font-black leading-tight tracking-tight text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: content.text }} />
-              <div className="space-y-1">
-                 <p className="text-sm font-black uppercase tracking-[0.4em] text-primary">— {content.author}</p>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{content.source}</p>
-              </div>
+              <p className="text-3xl md:text-5xl font-sans font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: content.text }} />
+              {(content.author || content.source) && (
+                <div className="space-y-1">
+                  {content.author && <p className="text-sm font-black uppercase tracking-[0.4em] text-primary">— <span dangerouslySetInnerHTML={{ __html: content.author }} /></p>}
+                  {content.source && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest" dangerouslySetInnerHTML={{ __html: content.source }} />}
+                </div>
+              )}
            </div>
+        </div>
+      );
+
+    case 'divider':
+      return (
+        <div className="py-16 flex items-center justify-center">
+          <div className="w-full h-px bg-slate-100 dark:bg-white/5 relative">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-6">
+              <div className="flex gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/20" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/20" />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'video':
+      const getEmbedUrl = (url: string) => {
+        if (!url) return '';
+        const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/);
+        if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+        const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+        if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+        return url;
+      };
+      const embedUrl = getEmbedUrl(content.url);
+      if (!embedUrl) return null;
+      return (
+        <figure className="my-16 md:my-24 space-y-6">
+          <div className="relative aspect-video rounded-[2.5rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-white/5">
+            <iframe
+              src={embedUrl}
+              className="absolute inset-0 w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          {content.caption && <figcaption className="text-center text-sm text-slate-400 italic">/ {content.caption}</figcaption>}
+        </figure>
+      );
+
+    case 'button':
+      return (
+        <div className={cn(
+          "my-12 flex",
+          content.alignment === 'left' && "justify-start",
+          content.alignment === 'center' && "justify-center",
+          content.alignment === 'right' && "justify-end"
+        )}>
+          <a
+            href={content.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-primary/20 bg-primary text-white"
+            )}
+          >
+            {content.text}
+          </a>
+        </div>
+      );
+
+    case 'personalTouch':
+      return (
+        <div className="relative my-24 group">
+          {/* Glowing Aura Effect */}
+          <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-blue-500/10 to-primary/20 rounded-[4rem] blur-3xl opacity-50 group-hover:opacity-80 transition-opacity duration-1000" />
+
+          <div className="relative p-12 md:p-20 rounded-[3.5rem] bg-slate-950 border border-white/10 overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
+
+            <div className="relative z-10 flex items-center gap-4 mb-10">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+                <Sparkles size={24} />
+              </div>
+              <h4 className="text-[11px] font-black uppercase tracking-[0.5em] text-primary" dangerouslySetInnerHTML={{ __html: content.title || 'PERSONAL INSIGHT' }} />
+            </div>
+
+            <div className="relative z-10 space-y-12">
+              <p className="text-3xl md:text-5xl lg:text-6xl font-sans font-black tracking-tighter leading-[1.05] text-white italic" dangerouslySetInnerHTML={{ __html: content.text }} />
+
+              <div className="flex items-center gap-8 pt-10 border-t border-white/5">
+                 <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                 <p className="text-sm font-black uppercase tracking-[0.3em] text-slate-500 italic" dangerouslySetInnerHTML={{ __html: content.signature }} />
+              </div>
+            </div>
+
+            {/* Ghost Icon Watermark */}
+            <div className="absolute -bottom-12 -right-12 text-white/[0.03] pointer-events-none transform rotate-12">
+               <Info size={240} />
+            </div>
+          </div>
         </div>
       );
 

@@ -3,30 +3,19 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-function calculateStats(blocks: any[]) {
-  let wordCount = 0;
-  blocks.forEach(block => {
-    if (block.type === 'paragraph' || block.type === 'heading') {
-      const text = block.content.text || '';
-      wordCount += text.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length;
-    }
-  });
-  const readingTime = Math.ceil(wordCount / 200) || 1;
-  return { wordCount, readingTime };
-}
-
 async function main() {
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const hashedPassword = await bcrypt.hash('KeepMeSecret@04', 10);
 
+  // 1. Create Admin User
   const anirudh = await prisma.user.upsert({
-    where: { email: 'anirudh@chroniclelab.com' },
+    where: { email: 'cmanirudh03@gmail.com' },
     update: {
       password: hashedPassword,
       role: 'ADMIN',
       name: 'Anirudh CM'
     },
     create: {
-      email: 'anirudh@chroniclelab.com',
+      email: 'cmanirudh03@gmail.com',
       password: hashedPassword,
       name: 'Anirudh CM',
       role: 'ADMIN',
@@ -35,91 +24,58 @@ async function main() {
 
   console.log('Admin user verified:', anirudh.email);
 
-  const tech = await prisma.category.upsert({ where: { slug: 'technology' }, update: {}, create: { name: 'Technology', slug: 'technology' } });
-  const history = await prisma.category.upsert({ where: { slug: 'history' }, update: {}, create: { name: 'History', slug: 'history' } });
-  const security = await prisma.category.upsert({ where: { slug: 'security' }, update: {}, create: { name: 'Security', slug: 'security' } });
-
-  await prisma.block.deleteMany({});
-  await prisma.post.deleteMany({});
-
-  const postTemplates = [
-    {
-      title: 'Decoding Operation Sindhoor',
-      subtitle: 'Inside the Indian Army\'s counter-terror strategy in Kashmir.',
-      slug: 'decoding-operation-sindhoor',
-      excerpt: 'A deep dive into one of the most successful counter-insurgency operations.',
-      status: 'PUBLISHED',
-      featured: true,
-      categoryId: history.id,
-      blocks: [
-        { type: 'heading', content: { level: 1, text: 'Operation Sindhoor: A Strategic Masterclass' }, orderIndex: 1 },
-        { type: 'paragraph', content: { text: 'In the late 90s, the Indian Army faced a significant challenge in the remote valleys. Operation Sindhoor wasn\'t just about tactical superiority; it was about intelligence and winning the hearts of the locals.' }, orderIndex: 2 },
-        { type: 'image', content: { url: 'https://images.unsplash.com/photo-1590001158193-79013018e75e?q=80&w=2070&auto=format&fit=crop', alt: 'Indian Army', caption: 'Forces on the move.', alignment: 'center' }, orderIndex: 3 },
-      ]
-    },
-    {
-      title: 'OWASP Top 10 Vulnerabilities: A Modern Guide',
-      subtitle: 'Understanding critical web risks in 2024.',
-      slug: 'owasp-top-10-2024',
-      excerpt: 'Everything a developer needs to know about securing their code.',
-      status: 'PUBLISHED',
-      featured: true,
-      categoryId: security.id,
-      blocks: [
-        { type: 'heading', content: { level: 1, text: 'Why OWASP Matters' }, orderIndex: 1 },
-        { type: 'paragraph', content: { text: 'Security is no longer an afterthought. With the rise of data breaches, understanding the OWASP Top 10 is mandatory for every full-stack engineer.' }, orderIndex: 2 },
-        { type: 'code', content: { language: 'sql', filename: 'vulnerable.sql', code: "SELECT * FROM users WHERE id = 'user_input';" }, orderIndex: 3 },
-      ]
-    },
-    {
-        title: 'The 1975 Indian Emergency',
-        subtitle: '21 Months of Darkness in Indian Democracy.',
-        slug: 'indian-emergency-1975',
-        excerpt: 'Exploring the political climate and lasting impact of the 1975 Emergency.',
-        status: 'PUBLISHED',
-        featured: false,
-        categoryId: history.id,
-        blocks: [
-          { type: 'heading', content: { level: 1, text: 'The Midnight Declaration' }, orderIndex: 1 },
-          { type: 'paragraph', content: { text: 'On June 25, 1975, the President of India issued a proclamation of internal emergency.' }, orderIndex: 2 },
-        ]
-      },
-      {
-        title: 'Mastering the Samsung S9 Ultra Ecosystem',
-        subtitle: 'How a tablet became my primary workstation.',
-        slug: 'samsung-s9-ultra-review',
-        excerpt: 'Deep dive into the productivity features of the S9 Ultra.',
-        status: 'PUBLISHED',
-        featured: false,
-        categoryId: tech.id,
-        blocks: [
-          { type: 'heading', content: { level: 1, text: 'More than just a Tablet' }, orderIndex: 1 },
-          { type: 'paragraph', content: { text: 'With the S9 Ultra, Samsung has bridged the gap between mobile portability and laptop power.' }, orderIndex: 2 },
-        ]
-      }
+  // 2. Create Initial Categories
+  const categories = [
+    { name: 'Technology', slug: 'technology' },
+    { name: 'History', slug: 'history' },
+    { name: 'Security', slug: 'security' },
+    { name: 'Military', slug: 'military' },
+    { name: 'Intelligence', slug: 'intelligence' },
   ];
 
-  for (const p of postTemplates) {
-    const { blocks, ...postData } = p;
-    const { wordCount, readingTime } = calculateStats(blocks);
-    await prisma.post.create({
-      data: {
-        ...postData,
-        wordCount,
-        readingTime,
-        authorId: anirudh.id,
-        blocks: {
-          create: blocks.map(b => ({
-            type: b.type,
-            content: JSON.stringify(b.content),
-            orderIndex: b.orderIndex
-          }))
-        }
-      }
+  for (const cat of categories) {
+    await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: {},
+      create: cat,
     });
   }
 
-  console.log('Seed completed successfully.');
+  // 3. Clean up any existing data (Optional, be careful with production)
+  // await prisma.block.deleteMany({});
+  // await prisma.post.deleteMany({});
+  // await prisma.quote.deleteMany({});
+
+  // 4. Add your previous quotes
+  const quotes = [
+    { text: "Sura so pehchaniye, jo lade deen ke hait, purja purja kat mare, kab hu na chhadai kheit", author: "Bhagat Kabir Ji", category: "Indian Army" },
+    { text: "Freedom is a boon, which everyone has the right to receive.", author: "Shri Chhatrapati Shivaji Maharaj", category: "History" },
+    { text: "Even if everyone holds a sword, it is willpower that establishes a kingdom.", author: "Shri Chhatrapati Shivaji Maharaj", category: "History" },
+    { text: "Self-confidence gives strength, strength gives knowledge, knowledge gives stability, and stability leads to victory.", author: "Shri Chhatrapati Shivaji Maharaj", category: "History" },
+    { text: "Creating Swarajya from nothing was difficult; preserving the Swarajya that was built is even more difficult.", author: "Shri Chhatrapati Sambhaji Mahraj", category: "History" },
+    { text: "Those who bow only before their motherland never have to bow before anyone else.", author: "Shri Chhatrapati Sambhaji Mahraj", category: "History" },
+    { text: "If a man says he is not afraid of dying, he is either lying or he is a Gorkha.", author: "Field Marshal SHFJ Manekshaw", category: "Indian Army" },
+    { text: "Professional knowledge and professional competence are the main attributes of leadership.", author: "Field Marshal SHFJ Manekshaw", category: "Indian Army" },
+    { text: "A \"Yes man\" is a dangerous man. He is a menace... he can never become a leader nor can he ever be respected.", author: "Field Marshal SHFJ Manekshaw", category: "Indian Army" },
+    { text: "Yeh Dil Maange More!", author: "Captain Vikram Batra", category: "Indian Army" },
+    { text: "Either I will come back after hoisting the Tricolour, or I will come back wrapped in it.", author: "Captain Vikram Batra", category: "Indian Army" },
+    { text: "A soldier is a soldier, he doesn't belong to any state or any religion.", author: "Field Marshal K. M. Cariappa", category: "Indian Army" },
+    { text: "A soldier should be above politics. He is there to defend the country.", author: "Field Marshal K. M. Cariappa", category: "Indian Army" },
+    { text: "I shall not withdraw an inch but will fight to our last man and our last round.", author: "Major Shaitan Singh", category: "Indian Army" },
+    { text: "Tell the world that Shaitan Singh did his duty.", author: "Major Shaitan Singh", category: "Indian Army" },
+    { text: "The best way to predict the future is to invent it.", author: "Alan Kay", category: "Tech" },
+    { text: "Technology is best when it brings people together.", author: "Matt Mullenweg", category: "Tech" },
+    { text: "Price is what you pay. Value is what you get.", author: "Warren Buffett", category: "Finance" },
+    { text: "Rule No. 1: Never lose money. Rule No. 2: Never forget rule No. 1.", author: "Warren Buffett", category: "Finance" }
+  ];
+
+  for (const q of quotes) {
+    await prisma.quote.create({
+      data: q
+    });
+  }
+
+  console.log('Seed completed successfully. Admin created and quotes ported.');
 }
 
 main()

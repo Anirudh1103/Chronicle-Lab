@@ -13,7 +13,7 @@ export type BlockType =
   | 'file'
   | 'checklist'
   | 'timeline'
-  | 'faq'
+  | 'personalTouch'
   | 'relatedLinks'
   | 'embed';
 

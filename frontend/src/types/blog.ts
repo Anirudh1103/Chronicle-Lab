@@ -12,7 +12,8 @@ export type BlockType =
   | 'divider'
   | 'table'
   | 'video'
-  | 'faq';
+  | 'button'
+  | 'personal-touch';
 
 export interface Block {
   id: string;

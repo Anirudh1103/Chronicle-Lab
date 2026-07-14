@@ -84,10 +84,13 @@ export const EditorCanvas: React.FC = () => {
     { type: 'quote', label: 'Quote' },
     { type: 'table', label: 'Table' },
     { type: 'callout', label: 'Callout' },
-    { type: 'faq', label: 'FAQ' },
     { type: 'timeline', label: 'Timeline' },
     { type: 'reference', label: 'Citations' },
     { type: 'list', label: 'List' },
+    { type: 'divider', label: 'Divider' },
+    { type: 'video', label: 'Video' },
+    { type: 'button', label: 'Button' },
+    { type: 'personalTouch', label: 'Personal Touch' },
   ];
 
   return (

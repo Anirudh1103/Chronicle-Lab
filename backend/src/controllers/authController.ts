@@ -60,12 +60,21 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    console.log(`Login attempt for: ${email}`);
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      console.log(`User not found: ${email}`);
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      console.log(`Password mismatch for: ${email}`);
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    console.log(`Login successful for: ${email}`);
     const token = generateToken(user.id);
     setTokenCookie(res, token);
 

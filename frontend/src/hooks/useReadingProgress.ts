@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { EditorBlock } from '../types/editor';
 import { HeadingNode } from '../types/navigator';
+import { stripHtml } from '../utils/stripHtml';
 
 export function useReadingProgress(blocks: EditorBlock[]) {
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -8,14 +9,14 @@ export function useReadingProgress(blocks: EditorBlock[]) {
 
   // Focus navigation on significant structural headings for a cleaner TOC
   const headings = useMemo(() =>
-    blocks.filter(b => b.type === 'heading' && b.content.level > 1),
+    blocks.filter(b => b.type === 'heading' && b.content.level > 1 && stripHtml(b.content.text) !== ''),
     [blocks]
   );
 
   const tree = useMemo(() => {
     return headings.map((h, i) => ({
       id: h.id,
-      text: h.content.text.replace(/<[^>]*>/g, ''),
+      text: stripHtml(h.content.text),
       level: h.content.level,
       index: i,
       children: [],
