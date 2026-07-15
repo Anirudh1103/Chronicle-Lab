@@ -23,6 +23,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
   switch (block.type) {
     case 'heading':
       return <HeadingBlock id={block.id} content={block.content} />;
+    case 'subheading':
+      return <HeadingBlock id={block.id} content={block.content} isSubheading />;
     case 'paragraph':
       return <ParagraphBlock id={block.id} content={block.content} />;
     case 'code':

@@ -78,6 +78,7 @@ export const EditorCanvas: React.FC = () => {
 
   const blockTypes: { type: BlockType; label: string }[] = [
     { type: 'heading', label: 'Heading' },
+    { type: 'subheading', label: 'Sub Heading' },
     { type: 'paragraph', label: 'Text' },
     { type: 'image', label: 'Image' },
     { type: 'code', label: 'Code' },

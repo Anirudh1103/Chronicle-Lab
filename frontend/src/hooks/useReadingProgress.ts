@@ -9,7 +9,7 @@ export function useReadingProgress(blocks: EditorBlock[]) {
 
   // Focus navigation on significant structural headings for a cleaner TOC
   const headings = useMemo(() =>
-    blocks.filter(b => b.type === 'heading' && b.content.level > 1 && stripHtml(b.content.text) !== ''),
+    blocks.filter(b => (b.type === 'heading' || b.type === 'subheading') && b.content.level > 1 && stripHtml(b.content.text) !== ''),
     [blocks]
   );
 

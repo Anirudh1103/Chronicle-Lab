@@ -10,7 +10,7 @@ interface TableOfContentsProps {
 
 export const TableOfContents: React.FC<TableOfContentsProps> = ({ blocks }) => {
   const headings = blocks
-    .filter((block) => block.type === 'heading' && stripHtml(block.content.text) !== '')
+    .filter((block) => (block.type === 'heading' || block.type === 'subheading') && stripHtml(block.content.text) !== '')
     .map((block) => ({
       id: block.id,
       text: stripHtml(block.content.text),

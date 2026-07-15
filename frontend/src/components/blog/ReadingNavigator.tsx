@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform, useMotionValueEvent } from 'framer-motion';
 import {
   Check,
   ArrowUp,
@@ -21,9 +21,12 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
   const { tree, activeId, completedIds } = useReadingProgress(blocks);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [percent, setPercent] = useState(0);
 
-  const { scrollYProgress } = useScroll({
-    offset: ["start start", "end end"]
+  const { scrollYProgress } = useScroll();
+
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    setPercent(Math.round(latest * 100));
   });
 
   const scrollProgress = useSpring(scrollYProgress, {
@@ -205,7 +208,7 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
               style={{ height: useTransform(scrollYProgress, [0, 1], ["0%", "100%"]) }}
             />
             <div className="relative z-10 flex flex-col items-center gap-0.5">
-               <span className="text-[9px] font-black">{Math.round(scrollYProgress.get() * 100)}%</span>
+               <span className="text-[9px] font-black">{percent}%</span>
                <Navigation size={22} className={cn("transition-transform duration-500", isMobileMenuOpen && "rotate-45")} />
             </div>
          </button>

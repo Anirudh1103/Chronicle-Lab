@@ -153,6 +153,8 @@ function getInitialContent(type: BlockType) {
   switch (type) {
     case 'heading':
       return { level: 2, text: '', subtext: '' };
+    case 'subheading':
+      return { level: 3, text: '' };
     case 'paragraph':
       return { text: '' };
     case 'image':

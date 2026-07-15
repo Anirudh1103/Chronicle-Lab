@@ -100,6 +100,7 @@ export const BlogDetailsPage: React.FC = () => {
 
   const personalInsights = post.blocks.filter((b: any) => b.type === 'personalTouch');
   const mainContentBlocks = post.blocks.filter((b: any) => b.type !== 'personalTouch');
+  const hasPersonalInsights = personalInsights.length > 0;
 
   return (
     <div className={cn("min-h-screen bg-background pb-32 transition-all duration-700", isFocusMode && "pt-0")}>
@@ -140,7 +141,10 @@ export const BlogDetailsPage: React.FC = () => {
 
       {/* Hero Header */}
       {!isFocusMode && (
-        <header className="relative pt-12 md:pt-20 pb-12 md:pb-16 px-4 md:px-6 max-w-7xl mx-auto space-y-6 md:space-y-8 xl:pl-32">
+        <header className={cn(
+          "relative pt-12 md:pt-20 pb-12 md:pb-16 px-4 md:px-6 mx-auto space-y-6 md:space-y-8 transition-all duration-700",
+          hasPersonalInsights ? "max-w-7xl xl:pl-32" : "max-w-5xl"
+        )}>
           <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-primary transition-colors mb-2">
             <ChevronLeft size={16} /> <span className="hidden sm:inline">Back to Chronicles</span><span className="sm:hidden">Back</span>
           </Link>
@@ -183,8 +187,12 @@ export const BlogDetailsPage: React.FC = () => {
       )}
 
       <main className={cn(
-        "max-w-[1600px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-16 transition-all duration-700",
-        !isFocusMode ? "xl:pl-32 xl:pr-12" : "max-w-3xl py-12 md:py-20"
+        "mx-auto px-6 transition-all duration-700",
+        !isFocusMode
+          ? hasPersonalInsights
+            ? "max-w-[1800px] grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-16 lg:gap-24 xl:pl-32"
+            : "max-w-5xl"
+          : "max-w-4xl py-12 md:py-20"
       )}>
         <div className="space-y-12">
           <div
@@ -202,8 +210,8 @@ export const BlogDetailsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Sticky Sidebar for desktop */}
-        {!isFocusMode && (
+        {/* Sidebar for desktop */}
+        {!isFocusMode && hasPersonalInsights && (
           <aside className="hidden lg:block">
            <div className="sticky top-32 space-y-12">
               <div className="p-10 rounded-[3rem] bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-8 shadow-sm backdrop-blur-xl">
@@ -228,19 +236,17 @@ export const BlogDetailsPage: React.FC = () => {
               </div>
 
               {/* Personal Insights Sidebar Section */}
-              {personalInsights.length > 0 && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 px-6">
-                    <Sparkles size={14} className="text-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Personal Insights</span>
-                  </div>
-                  {personalInsights.map((insight: any) => (
-                    <div key={insight.id} className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-white/5 backdrop-blur-xl shadow-sm dark:shadow-xl">
-                       <p className="text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
-                    </div>
-                  ))}
+              <div className="space-y-6">
+                <div className="flex items-center gap-2 px-6">
+                  <Sparkles size={14} className="text-primary" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Personal Insights</span>
                 </div>
-              )}
+                {personalInsights.map((insight: any) => (
+                  <div key={insight.id} className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-white/5 backdrop-blur-xl shadow-sm dark:shadow-xl">
+                      <p className="text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
+                  </div>
+                ))}
+              </div>
            </div>
         </aside>
         )}
@@ -253,6 +259,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
   const { type, content } = block;
   switch (type) {
     case 'heading':
+    case 'subheading':
       const Tag = `h${content.level}` as any;
       const classes = {
         1: 'text-4xl sm:text-5xl md:text-7xl font-black mb-4 md:mb-6',
@@ -260,8 +267,8 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
         3: 'text-2xl sm:text-3xl md:text-5xl font-bold mb-3 md:mb-4 pt-6 md:pt-10',
       }[content.level as 1 | 2 | 3] || 'text-xl font-bold';
       return (
-        <div className="mb-12">
-          <Tag className={cn(classes, "font-editorial italic")} dangerouslySetInnerHTML={{ __html: content.text }} />
+        <div className={cn("mb-12", type === 'subheading' && "pl-4 md:pl-8 border-l-4 border-primary/10 ml-2 md:ml-4")}>
+          <Tag className={cn(classes, "font-editorial italic", type === 'subheading' && "text-slate-800 dark:text-slate-200")} dangerouslySetInnerHTML={{ __html: content.text }} />
           {content.subtext && (
             <p className="text-xl md:text-2xl text-muted-foreground font-medium border-l-4 border-primary/20 pl-8 py-2 mt-4" dangerouslySetInnerHTML={{ __html: content.subtext }} />
           )}
@@ -387,22 +394,22 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
 
     case 'table':
       return (
-        <div className="my-12 overflow-x-auto glass rounded-[2rem] border border-white/5 shadow-2xl">
-          <table className="w-full border-collapse">
+        <div className="my-12 overflow-x-auto glass rounded-[1.5rem] md:rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-2xl no-scrollbar">
+          <table className="w-full border-collapse min-w-[600px] md:min-w-full">
             {content.headers && (
               <thead>
                 <tr className="bg-slate-100/50 dark:bg-white/5">
-                  {content.headers.map((header, i) => (
-                    <th key={i} className="p-10 border-b border-r border-slate-100 dark:border-white/10 text-left font-black text-[10px] uppercase tracking-[0.3em] text-primary" dangerouslySetInnerHTML={{ __html: header }} />
+                  {content.headers.map((header: string, i: number) => (
+                    <th key={i} className="p-4 md:p-10 border-b border-r border-slate-200 dark:border-white/10 text-left font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] md:tracking-[0.3em] text-primary" dangerouslySetInnerHTML={{ __html: header }} />
                   ))}
                 </tr>
               </thead>
             )}
             <tbody>
-              {content.rows.map((row, ri) => (
+              {content.rows.map((row: any[], ri: number) => (
                 <tr key={ri} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
-                  {row.map((cell, ci) => (
-                    <td key={ci} className="p-10 border-b border-r border-slate-100 dark:border-white/10 text-lg md:text-xl text-slate-700 dark:text-slate-300 leading-relaxed font-medium min-w-[300px]">
+                  {row.map((cell: any, ci: number) => (
+                    <td key={ci} className="p-4 md:p-10 border-b border-r border-slate-200 dark:border-white/10 text-base md:text-xl text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
                         <TableCell content={cell} onImageClick={onImageClick} />
                     </td>
                   ))}

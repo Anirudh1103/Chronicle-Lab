@@ -1,5 +1,6 @@
 export type BlockType =
   | 'heading'
+  | 'subheading'
   | 'paragraph'
   | 'image'
   | 'gallery'

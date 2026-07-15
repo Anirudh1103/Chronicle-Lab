@@ -10,37 +10,44 @@ interface HeadingBlockProps {
     text: string;
     subtext?: string;
   };
+  isSubheading?: boolean;
 }
 
-export const HeadingBlock: React.FC<HeadingBlockProps> = ({ id, content }) => {
+export const HeadingBlock: React.FC<HeadingBlockProps> = ({ id, content, isSubheading }) => {
   const updateBlock = useEditorStore((state) => state.updateBlock);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateBlock(id, { ...content, text: e.target.value });
-  };
 
   const handleLevelChange = (level: number) => {
     updateBlock(id, { ...content, level });
   };
 
   return (
-    <div className="space-y-4 group/heading">
+    <div className={cn(
+      "space-y-4 group/heading transition-all duration-500",
+      isSubheading && "pl-8 border-l-2 border-slate-100 dark:border-white/5"
+    )}>
       <div className="flex items-center justify-between">
-        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-          {[1, 2, 3, 4].map((l) => (
-            <button
-              key={l}
-              onClick={() => handleLevelChange(l)}
-              className={cn(
-                'px-2.5 py-1 text-[10px] font-black rounded-md transition-all',
-                content.level === l
-                  ? 'bg-white dark:bg-slate-700 shadow-sm text-primary'
-                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-              )}
-            >
-              H{l}
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          {isSubheading && (
+             <div className="px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-black uppercase tracking-widest rounded-md">
+                Module / Section
+             </div>
+          )}
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+            {[1, 2, 3, 4].map((l) => (
+              <button
+                key={l}
+                onClick={() => handleLevelChange(l)}
+                className={cn(
+                  'px-2.5 py-1 text-[10px] font-black rounded-md transition-all',
+                  content.level === l
+                    ? 'bg-white dark:bg-slate-700 shadow-sm text-primary'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                )}
+              >
+                H{l}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -48,22 +55,25 @@ export const HeadingBlock: React.FC<HeadingBlockProps> = ({ id, content }) => {
         <RichTextEditor
           content={content.text}
           onChange={(html) => updateBlock(id, { ...content, text: html })}
-          placeholder={`H${content.level} Heading`}
+          placeholder={isSubheading ? "Enter Sub Heading..." : `H${content.level} Heading`}
           className={cn(
-            'w-full bg-transparent font-black tracking-tighter leading-tight italic font-editorial',
+            'w-full bg-transparent font-black tracking-tighter leading-tight italic font-editorial transition-all',
             content.level === 1 && 'text-5xl md:text-6xl',
             content.level === 2 && 'text-4xl md:text-5xl',
             content.level === 3 && 'text-3xl md:text-4xl',
-            content.level === 4 && 'text-2xl md:text-3xl'
+            content.level === 4 && 'text-2xl md:text-3xl',
+            isSubheading && "opacity-80"
           )}
         />
 
-        <RichTextEditor
-          content={content.subtext || ''}
-          onChange={(html) => updateBlock(id, { ...content, subtext: html })}
-          placeholder="Add a subheading or description..."
-          className="text-lg md:text-xl text-muted-foreground font-medium border-l-2 border-primary/20 pl-4 py-1"
-        />
+        {!isSubheading && (
+          <RichTextEditor
+            content={content.subtext || ''}
+            onChange={(html) => updateBlock(id, { ...content, subtext: html })}
+            placeholder="Add a subheading or description..."
+            className="text-lg md:text-xl text-muted-foreground font-medium border-l-2 border-primary/20 pl-4 py-1"
+          />
+        )}
       </div>
     </div>
   );
