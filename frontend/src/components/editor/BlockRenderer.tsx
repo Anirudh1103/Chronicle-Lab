@@ -14,13 +14,17 @@ import { DividerBlock } from './blocks/DividerBlock';
 import { VideoBlock } from './blocks/VideoBlock';
 import { ButtonBlock } from './blocks/ButtonBlock';
 import { PersonalTouchBlock } from './blocks/PersonalTouchBlock';
+import { GalleryBlock } from './blocks/GalleryBlock';
+import { KeyInsightBlock } from './blocks/KeyInsightBlock';
 
 interface BlockRendererProps {
   block: EditorBlock;
 }
 
 export const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
-  switch (block.type) {
+  const type = block.type.toLowerCase();
+
+  switch (type) {
     case 'heading':
       return <HeadingBlock id={block.id} content={block.content} />;
     case 'subheading':
@@ -49,8 +53,12 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
       return <VideoBlock id={block.id} content={block.content} />;
     case 'button':
       return <ButtonBlock id={block.id} content={block.content} />;
-    case 'personalTouch':
+    case 'personaltouch':
       return <PersonalTouchBlock id={block.id} content={block.content} />;
+    case 'gallery':
+      return <GalleryBlock id={block.id} content={block.content} />;
+    case 'keyinsight':
+      return <KeyInsightBlock id={block.id} content={block.content} />;
     default:
       return (
         <div className="p-4 bg-slate-100 rounded text-slate-500 text-sm">

@@ -88,6 +88,8 @@ export const EditorCanvas: React.FC = () => {
     { type: 'timeline', label: 'Timeline' },
     { type: 'reference', label: 'Citations' },
     { type: 'list', label: 'List' },
+    { type: 'gallery', label: 'Gallery' },
+    { type: 'keyInsight', label: 'Key Insight' },
     { type: 'divider', label: 'Divider' },
     { type: 'video', label: 'Video' },
     { type: 'button', label: 'Button' },

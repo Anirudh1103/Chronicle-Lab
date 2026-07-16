@@ -173,6 +173,10 @@ function getInitialContent(type: BlockType) {
       return { items: [{ id: '1', citation: '', url: '' }] };
     case 'list':
       return { type: 'bullet', items: [''] };
+    case 'gallery':
+      return { images: [], layout: 'grid' };
+    case 'keyInsight':
+      return { title: 'The Core Insight', points: [''] };
     case 'divider':
       return { style: 'solid' };
     case 'video':

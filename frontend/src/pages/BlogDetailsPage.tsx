@@ -187,19 +187,18 @@ export const BlogDetailsPage: React.FC = () => {
       )}
 
       <main className={cn(
-        "mx-auto px-6 transition-all duration-700",
+        "mx-auto px-6 md:px-12 transition-all duration-700",
         !isFocusMode
-          ? hasPersonalInsights
-            ? "max-w-[1800px] grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-16 lg:gap-24 xl:pl-32"
-            : "max-w-5xl"
+          ? "w-full max-w-[1600px] grid grid-cols-1 gap-16 lg:gap-24" + (hasPersonalInsights ? " lg:grid-cols-[1fr_400px]" : " lg:grid-cols-1")
           : "max-w-4xl py-12 md:py-20"
       )}>
-        <div className="space-y-12">
+        <div className="w-full">
           <div
             id="chronicle-content"
             className={cn(
-              "prose prose-xl md:prose-2xl dark:prose-invert max-w-none transition-all duration-500 font-medium",
-              fontTheme === 'serif' ? "font-editorial" : "font-sans leading-relaxed"
+              "prose prose-xl md:prose-2xl dark:prose-invert transition-all duration-500 font-medium",
+              fontTheme === 'serif' ? "font-editorial" : "font-sans leading-relaxed",
+              !hasPersonalInsights ? "max-w-none" : "max-w-[1100px]"
             )}
           >
             {mainContentBlocks.map((block: any) => (
@@ -493,6 +492,40 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
                   {content.source && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest" dangerouslySetInnerHTML={{ __html: content.source }} />}
                 </div>
               )}
+           </div>
+        </div>
+      );
+
+    case 'gallery':
+      return (
+        <div className="my-16 grid grid-cols-1 md:grid-cols-2 gap-8">
+          {content.images.map((img: any, i: number) => (
+            <motion.div
+              key={i}
+              whileHover={{ scale: 1.02 }}
+              className="relative aspect-square rounded-3xl overflow-hidden cursor-zoom-in shadow-xl"
+              onClick={() => onImageClick?.({src: img.url})}
+            >
+              <img src={img.url} className="w-full h-full object-cover" />
+            </motion.div>
+          ))}
+        </div>
+      );
+
+    case 'keyInsight':
+      return (
+        <div className="my-16 p-10 md:p-16 rounded-[4rem] bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 relative overflow-hidden">
+           <Sparkles className="absolute -top-4 -right-4 text-primary/10 w-40 h-40" />
+           <div className="relative z-10 space-y-10">
+              <h4 className="text-xl font-black uppercase tracking-[0.3em] text-primary">{content.title}</h4>
+              <div className="space-y-6">
+                {content.points.map((point: string, i: number) => (
+                  <div key={i} className="flex gap-6 items-start">
+                    <span className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-xs font-black flex-shrink-0">{(i+1).toString().padStart(2, '0')}</span>
+                    <p className="text-xl md:text-2xl font-medium text-slate-700 dark:text-slate-200 leading-relaxed" dangerouslySetInnerHTML={{ __html: point }} />
+                  </div>
+                ))}
+              </div>
            </div>
         </div>
       );
