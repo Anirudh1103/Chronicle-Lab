@@ -1,0 +1,25 @@
+name: Sync Frontend to Private Repo
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Public Repo
+        uses: actions/checkout@v4
+
+      - name: Push frontend to private repo
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DEPLOY_TOKEN }}
+        with:
+          source-directory: frontend
+          destination-github-username: Anirudh1103
+          destination-repository-name: Chronicle-lab-priv
+          user-email: cmanirudh03@gmail.com
+          target-branch: main
