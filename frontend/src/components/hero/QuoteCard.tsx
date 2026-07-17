@@ -7,6 +7,8 @@ import { cn } from '../../utils/cn';
 interface QuoteItem {
   id: string;
   text: string;
+  translation?: string;
+  meaning?: string;
   author: string;
   category: string;
 }
@@ -41,13 +43,33 @@ export const QuoteCard: React.FC = () => {
     fetchQuotes();
   }, []);
 
+  const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    setProgress(0);
+  }, [index]);
+
   useEffect(() => {
     if (quotes.length <= 1) return;
+    if (isPaused) return;
+
+    const tick = 50;
     const timer = setInterval(() => {
-      setIndex((prev) => (prev + 1) % quotes.length);
-    }, ROTATION_TIME);
+      setProgress((prev) => {
+        if (prev >= ROTATION_TIME) {
+          setIndex((idx) => (idx + 1) % quotes.length);
+          return 0;
+        }
+        return prev + tick;
+      });
+    }, tick);
+
     return () => clearInterval(timer);
-  }, [quotes]);
+  }, [quotes, isPaused]);
+
+  const handlePause = () => setIsPaused(true);
+  const handleResume = () => setIsPaused(false);
 
   if (loading || quotes.length === 0) {
      return (
@@ -76,7 +98,15 @@ export const QuoteCard: React.FC = () => {
       <motion.div
         animate={{ y: [0, -10, 0] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        className="relative flex aspect-[4/5] w-full flex-col justify-between overflow-hidden rounded-[2.5rem] border border-white/15 bg-white/5 p-8 shadow-2xl backdrop-blur-3xl transition-shadow hover:shadow-primary/10 sm:p-10 dark:bg-slate-900/40 glass group"
+        onMouseDown={handlePause}
+        onMouseUp={handleResume}
+        onMouseLeave={handleResume}
+        onTouchStart={handlePause}
+        onTouchEnd={handleResume}
+        className={cn(
+          "relative flex aspect-[4/5] w-full flex-col justify-between overflow-hidden rounded-[2.5rem] border border-white/15 bg-white/5 p-8 shadow-2xl backdrop-blur-3xl transition-all duration-300 hover:shadow-primary/10 sm:p-10 dark:bg-slate-900/40 glass group select-none cursor-pointer",
+          isPaused && "scale-[0.98] border-primary/30 shadow-primary/5"
+        )}
       >
         <div className="absolute -top-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
           <QuoteIcon size={160} />
@@ -100,6 +130,22 @@ export const QuoteCard: React.FC = () => {
               )}>
                 "{currentQuote.text}"
               </p>
+              {currentQuote.translation && (
+                <div className="pt-2 border-t border-black/10 dark:border-white/10">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-primary block mb-0.5">Translation</span>
+                  <p className="text-xs font-serif italic text-slate-700 dark:text-slate-300 leading-normal">
+                    "{currentQuote.translation}"
+                  </p>
+                </div>
+              )}
+              {currentQuote.meaning && (
+                <div className="pt-2 border-t border-black/10 dark:border-white/10">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-primary block mb-0.5">Meaning</span>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-normal">
+                    "{currentQuote.meaning}"
+                  </p>
+                </div>
+              )}
               <div className="space-y-1.5 border-l-2 border-primary/30 pl-5">
                 <p className="text-xs md:text-sm font-black text-primary uppercase tracking-[0.2em]">— {currentQuote.author}</p>
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] opacity-60">{currentQuote.category}</p>
@@ -110,12 +156,13 @@ export const QuoteCard: React.FC = () => {
 
         {/* Progress Bar */}
         <div className="absolute bottom-0 left-0 h-1 bg-primary/10 w-full">
-          <motion.div
-            key={`${currentQuote.id}-${index}`}
-            initial={{ width: 0 }}
-            animate={{ width: "100%" }}
-            transition={{ duration: ROTATION_TIME / 1000, ease: "linear" }}
-            className="h-full bg-primary/40"
+          <div
+            className="h-full bg-primary/40 transition-[width]"
+            style={{
+              width: `${(progress / ROTATION_TIME) * 100}%`,
+              transitionDuration: isPaused ? '0ms' : '50ms',
+              transitionTimingFunction: 'linear'
+            }}
           />
         </div>
       </motion.div>

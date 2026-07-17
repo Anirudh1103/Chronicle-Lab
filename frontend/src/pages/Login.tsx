@@ -21,7 +21,7 @@ const TypingText: React.FC<{ messages: string[] }> = ({ messages }) => {
   const [isTyping, setIsTyping] = useState(true);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: any;
 
     if (currentMessageIndex < messages.length) {
       if (currentText.length < messages[currentMessageIndex].length) {

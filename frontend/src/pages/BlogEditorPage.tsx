@@ -56,6 +56,7 @@ export const BlogEditorPage: React.FC = () => {
             excerpt: post.excerpt,
             status: post.status,
             featured: post.featured,
+            featuredOrder: post.featuredOrder,
             coverImage: post.coverImage,
             coverImageAlt: post.coverImageAlt,
             coverImageCaption: post.coverImageCaption,

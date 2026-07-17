@@ -28,7 +28,7 @@ async function main() {
   const categories = [
     { name: 'Technology', slug: 'technology' },
     { name: 'History', slug: 'history' },
-    { name: 'Security', slug: 'security' },
+    { name: 'CyberSecurity', slug: 'cybersecurity' },
     { name: 'Military', slug: 'military' },
     { name: 'Intelligence', slug: 'intelligence' },
   ];
@@ -36,7 +36,7 @@ async function main() {
   for (const cat of categories) {
     await prisma.category.upsert({
       where: { slug: cat.slug },
-      update: {},
+      update: { name: cat.name },
       create: cat,
     });
   }

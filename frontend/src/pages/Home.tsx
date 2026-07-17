@@ -13,16 +13,33 @@ export function Home() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
+  const [subStatus, setSubStatus] = useState<'idle' | 'success' | 'info' | 'error'>('idle');
+  const [subMessage, setSubMessage] = useState('');
 
   const handleSubscribe = async () => {
-    if (!email) return;
+    const trimmed = email.trim();
+    if (!trimmed) return;
+
+    setSubscribing(true);
+    setSubStatus('idle');
+    setSubMessage('');
+
     try {
-      await blogApi.subscribe(email);
-      setSubscribed(true);
+      const res = await blogApi.subscribe(trimmed);
+      setSubStatus('success');
+      setSubMessage(res.message || "Almost there! We've sent a verification link to your email.");
       setEmail('');
-    } catch (error) {
-      console.error('Subscription failed:', error);
+    } catch (error: any) {
+      const errMsg = error?.response?.data?.error || 'An error occurred. Please try again.';
+      if (error?.response?.status === 400 || error?.response?.status === 429) {
+        setSubStatus('info');
+      } else {
+        setSubStatus('error');
+      }
+      setSubMessage(errMsg);
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -33,8 +50,22 @@ export function Home() {
         const posts = await blogApi.getAllPosts('PUBLISHED');
         const cats = await blogApi.getCategories();
 
-        // Featured: Handpicked by Author
-        setFeaturedPosts(posts.filter((p: any) => p.featured));
+        // Featured: Handpicked by Author, sorted by custom featuredOrder (nulls last)
+        const sortedFeatured = posts
+          .filter((p: any) => p.featured)
+          .sort((a: any, b: any) => {
+            const aOrder = a.featuredOrder;
+            const bOrder = b.featuredOrder;
+            if (aOrder !== null && bOrder !== null) {
+              if (aOrder !== bOrder) return aOrder - bOrder;
+            } else if (aOrder !== null) {
+              return -1;
+            } else if (bOrder !== null) {
+              return 1;
+            }
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+        setFeaturedPosts(sortedFeatured);
 
         // Recent: Top 10 most recently uploaded
         setRecentPosts(posts.slice(0, 10));
@@ -125,37 +156,6 @@ export function Home() {
 
           <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background to-transparent pointer-events-none z-10 opacity-0 md:group-hover/container:opacity-100 transition-opacity duration-700" />
           <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent pointer-events-none z-10 opacity-0 md:group-hover/container:opacity-100 transition-opacity duration-700" />
-        </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="mx-6 glass rounded-[4rem] p-16 md:p-24 text-center space-y-10 border-white/5 relative overflow-hidden">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <h2 className="text-5xl font-black tracking-tighter">
-            {subscribed ? 'You\'re on the list!' : 'Stay Ahead of the Curve'}
-          </h2>
-          <p className="text-xl text-muted-foreground font-medium">
-            {subscribed
-              ? 'Welcome to the lab. You\'ll receive the next chronicle directly in your inbox.'
-              : 'Get the latest chronicles and technical insights delivered directly to you.'}
-          </p>
-          {!subscribed && (
-            <div className="flex flex-col sm:flex-row gap-4 pt-6">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="flex-1 bg-muted/50 border border-white/5 rounded-2xl px-6 py-4 outline-none focus:ring-2 ring-primary/20 transition-all font-medium"
-              />
-              <button
-                onClick={handleSubscribe}
-                className="bg-primary text-primary-foreground px-8 py-4 rounded-2xl font-black hover:opacity-90 transition-all shadow-xl shadow-primary/20"
-              >
-                Subscribe
-              </button>
-            </div>
-          )}
         </div>
       </section>
     </div>

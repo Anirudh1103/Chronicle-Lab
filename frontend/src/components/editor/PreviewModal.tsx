@@ -99,7 +99,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({ isOpen, onClose, met
 
 function renderBlockPreview(block: EditorBlock) {
   const { type, content } = block;
-  switch (type) {
+  switch (type as string) {
     case 'heading':
       const HeadingTag = `h${content.level}` as keyof JSX.IntrinsicElements;
       const classes = {
@@ -107,8 +107,8 @@ function renderBlockPreview(block: EditorBlock) {
         2: 'text-3xl font-bold',
         3: 'text-2xl font-bold',
         4: 'text-xl font-semibold',
-      }[content.level] || 'text-lg font-semibold';
-      return <HeadingTag className={cn(classes, "text-slate-900 dark:text-white")}>{content.text}</HeadingTag>;
+      }[content.level as 1 | 2 | 3 | 4] || 'text-lg font-semibold';
+      return <HeadingTag className={cn(classes, "text-slate-900 dark:text-white")} dangerouslySetInnerHTML={{ __html: content.text }} />;
 
     case 'paragraph':
       return (
@@ -116,6 +116,39 @@ function renderBlockPreview(block: EditorBlock) {
           className="prose prose-slate lg:prose-lg dark:prose-invert max-w-none"
           dangerouslySetInnerHTML={{ __html: content.text }}
         />
+      );
+
+    case 'quote':
+      return (
+        <blockquote className="my-8 border-l-4 border-primary pl-4 italic text-lg text-slate-700 dark:text-slate-350">
+          <p dangerouslySetInnerHTML={{ __html: content.text }} />
+          {content.author && <cite className="block mt-2 text-sm font-bold uppercase tracking-widest text-slate-500">— <span dangerouslySetInnerHTML={{ __html: content.author }} /></cite>}
+        </blockquote>
+      );
+
+    case 'translationquote':
+    case 'translationQuote':
+      return (
+        <div className="my-8 p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
+          <blockquote className="border-l-4 border-primary pl-4 italic text-lg text-slate-900 dark:text-white">
+            <p dangerouslySetInnerHTML={{ __html: content.text }} />
+          </blockquote>
+          {content.translation && (
+            <div className="pl-4 border-t border-slate-100 dark:border-white/5 pt-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">Translation:</span>
+              <p className="text-sm italic font-serif text-slate-650 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: content.translation }} />
+            </div>
+          )}
+          {content.meaning && (
+            <div className="pl-4 border-t border-slate-100 dark:border-white/5 pt-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">Meaning:</span>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium" dangerouslySetInnerHTML={{ __html: content.meaning }} />
+            </div>
+          )}
+          {content.author && (
+            <cite className="block pl-4 text-xs font-black uppercase tracking-[0.2em] text-primary">— <span dangerouslySetInnerHTML={{ __html: content.author }} /></cite>
+          )}
+        </div>
       );
 
     case 'image':

@@ -27,6 +27,7 @@ model Post {
   excerpt           String?
   status            String     @default("DRAFT")
   featured          Boolean    @default(false)
+  featuredOrder     Int?
   coverImage        String?
   coverImageAlt     String?
   coverImageCaption String?
@@ -131,14 +132,33 @@ model Feedback {
 }
 
 model Quote {
-  id        String   @id @default(cuid())
-  text      String
-  author    String
-  category  String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  text        String
+  translation String?
+  meaning     String?
+  author      String
+  category    String
+  createdAt   DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                      String    @unique
+  status                     String    // 'pending' | 'active' | 'unsubscribed'
+  verificationToken          String?   @unique @map("verification_token")
+  verificationTokenExpiresAt DateTime? @map("verification_token_expires_at")
+  unsubscribeToken           String?   @unique @map("unsubscribe_token")
+  subscribedAt               DateTime  @default(now()) @map("subscribed_at")
+  verifiedAt                 DateTime? @map("verified_at")
+  unsubscribedAt             DateTime? @map("unsubscribed_at")
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
+
+  @@map("newsletter_subscribers")
 }
 
 model SiteConfig {
   key   String @id
   value String
 }
+

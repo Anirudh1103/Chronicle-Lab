@@ -46,7 +46,7 @@ export const AnimatedSubtitle: React.FC = () => {
           duration: 1,
           delay: (INTRO_TIMING.INITIAL_DELAY + INTRO_TIMING.TITLE_FADE + INTRO_TIMING.SUBTITLE_DELAY + 400) / 1000,
         }}
-        className="text-[10px] md:text-xs font-bold uppercase tracking-[0.4em] text-slate-400/60 dark:text-slate-500/60"
+        className="text-xs md:text-sm font-extrabold uppercase tracking-[0.5em] text-slate-500 dark:text-slate-400"
       >
         By Anirudh CM
       </motion.span>

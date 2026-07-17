@@ -7,6 +7,7 @@ import { ImageBlock } from './blocks/ImageBlock';
 import { TableBlock } from './blocks/TableBlock';
 import { CalloutBlock } from './blocks/CalloutBlock';
 import { QuoteBlock } from './blocks/QuoteBlock';
+import { TranslationQuoteBlock } from './blocks/TranslationQuoteBlock';
 import { TimelineBlock } from './blocks/TimelineBlock';
 import { ReferenceBlock } from './blocks/ReferenceBlock';
 import { ListBlock } from './blocks/ListBlock';
@@ -41,6 +42,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
       return <CalloutBlock id={block.id} content={block.content} />;
     case 'quote':
       return <QuoteBlock id={block.id} content={block.content} />;
+    case 'translationquote':
+      return <TranslationQuoteBlock id={block.id} content={block.content} />;
     case 'timeline':
       return <TimelineBlock id={block.id} content={block.content} />;
     case 'reference':

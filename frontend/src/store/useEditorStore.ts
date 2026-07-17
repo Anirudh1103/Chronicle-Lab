@@ -34,6 +34,7 @@ const initialMetadata: PostMetadata = {
   excerpt: '',
   status: 'DRAFT',
   featured: false,
+  featuredOrder: null,
   tagIds: [],
   authorId: '', // Should be set from authStore
 };
@@ -163,6 +164,8 @@ function getInitialContent(type: BlockType) {
       return { code: '', language: 'javascript', filename: '' };
     case 'quote':
       return { text: '', author: '', source: '' };
+    case 'translationQuote':
+      return { text: '', translation: '', meaning: '', author: '', source: '' };
     case 'callout':
       return { type: 'info', text: '' };
     case 'table':

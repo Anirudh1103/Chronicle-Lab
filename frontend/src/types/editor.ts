@@ -7,6 +7,7 @@ export type BlockType =
   | 'table'
   | 'code'
   | 'quote'
+  | 'translationQuote'
   | 'divider'
   | 'callout'
   | 'button'
@@ -16,7 +17,10 @@ export type BlockType =
   | 'timeline'
   | 'personalTouch'
   | 'relatedLinks'
-  | 'embed';
+  | 'embed'
+  | 'reference'
+  | 'list'
+  | 'keyInsight';
 
 export interface EditorBlock {
   id: string;
@@ -35,6 +39,7 @@ export interface PostMetadata {
   excerpt?: string;
   status: PostStatus;
   featured: boolean;
+  featuredOrder?: number | null;
   coverImage?: string;
   coverImageAlt?: string;
   coverImageCaption?: string;

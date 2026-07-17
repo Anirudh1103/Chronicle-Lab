@@ -8,8 +8,11 @@ import authRoutes from './routes/authRoutes';
 import mediaRoutes from './routes/mediaRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import settingsRoutes from './routes/settingsRoutes';
+import newsletterRoutes from './routes/newsletterRoutes';
+import { PrismaClient } from '@prisma/client';
 
 dotenv.config();
+
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -30,6 +33,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -44,6 +48,26 @@ app.get('/', (req, res) => {
   res.send('Blog API is running');
 });
 
+const prisma = new PrismaClient();
+async function ensureCategories() {
+  const categories = [
+    { name: 'History', slug: 'history' },
+    { name: 'Technology', slug: 'technology' },
+    { name: 'CyberSecurity', slug: 'cybersecurity' },
+  ];
+  for (const cat of categories) {
+    await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: { name: cat.name },
+      create: cat,
+    });
+  }
+  console.log('Default categories verified/created successfully.');
+}
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  ensureCategories().catch(err => {
+    console.error('Error ensuring default categories:', err);
+  });
 });

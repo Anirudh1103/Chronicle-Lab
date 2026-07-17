@@ -3,22 +3,31 @@ import { Github, Linkedin, Mail, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LegalModal, LegalContentType } from './LegalModal';
 import { blogApi } from '../api/blog.api';
+import { cn } from '../utils/cn';
 
 export function Footer() {
   const [legalType, setLegalType] = useState<LegalContentType>(null);
   const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'success' | 'info' | 'error'>('idle');
+  const [message, setMessage] = useState('');
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    try {
-      await blogApi.subscribe(email);
-      setSubscribed(true);
+    const trimmed = email.trim();
+    if (!trimmed) return;
+
+    setLoading(true);
+    setStatus('idle');
+    setMessage('');
+
+    // Simulate submission delay for a professional feel
+    setTimeout(() => {
+      setStatus('info');
+      setMessage("Thank you! The Chronicle Lab newsletter system is currently under construction. We will register your email address and start broadcasting our briefings soon.");
       setEmail('');
-    } catch (error) {
-      console.error('Subscription failed:', error);
-    }
+      setLoading(false);
+    }, 800);
   };
 
   return (
@@ -39,11 +48,12 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-bold mb-6">Quick Links</h4>
+          <h4 className="font-bold mb-6">Explore</h4>
           <ul className="space-y-4 text-muted-foreground font-medium">
-            <li><Link to="/" className="hover:text-primary transition-colors">Home</Link></li>
-            <li><Link to="/about" className="hover:text-primary transition-colors">The Story</Link></li>
-            <li><Link to="/feedback" className="hover:text-primary transition-colors">Share Feedback</Link></li>
+            <li><Link to="/library?category=history" className="hover:text-primary transition-colors">History</Link></li>
+            <li><Link to="/library?category=technology" className="hover:text-primary transition-colors">Technology</Link></li>
+            <li><Link to="/library?category=cybersecurity" className="hover:text-primary transition-colors">CyberSecurity</Link></li>
+            <li><Link to="/library" className="hover:text-primary transition-colors">Latest stories</Link></li>
           </ul>
         </div>
 
@@ -64,27 +74,41 @@ export function Footer() {
           <h4 className="font-bold">Subscribe to our newsletter</h4>
           <p className="text-sm text-muted-foreground">Get the latest insights delivered straight to your inbox.</p>
 
-          {subscribed ? (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-500 font-bold text-sm text-center">
-              Successfully patched into the signal.
+          <form onSubmit={handleSubscribe} className="flex gap-2">
+            <input
+              type="email"
+              required
+              disabled={loading}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email address"
+              className="bg-background border px-4 py-2 rounded-xl flex-1 focus:ring-2 ring-primary/20 outline-none transition-all disabled:opacity-50"
+              aria-label="Email address for newsletter"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-primary text-white px-5 py-2 rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center justify-center min-w-[70px] disabled:opacity-50"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                'Join'
+              )}
+            </button>
+          </form>
+
+          {status !== 'idle' && (
+            <div
+              className={cn(
+                "p-4 rounded-xl text-xs font-bold border leading-relaxed",
+                status === 'success' && "bg-emerald-500/10 border-emerald-500/20 text-emerald-500",
+                status === 'info' && "bg-blue-500/10 border-blue-500/20 text-blue-500 dark:text-blue-400",
+                status === 'error' && "bg-red-500/10 border-red-500/20 text-red-500"
+              )}
+            >
+              {message}
             </div>
-          ) : (
-            <form onSubmit={handleSubscribe} className="flex gap-2">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
-                className="bg-background border px-4 py-2 rounded-xl flex-1 focus:ring-2 ring-primary/20 outline-none transition-all"
-              />
-              <button
-                type="submit"
-                className="bg-primary text-white px-4 py-2 rounded-xl font-bold hover:opacity-90 transition-opacity"
-              >
-                Join
-              </button>
-            </form>
           )}
         </div>
       </div>

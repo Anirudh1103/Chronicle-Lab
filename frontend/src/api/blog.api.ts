@@ -64,8 +64,18 @@ export const blogApi = {
     return response.data;
   },
 
+  createCategory: async (data: { name: string; slug: string }) => {
+    const response = await api.post('/categories', data);
+    return response.data;
+  },
+
+  deleteCategory: async (id: string) => {
+    const response = await api.delete(`/categories/${id}`);
+    return response.data;
+  },
+
   subscribe: async (email: string) => {
-    const response = await api.post('/auth/subscribe', { email });
+    const response = await api.post('/newsletter/subscribe', { email });
     return response.data;
   },
 
@@ -97,6 +107,16 @@ export const blogApi = {
 
   updateConfig: async (configs: Record<string, string>) => {
     const response = await api.post('/settings/config', configs);
+    return response.data;
+  },
+
+  verifyNewsletter: async (token: string) => {
+    const response = await api.post('/newsletter/verify', { token });
+    return response.data;
+  },
+
+  unsubscribeNewsletter: async (token: string) => {
+    const response = await api.post('/newsletter/unsubscribe', { token });
     return response.data;
   },
 };

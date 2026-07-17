@@ -4,6 +4,7 @@ import { Library, Hash, Search, FilterX } from 'lucide-react';
 import { PostCard } from '../components/PostCard';
 import { blogApi } from '../api/blog.api';
 import { cn } from '../utils/cn';
+import { useSearchParams } from 'react-router-dom';
 
 export function LibraryPage() {
   const [allPosts, setAllPosts] = useState<any[]>([]);
@@ -11,6 +12,8 @@ export function LibraryPage() {
   const [activeCategory, setActiveCategory] = useState<string | 'ALL'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryQuery = searchParams.get('category');
 
   useEffect(() => {
     document.title = "Library | Chronicle Lab";
@@ -22,7 +25,11 @@ export function LibraryPage() {
         ]);
 
         setAllPosts(posts);
-        setCategories(cats.filter((c: any) => posts.some((p: any) => p.categoryId === c.id)));
+        // Show categories that have posts OR matches the query parameter category
+        setCategories(cats.filter((c: any) => 
+          posts.some((p: any) => p.categoryId === c.id) || 
+          (categoryQuery && c.slug.toLowerCase() === categoryQuery.toLowerCase())
+        ));
       } catch (error) {
         console.error("Error fetching library data:", error);
       } finally {
@@ -30,7 +37,34 @@ export function LibraryPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [categoryQuery]);
+
+  // Sync category query parameter with activeCategory state
+  useEffect(() => {
+    if (categories.length > 0) {
+      if (categoryQuery) {
+        const matched = categories.find(c => c.slug.toLowerCase() === categoryQuery.toLowerCase());
+        if (matched) {
+          setActiveCategory(matched.id);
+        } else {
+          setActiveCategory('all');
+        }
+      } else {
+        setActiveCategory('all');
+      }
+    }
+  }, [categoryQuery, categories]);
+
+  const handleCategoryChange = (id: string | 'all') => {
+    if (id === 'all') {
+      setSearchParams({});
+    } else {
+      const cat = categories.find(c => c.id === id);
+      if (cat) {
+        setSearchParams({ category: cat.slug });
+      }
+    }
+  };
 
   const filteredPosts = useMemo(() => {
     return allPosts.filter(post => {
@@ -91,7 +125,7 @@ export function LibraryPage() {
             <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 pl-2">Filter by Domain</h4>
             <div className="space-y-2">
               <button
-                onClick={() => setActiveCategory('all')}
+                onClick={() => handleCategoryChange('all')}
                 className={cn(
                   "w-full flex items-center justify-between p-5 rounded-2xl transition-all duration-300 group",
                   activeCategory === 'all'
@@ -114,7 +148,7 @@ export function LibraryPage() {
               {categories.map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
+                  onClick={() => handleCategoryChange(cat.id)}
                   className={cn(
                     "w-full flex items-center justify-between p-5 rounded-2xl transition-all duration-300 group",
                     activeCategory === cat.id

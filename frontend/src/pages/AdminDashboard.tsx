@@ -265,7 +265,7 @@ function QuotesPage() {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
-  const [newQuote, setNewQuote] = useState({ text: '', author: '', category: 'History' });
+  const [newQuote, setNewQuote] = useState({ text: '', translation: '', meaning: '', author: '', category: 'History' });
 
   const fetchQuotes = async () => {
     setLoading(true);
@@ -288,7 +288,7 @@ function QuotesPage() {
     try {
       const q = await blogApi.addQuote(newQuote);
       setQuotes([q, ...quotes]);
-      setNewQuote({ text: '', author: '', category: 'History' });
+      setNewQuote({ text: '', translation: '', meaning: '', author: '', category: 'History' });
       setIsAdding(false);
     } catch (err) {
       alert('Failed to add quote.');
@@ -340,6 +340,29 @@ function QuotesPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Translation (Optional)</label>
+                <textarea
+                  value={newQuote.translation || ''}
+                  onChange={e => setNewQuote({ ...newQuote, translation: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-sm outline-none focus:ring-2 ring-primary/20 transition-all font-medium resize-none"
+                  rows={2}
+                  placeholder="Translation in Roman script..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Meaning (Optional)</label>
+                <textarea
+                  value={newQuote.meaning || ''}
+                  onChange={e => setNewQuote({ ...newQuote, meaning: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-sm outline-none focus:ring-2 ring-primary/20 transition-all font-medium resize-none"
+                  rows={2}
+                  placeholder="Deeper meaning or explanation..."
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Attribution (Author)</label>
                   <input
@@ -359,7 +382,7 @@ function QuotesPage() {
                     <option>History</option>
                     <option>Technology</option>
                     <option>Philosophy</option>
-                    <option>Security</option>
+                    <option>CyberSecurity</option>
                   </select>
                </div>
             </div>
@@ -404,6 +427,20 @@ function QuotesPage() {
               <p className="text-xl font-bold tracking-tight leading-relaxed italic text-slate-800 dark:text-slate-100">
                 "{q.text}"
               </p>
+
+              {q.translation && (
+                <div className="pl-4 border-l-2 border-primary/20 space-y-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-405 text-slate-400">Translation</span>
+                  <p className="text-sm font-serif italic text-slate-600 dark:text-slate-350">"{q.translation}"</p>
+                </div>
+              )}
+
+              {q.meaning && (
+                <div className="pl-4 border-l-2 border-primary/20 space-y-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-405 text-slate-400">Meaning</span>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">"{q.meaning}"</p>
+                </div>
+              )}
 
               <div className="pt-4 border-t border-white/5 flex items-center gap-3">
                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-xs text-slate-400">

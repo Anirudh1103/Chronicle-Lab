@@ -83,6 +83,7 @@ export const EditorCanvas: React.FC = () => {
     { type: 'image', label: 'Image' },
     { type: 'code', label: 'Code' },
     { type: 'quote', label: 'Quote' },
+    { type: 'translationQuote', label: 'Translation Quote' },
     { type: 'table', label: 'Table' },
     { type: 'callout', label: 'Callout' },
     { type: 'timeline', label: 'Timeline' },

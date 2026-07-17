@@ -18,6 +18,7 @@ export interface PostInput {
   excerpt?: string;
   status?: PostStatus;
   featured?: boolean;
+  featuredOrder?: number | null;
   coverImage?: string;
   coverImageAlt?: string;
   coverImageCaption?: string;
@@ -56,12 +57,26 @@ export class PostService {
   static async createPost(data: PostInput) {
     const { blocks, tagIds, categoryId, ...postData } = data;
     const { wordCount, readingTime } = calculateStats(blocks);
+    const featuredOrder = data.featuredOrder ? parseInt(data.featuredOrder as any, 10) : null;
 
     return await prisma.$transaction(async (tx) => {
+      if (data.featured && featuredOrder && featuredOrder >= 1) {
+        await tx.post.updateMany({
+          where: {
+            featured: true,
+            featuredOrder: { gte: featuredOrder }
+          },
+          data: {
+            featuredOrder: { increment: 1 }
+          }
+        });
+      }
+
       // 1. Create Post
       const post = await tx.post.create({
         data: {
           ...postData,
+          featuredOrder,
           categoryId: categoryId || null,
           wordCount,
           readingTime,
@@ -97,13 +112,28 @@ export class PostService {
   static async updatePost(postId: string, data: PostInput) {
     const { blocks, tagIds, categoryId, ...postData } = data;
     const { wordCount, readingTime } = calculateStats(blocks);
+    const featuredOrder = data.featuredOrder ? parseInt(data.featuredOrder as any, 10) : null;
 
     return await prisma.$transaction(async (tx) => {
+      if (data.featured && featuredOrder && featuredOrder >= 1) {
+        await tx.post.updateMany({
+          where: {
+            id: { not: postId },
+            featured: true,
+            featuredOrder: { gte: featuredOrder }
+          },
+          data: {
+            featuredOrder: { increment: 1 }
+          }
+        });
+      }
+
       // 1. Update Post Metadata
       const post = await tx.post.update({
         where: { id: postId },
         data: {
           ...postData,
+          featuredOrder: data.featured ? featuredOrder : null,
           categoryId: categoryId || null,
           wordCount,
           readingTime,

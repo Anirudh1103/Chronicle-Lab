@@ -143,7 +143,7 @@ export const BlogDetailsPage: React.FC = () => {
       {!isFocusMode && (
         <header className={cn(
           "relative pt-12 md:pt-20 pb-12 md:pb-16 px-4 md:px-6 mx-auto space-y-6 md:space-y-8 transition-all duration-700",
-          hasPersonalInsights ? "max-w-7xl xl:pl-32" : "max-w-5xl"
+          hasPersonalInsights ? "max-w-[1600px] xl:pl-32" : "max-w-[1300px]"
         )}>
           <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-primary transition-colors mb-2">
             <ChevronLeft size={16} /> <span className="hidden sm:inline">Back to Chronicles</span><span className="sm:hidden">Back</span>
@@ -190,15 +190,15 @@ export const BlogDetailsPage: React.FC = () => {
         "mx-auto px-6 md:px-12 transition-all duration-700",
         !isFocusMode
           ? "w-full max-w-[1600px] grid grid-cols-1 gap-16 lg:gap-24" + (hasPersonalInsights ? " lg:grid-cols-[1fr_400px]" : " lg:grid-cols-1")
-          : "max-w-4xl py-12 md:py-20"
+          : "max-w-5xl py-12 md:py-20"
       )}>
         <div className="w-full">
           <div
             id="chronicle-content"
             className={cn(
-              "prose prose-xl md:prose-2xl dark:prose-invert transition-all duration-500 font-medium",
+              "prose prose-xl md:prose-2xl dark:prose-invert transition-all duration-500 font-medium max-w-none",
               fontTheme === 'serif' ? "font-editorial" : "font-sans leading-relaxed",
-              !hasPersonalInsights ? "max-w-none" : "max-w-[1100px]"
+              hasPersonalInsights ? "lg:max-w-[1100px] xl:max-w-[1200px]" : "max-w-[1300px]"
             )}
           >
             {mainContentBlocks.map((block: any) => (
@@ -488,6 +488,38 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
               <p className="text-3xl md:text-5xl font-sans font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: content.text }} />
               {(content.author || content.source) && (
                 <div className="space-y-1">
+                  {content.author && <p className="text-sm font-black uppercase tracking-[0.4em] text-primary">— <span dangerouslySetInnerHTML={{ __html: content.author }} /></p>}
+                  {content.source && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest" dangerouslySetInnerHTML={{ __html: content.source }} />}
+                </div>
+              )}
+           </div>
+        </div>
+      );
+
+    case 'translationquote':
+    case 'translationQuote':
+      return (
+        <div className="my-20 relative p-16 rounded-[4rem] bg-primary/5 border border-primary/10 group overflow-hidden">
+           <Quote className="absolute top-10 left-10 text-primary/20 group-hover:scale-110 transition-transform duration-700" size={80} />
+           <div className="relative z-10 space-y-8 text-center">
+              <p className="text-3xl md:text-5xl font-sans font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: content.text }} />
+              
+              {content.translation && (
+                <div className="pt-6 border-t border-slate-200/50 dark:border-white/10 max-w-2xl mx-auto">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 block mb-2">Translation</span>
+                  <p className="text-xl md:text-2xl font-serif italic text-slate-650 dark:text-slate-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: content.translation }} />
+                </div>
+              )}
+
+              {content.meaning && (
+                <div className="pt-6 border-t border-slate-200/50 dark:border-white/10 max-w-2xl mx-auto">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 block mb-2">Meaning</span>
+                  <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: content.meaning }} />
+                </div>
+              )}
+
+              {(content.author || content.source) && (
+                <div className="pt-4 space-y-1">
                   {content.author && <p className="text-sm font-black uppercase tracking-[0.4em] text-primary">— <span dangerouslySetInnerHTML={{ __html: content.author }} /></p>}
                   {content.source && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest" dangerouslySetInnerHTML={{ __html: content.source }} />}
                 </div>

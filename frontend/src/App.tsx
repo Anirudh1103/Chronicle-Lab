@@ -14,6 +14,8 @@ import { AboutPage } from './pages/AboutPage';
 import { FeedbackPage } from './pages/FeedbackPage';
 import { BlogDetailsPage } from './pages/BlogDetailsPage';
 import { LibraryPage } from './pages/LibraryPage';
+import { NewsletterVerifyPage } from './pages/NewsletterVerifyPage';
+import { NewsletterUnsubscribePage } from './pages/NewsletterUnsubscribePage';
 
 import { BlogEditorPage } from './pages/BlogEditorPage';
 import { CommandCenter } from './components/CommandCenter';
@@ -107,6 +109,8 @@ function App() {
                   <Route path="/feedback" element={<FeedbackPage />} />
                   <Route path="/library" element={<LibraryPage />} />
                   <Route path="/blog/:slug" element={<BlogDetailsPage />} />
+                  <Route path="/newsletter/verify" element={<NewsletterVerifyPage />} />
+                  <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribePage />} />
                   <Route path="/admin/editor/:id?" element={<ProtectedRoute><BlogEditorPage /></ProtectedRoute>} />
                   <Route
                     path="/admin/*"

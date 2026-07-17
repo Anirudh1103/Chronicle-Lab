@@ -34,9 +34,9 @@ router.get('/config', async (req, res) => {
 // Admin: Add quote
 router.post('/quotes', protect, admin, async (req, res) => {
   try {
-    const { text, author, category } = req.body;
+    const { text, translation, meaning, author, category } = req.body;
     const quote = await prisma.quote.create({
-      data: { text, author, category }
+      data: { text, translation, meaning, author, category }
     });
     res.status(201).json(quote);
   } catch (error) {

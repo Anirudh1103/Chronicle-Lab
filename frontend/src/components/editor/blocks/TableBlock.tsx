@@ -4,7 +4,7 @@ import { Plus, Trash2, Columns, Rows, Image as ImageIcon, Layout, Upload } from 
 import { cn } from '../../../utils/cn';
 import { RichTextEditor } from '../RichTextEditor';
 import { MediaPicker } from '../MediaPicker';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import api from '../../../api/client';
 
 interface TableBlockProps {

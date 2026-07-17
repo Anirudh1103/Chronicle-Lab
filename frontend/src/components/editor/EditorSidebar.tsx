@@ -127,7 +127,7 @@ export const EditorSidebar: React.FC = () => {
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Featured Article</span>
                   </div>
                   <button
-                    onClick={() => setMetadata({ featured: !metadata.featured })}
+                    onClick={() => setMetadata({ featured: !metadata.featured, featuredOrder: !metadata.featured ? null : metadata.featuredOrder })}
                     className={cn(
                       "w-10 h-6 rounded-full relative transition-colors duration-200",
                       metadata.featured ? "bg-primary" : "bg-slate-300 dark:bg-slate-700"
@@ -139,6 +139,23 @@ export const EditorSidebar: React.FC = () => {
                     )} />
                   </button>
                </div>
+
+                {metadata.featured && (
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5 mt-2">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Featured Order (Optional)</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={metadata.featuredOrder || ''}
+                      onChange={(e) => {
+                        const val = e.target.value ? parseInt(e.target.value, 10) : null;
+                        setMetadata({ featuredOrder: val });
+                      }}
+                      placeholder="Last"
+                      className="w-20 bg-background border px-3 py-1.5 rounded-lg text-xs font-bold text-center focus:ring-2 ring-primary/20 outline-none"
+                    />
+                  </div>
+                )}
             </section>
 
             {/* Cover Image Settings */}
