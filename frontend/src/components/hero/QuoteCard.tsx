@@ -166,6 +166,9 @@ export const QuoteCard: React.FC = () => {
           />
         </div>
       </motion.div>
+      <div className="text-center mt-3.5 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500/70 select-none pointer-events-none animate-pulse">
+        Hold screen to pause rotation
+      </div>
     </motion.div>
   );
 };

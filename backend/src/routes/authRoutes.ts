@@ -1,6 +1,19 @@
 import { Router } from 'express';
-import { register, login, logout, getMe, subscribe, submitFeedback } from '../controllers/authController';
-import { protect } from '../middleware/authMiddleware';
+import { 
+  register, 
+  login, 
+  logout, 
+  getMe, 
+  subscribe, 
+  submitFeedback,
+  verifyMfaLogin,
+  setupMfa,
+  enableMfa,
+  disableMfa,
+  getSecurityLogs,
+  getFeedback
+} from '../controllers/authController';
+import { protect, admin } from '../security/middleware/auth.middleware';
 
 const router = Router();
 
@@ -10,5 +23,15 @@ router.post('/logout', logout);
 router.get('/me', protect, getMe);
 router.post('/subscribe', subscribe);
 router.post('/feedback', submitFeedback);
+router.get('/feedback', protect, admin, getFeedback);
+
+// MFA second factor routes
+router.post('/mfa/verify', verifyMfaLogin);
+router.post('/mfa/setup', protect, setupMfa);
+router.post('/mfa/enable', protect, enableMfa);
+router.post('/mfa/disable', protect, disableMfa);
+
+// Security audit logging routes
+router.get('/logs', protect, admin, getSecurityLogs);
 
 export default router;

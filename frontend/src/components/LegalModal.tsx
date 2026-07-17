@@ -133,24 +133,26 @@ export function LegalModal({ type, onClose }: LegalModalProps) {
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/5 overflow-hidden z-10"
+            className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/5 overflow-hidden z-10 flex flex-col max-h-[85vh]"
           >
-            <div className="p-8 md:p-14 space-y-10 overflow-y-auto max-h-[85vh] no-scrollbar">
-              <div className="flex items-center justify-between sticky top-0 bg-inherit z-20 pb-4">
-                <div className="flex items-center gap-5">
-                  <div className="p-4 bg-primary/10 rounded-2xl shadow-inner">
-                    {activeContent.icon}
-                  </div>
-                  <h2 className="text-4xl font-black tracking-tighter">{activeContent.title}</h2>
+            {/* Sticky Header */}
+            <div className="flex items-center justify-between p-8 md:p-14 pb-6 border-b border-slate-150 dark:border-white/5 bg-white dark:bg-slate-900 z-20 flex-shrink-0">
+              <div className="flex items-center gap-5">
+                <div className="p-4 bg-primary/10 rounded-2xl shadow-inner">
+                  {activeContent.icon}
                 </div>
-                <button
-                  onClick={onClose}
-                  className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white hover:scale-110 active:scale-95"
-                >
-                  <X size={28} />
-                </button>
+                <h2 className="text-3xl md:text-4xl font-black tracking-tighter">{activeContent.title}</h2>
               </div>
+              <button
+                onClick={onClose}
+                className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white hover:scale-110 active:scale-95"
+              >
+                <X size={28} />
+              </button>
+            </div>
 
+            {/* Scrollable content area */}
+            <div className="p-8 md:p-14 pt-6 space-y-10 overflow-y-auto no-scrollbar flex-1">
               <div className="space-y-10">
                 {activeContent.sections.map((s, i) => (
                   <motion.div

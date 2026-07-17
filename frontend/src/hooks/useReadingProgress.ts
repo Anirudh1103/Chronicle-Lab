@@ -52,6 +52,13 @@ export function useReadingProgress(blocks: EditorBlock[]) {
                 next.add(id);
                 return next;
             });
+        } else {
+            setCompletedIds(prev => {
+                if (!prev.has(id)) return prev;
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
         }
       });
     };

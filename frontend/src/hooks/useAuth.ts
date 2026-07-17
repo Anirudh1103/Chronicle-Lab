@@ -34,6 +34,19 @@ export function useAuth() {
       return data;
     },
     onSuccess: (data) => {
+      if (data && !data.requireMfa) {
+        setUser(data);
+        queryClient.setQueryData(['me'], data);
+      }
+    },
+  });
+
+  const verifyMfaMutation = useMutation({
+    mutationFn: async (payload: { code: string; mfaToken: string }) => {
+      const { data } = await api.post('auth/mfa/verify', payload);
+      return data;
+    },
+    onSuccess: (data) => {
       setUser(data);
       queryClient.setQueryData(['me'], data);
     },
@@ -66,6 +79,7 @@ export function useAuth() {
     login: loginMutation.mutateAsync,
     register: registerMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,
-    isLoading: getMeQuery.isLoading || loginMutation.isPending || registerMutation.isPending,
+    verifyMfa: verifyMfaMutation.mutateAsync,
+    isLoading: getMeQuery.isLoading || loginMutation.isPending || registerMutation.isPending || verifyMfaMutation.isPending,
   };
 }

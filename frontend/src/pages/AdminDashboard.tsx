@@ -17,13 +17,19 @@ import {
   EyeOff,
   BarChart3,
   Quote,
-  X
+  X,
+  BookOpen,
+  ShieldCheck,
+  AlertCircle
 } from 'lucide-react';
 import { EditorPage } from './EditorPage';
 import { MediaLibrary } from './MediaLibrary';
 import { useAuth } from '../hooks/useAuth';
 import { blogApi } from '../api/blog.api';
 import { cn } from '../utils/cn';
+import { GlossaryManager } from './GlossaryManager';
+import api from '../api/client';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
 
 export function AdminDashboard() {
   const location = useLocation();
@@ -43,6 +49,8 @@ export function AdminDashboard() {
     { icon: <Tag size={20} />, label: 'Tags', path: '/admin/tags' },
     { icon: <MessageSquare size={20} />, label: 'Comments', path: '/admin/comments' },
     { icon: <Quote size={20} />, label: 'Quotes', path: '/admin/quotes' },
+    { icon: <BookOpen size={20} />, label: 'Glossary', path: '/admin/glossary' },
+    { icon: <BarChart3 size={20} />, label: 'Analytics', path: '/admin/analytics' },
     { icon: <Settings size={20} />, label: 'Settings', path: '/admin/settings' },
   ];
 
@@ -127,6 +135,8 @@ export function AdminDashboard() {
           <Route path="/tags" element={<PlaceholderSection title="Tags Manager" />} />
           <Route path="/comments" element={<PlaceholderSection title="Comments Manager" />} />
           <Route path="/quotes" element={<QuotesPage />} />
+          <Route path="/glossary" element={<GlossaryManager />} />
+          <Route path="/analytics" element={<AnalyticsDashboard />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </main>
@@ -457,22 +467,48 @@ function QuotesPage() {
 }
 
 function SettingsPage() {
+  const { user } = useAuth();
   const [config, setConfig] = useState<Record<string, string>>({
     footer_text: '',
     contact_email: '',
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  // MFA & Security States
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaSetup, setMfaSetup] = useState<{ secret: string; otpAuthUri: string } | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaSuccess, setMfaSuccess] = useState<string | null>(null);
+  const [disableCode, setDisableCode] = useState('');
+  const [isDisabling, setIsDisabling] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
+
+  const loadConfig = async () => {
+    try {
+      const data = await blogApi.getConfig();
+      setConfig(prev => ({ ...prev, ...data }));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const loadSecurityState = async () => {
+    try {
+      const { data: me } = await api.get('auth/me');
+      setMfaEnabled(me.mfaEnabled);
+
+      const { data: auditLogs } = await api.get('auth/logs');
+      setLogs(auditLogs || []);
+    } catch (error) {
+      console.error('Failed to load security profile:', error);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await blogApi.getConfig();
-        setConfig(prev => ({ ...prev, ...data }));
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    load();
+    loadConfig();
+    loadSecurityState();
   }, []);
 
   const handleSaveConfig = async () => {
@@ -487,14 +523,67 @@ function SettingsPage() {
     }
   };
 
+  const handleMfaSetup = async () => {
+    setMfaError(null);
+    setMfaSuccess(null);
+    try {
+      const { data } = await api.post('auth/mfa/setup');
+      setMfaSetup(data);
+    } catch (err) {
+      setMfaError('Failed to initiate MFA setup.');
+    }
+  };
+
+  const handleMfaEnable = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMfaError(null);
+    if (!mfaCode || mfaCode.length !== 6) {
+      setMfaError('Code must be exactly 6 digits.');
+      return;
+    }
+    try {
+      const { data } = await api.post('auth/mfa/enable', { code: mfaCode });
+      setMfaEnabled(true);
+      setBackupCodes(data.backupCodes || []);
+      setMfaSetup(null);
+      setMfaCode('');
+      setMfaSuccess('Multi-Factor Authentication enabled successfully!');
+      loadSecurityState();
+    } catch (err: any) {
+      setMfaError(err.response?.data?.message || 'Verification code invalid.');
+    }
+  };
+
+  const handleMfaDisable = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMfaError(null);
+    if (!disableCode || disableCode.length !== 6) {
+      setMfaError('Code must be exactly 6 digits.');
+      return;
+    }
+    setIsDisabling(true);
+    try {
+      await api.post('auth/mfa/disable', { code: disableCode });
+      setMfaEnabled(false);
+      setDisableCode('');
+      setMfaSuccess('Multi-Factor Authentication deactivated.');
+      loadSecurityState();
+    } catch (err: any) {
+      setMfaError(err.response?.data?.message || 'Verification code invalid.');
+    } finally {
+      setIsDisabling(false);
+    }
+  };
+
   return (
-    <div className="space-y-12 pb-20 max-w-2xl">
+    <div className="space-y-12 pb-20 max-w-4xl">
       <div className="space-y-1">
         <h1 className="text-4xl font-black">Laboratory Settings</h1>
-        <p className="text-muted-foreground font-medium">Configure the core identity of the platform.</p>
+        <p className="text-muted-foreground font-medium">Configure authentication details, security headers, and dynamic variables.</p>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-12">
+        {/* System Settings */}
         <section className="space-y-6">
           <div className="flex items-center gap-3">
              <div className="p-2 bg-primary/10 text-primary rounded-lg">
@@ -533,6 +622,194 @@ function SettingsPage() {
             >
               {isSaving ? 'Synchronizing System...' : 'Update Configuration'}
             </button>
+          </div>
+        </section>
+
+        {/* Security Hardening */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3">
+             <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                <ShieldCheck size={20} />
+             </div>
+             <h2 className="text-xl font-black tracking-tight">Admin Gateway Security</h2>
+          </div>
+
+          <div className="glass p-10 rounded-[3rem] border-white/5 space-y-8 shadow-2xl">
+            {mfaError && (
+              <div className="bg-red-500/10 text-red-500 p-4 rounded-xl flex items-center gap-3 text-xs font-bold border border-red-500/20">
+                <AlertCircle size={16} />
+                {mfaError}
+              </div>
+            )}
+            {mfaSuccess && (
+              <div className="bg-emerald-500/10 text-emerald-500 p-4 rounded-xl flex items-center gap-3 text-xs font-bold border border-emerald-500/20">
+                <ShieldCheck size={16} />
+                {mfaSuccess}
+              </div>
+            )}
+
+            {!mfaEnabled ? (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-black tracking-tight">Multi-Factor Authentication (MFA)</h3>
+                  <p className="text-sm text-muted-foreground font-medium mt-1">
+                    Secure administrative actions using an Aegis or Google Authenticator time-based one-time password (TOTP) validator.
+                  </p>
+                </div>
+
+                {!mfaSetup ? (
+                  <button
+                    onClick={handleMfaSetup}
+                    className="bg-primary text-primary-foreground px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-md"
+                  >
+                    Set Up Multi-Factor
+                  </button>
+                ) : (
+                  <div className="bg-slate-50 dark:bg-slate-950/40 p-6 rounded-2xl border border-white/5 space-y-6">
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-black">1. Register Key in Authenticator</h4>
+                      <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                        Copy the key details or import the OTPAuth code below into your TOTP application:
+                      </p>
+                      <div className="bg-slate-900 p-4 rounded-xl font-mono text-center select-all tracking-wider text-xs border border-white/5 text-primary break-all">
+                        {mfaSetup.secret}
+                      </div>
+                      <div className="text-[10px] text-slate-500 break-all select-all font-mono">
+                        URI: {mfaSetup.otpAuthUri}
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleMfaEnable} className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">2. Verify TOTP Passcode</label>
+                        <input
+                          type="text"
+                          maxLength={6}
+                          placeholder="000000"
+                          value={mfaCode}
+                          onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                          className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3 px-5 text-center font-mono tracking-widest text-lg outline-none focus:border-primary/50 text-white"
+                        />
+                      </div>
+                      <div className="flex gap-4">
+                        <button
+                          type="button"
+                          onClick={() => setMfaSetup(null)}
+                          className="w-1/3 border border-white/10 text-slate-400 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/5 transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="flex-1 bg-primary text-primary-foreground py-3 rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:opacity-90 shadow-md transition-all"
+                        >
+                          Confirm & Activate
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-emerald-500">
+                  <ShieldCheck size={20} />
+                  <span className="text-sm font-bold">Multi-Factor Authentication is active.</span>
+                </div>
+
+                {backupCodes.length > 0 && (
+                  <div className="bg-slate-50 dark:bg-slate-950/40 p-6 rounded-2xl border border-white/5 space-y-3">
+                    <h4 className="text-sm font-black text-amber-400">Emergency Recovery Backup Codes</h4>
+                    <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                      Store these fallback tokens in a secure vault. Each code can only be used once to bypass the second-factor check during credential recovery:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 font-mono text-center text-slate-300 font-bold select-all text-xs bg-slate-900 p-4 rounded-xl border border-white/5">
+                      {backupCodes.map((code, idx) => (
+                        <div key={idx}>{code}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={handleMfaDisable} className="space-y-4 pt-4 border-t border-white/5">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-black text-red-500">Deactivate Authentication Locks</h4>
+                    <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                      Confirm deactivation by entering the active TOTP passcode:
+                    </p>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      placeholder="000000"
+                      value={disableCode}
+                      onChange={e => setDisableCode(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3 px-5 text-center font-mono tracking-widest text-lg outline-none focus:border-primary/50 text-white"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isDisabling}
+                    className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md"
+                  >
+                    Deactivate MFA
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Audit Log Trail */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3">
+             <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                <BarChart3 size={20} />
+             </div>
+             <h2 className="text-xl font-black tracking-tight">Security Audit Logs</h2>
+          </div>
+
+          <div className="glass rounded-[3rem] border-white/5 overflow-hidden shadow-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 border-b border-white/5">
+                    <th className="p-4 font-black uppercase tracking-wider">Timestamp</th>
+                    <th className="p-4 font-black uppercase tracking-wider">Event type</th>
+                    <th className="p-4 font-black uppercase tracking-wider">IP Address</th>
+                    <th className="p-4 font-black uppercase tracking-wider">OS</th>
+                    <th className="p-4 font-black uppercase tracking-wider">Browser</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground italic font-medium">
+                        No audit events recorded.
+                      </td>
+                    </tr>
+                  ) : (
+                    logs.slice(0, 10).map((log) => (
+                      <tr key={log.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                        <td className="p-4 text-slate-400 font-medium">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </td>
+                        <td className="p-4 font-black">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-[10px]",
+                            log.event.includes('SUCCESS') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                          )}>
+                            {log.event}
+                          </span>
+                        </td>
+                        <td className="p-4 text-slate-400 font-mono">{log.ipAddress || 'unknown'}</td>
+                        <td className="p-4 text-slate-400 font-medium">{log.os || 'unknown'}</td>
+                        <td className="p-4 text-slate-400 font-medium">{log.browser || 'unknown'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       </div>

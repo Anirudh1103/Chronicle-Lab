@@ -44,11 +44,44 @@ function App() {
   };
 
   // Use try-catch or ensure useAuth doesn't crash the render if backend is down
+  let authResult: any = null;
   try {
-    useAuth();
+    authResult = useAuth();
   } catch (e) {
     console.error("Auth hook error:", e);
   }
+  const user = authResult?.user;
+  const logout = authResult?.logout;
+
+  useEffect(() => {
+    if (!user || !logout) return;
+
+    let timeoutId: any;
+    const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutes
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        console.warn("Session idle timeout reached. Auto logging out.");
+        logout();
+      }, INACTIVITY_LIMIT);
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    // Initialize timer
+    resetTimer();
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [user, logout]);
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     try {

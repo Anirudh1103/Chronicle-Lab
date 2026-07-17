@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { uploadMedia, getAllMedia, deleteMedia } from '../controllers/mediaController';
 import { upload } from '../config/multer';
-import { protect, admin } from '../middleware/authMiddleware';
+import { protect, admin } from '../security/middleware/auth.middleware';
 
 const router = Router();
 

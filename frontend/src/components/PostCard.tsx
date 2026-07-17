@@ -40,7 +40,7 @@ export function PostCard({ post, index }: PostCardProps) {
               <span className="font-black text-4xl opacity-10 tracking-tighter uppercase">Chronicle.Lab</span>
             </div>
           )}
-          <div className="absolute top-6 left-6 flex items-center gap-2">
+          <div className="absolute bottom-6 right-6 flex items-center gap-2">
             <span className="glass px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-white">
               {post.category?.name || 'Uncategorized'}
             </span>

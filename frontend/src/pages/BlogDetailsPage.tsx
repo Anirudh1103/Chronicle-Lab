@@ -1,12 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { blogApi } from '../api/blog.api';
-import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote, Sparkles, Maximize2 } from 'lucide-react';
+import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote, Sparkles, Maximize2, BookOpen } from 'lucide-react';
 import { ReadingNavigator } from '../components/blog/ReadingNavigator';
 import { Lightbox } from '../components/blog/Lightbox';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '../utils/cn';
+
+// TTS & Glossary Imports
+import { highlightGlossary as highlightGlossaryOriginal } from '../utils/glossary';
+import { parseNarration } from '../services/narrationParser';
+import { useArticleTTS } from '../hooks/useArticleTTS';
+import { ArticleAudioPlayer } from '../components/blog/ArticleAudioPlayer';
+import { ArticleAudioMiniPlayer } from '../components/blog/ArticleAudioMiniPlayer';
+import { useQuery } from '@tanstack/react-query';
+import api from '../api/client';
 
 const CodeBlockDetails: React.FC<{ content: any }> = ({ content }) => {
   const [copied, setCopied] = useState(false);
@@ -39,6 +48,12 @@ const CodeBlockDetails: React.FC<{ content: any }> = ({ content }) => {
   );
 };
 
+let globalGlossaryList: any[] = [];
+
+function highlightGlossary(text: string | null | undefined) {
+  return highlightGlossaryOriginal(text, globalGlossaryList);
+}
+
 export const BlogDetailsPage: React.FC = () => {
   const { slug } = useParams();
   const [post, setPost] = useState<any>(null);
@@ -47,12 +62,137 @@ export const BlogDetailsPage: React.FC = () => {
   const [fontTheme, setFontTheme] = useState<'serif' | 'sans'>('serif');
   const [activeImage, setActiveImage] = useState<{src: string, alt?: string, caption?: string} | null>(null);
 
+  // Glossary states
+  const [activeTerm, setActiveTerm] = useState<{ term: string; definition: string } | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Load dynamic glossary terms from database
+  const { data: glossaryList = [] } = useQuery<any[]>({
+    queryKey: ['glossary'],
+    queryFn: async () => {
+      const { data } = await api.get('glossary');
+      return data;
+    }
+  });
+
+  globalGlossaryList = glossaryList;
+
+  // Scroll variables
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001
   });
+
+  // TTS Narration Parsing
+  const narrationChunks = useMemo(() => {
+    if (!post) return [];
+    return parseNarration(post.title, post.subtitle, post.blocks || []);
+  }, [post]);
+
+  const {
+    status: ttsStatus,
+    currentChunkIndex,
+    currentBlockId,
+    voices,
+    selectedVoiceName,
+    rate: ttsRate,
+    play: playTTS,
+    pause: pauseTTS,
+    stop: stopTTS,
+    skipForward: skipForwardTTS,
+    skipBackward: skipBackwardTTS,
+    setRate: setRateTTS,
+    setVoice: setVoiceTTS
+  } = useArticleTTS({ chunks: narrationChunks });
+
+  const [miniPlayerVisible, setMiniPlayerVisible] = useState(false);
+  const [autoFollow, setAutoFollow] = useState(true);
+  const lastAutoScrollTime = useRef(0);
+  const playerRef = useRef<HTMLDivElement>(null);
+
+  // Intersection observer to toggle floating mini-player
+  useEffect(() => {
+    if (ttsStatus === 'idle' || ttsStatus === 'completed') {
+      setMiniPlayerVisible(false);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setMiniPlayerVisible(!entry.isIntersecting);
+      },
+      { threshold: 0 }
+    );
+    const element = playerRef.current;
+    if (element) {
+      observer.observe(element);
+    }
+    return () => {
+      if (element) observer.unobserve(element);
+    };
+  }, [ttsStatus]);
+
+  // Scroll listener to temporarily disable auto-follow if manually scrolling
+  useEffect(() => {
+    const handleScroll = () => {
+      if (Date.now() - lastAutoScrollTime.current > 1000) {
+        setAutoFollow(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Smooth scroll current block into view
+  useEffect(() => {
+    if (currentBlockId && autoFollow) {
+      const element = document.getElementById(currentBlockId);
+      if (element) {
+        lastAutoScrollTime.current = Date.now();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [currentBlockId, autoFollow]);
+
+  const handleGlossaryInteraction = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const isGlossaryTerm = target.classList.contains('glossary-term');
+    
+    if (isGlossaryTerm) {
+      const termKey = target.getAttribute('data-term');
+      if (termKey) {
+        const match = glossaryList.find(item => item.term.toLowerCase() === termKey.toLowerCase());
+        if (match) {
+          const rect = target.getBoundingClientRect();
+          setTooltipPos({
+            x: rect.left + rect.width / 2,
+            y: rect.top - 10,
+          });
+          setActiveTerm({ term: match.term, definition: match.definition });
+          return;
+        }
+      }
+    }
+    setActiveTerm(null);
+  };
+
+  const handleGlossaryLeave = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    
+    if (target.classList.contains('glossary-term')) {
+      if (!relatedTarget || !relatedTarget.classList.contains('glossary-term')) {
+        setActiveTerm(null);
+      }
+    }
+  };
+
+  const scrollToPlayer = () => {
+    if (playerRef.current) {
+      playerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,6 +206,8 @@ export const BlogDetailsPage: React.FC = () => {
           }))
         });
         document.title = `${data.title} | Chronicle Lab`;
+        // Record page view dynamically in background
+        api.post('analytics/view', { slug: slug! }).catch(err => console.error('Failed to log page view:', err));
       } catch (error) {
         console.error("Error fetching post:", error);
       } finally {
@@ -143,7 +285,7 @@ export const BlogDetailsPage: React.FC = () => {
       {!isFocusMode && (
         <header className={cn(
           "relative pt-12 md:pt-20 pb-12 md:pb-16 px-4 md:px-6 mx-auto space-y-6 md:space-y-8 transition-all duration-700",
-          hasPersonalInsights ? "max-w-[1600px] xl:pl-32" : "max-w-[1300px]"
+          hasPersonalInsights ? "max-w-[1800px] xl:pl-32" : "max-w-[1450px]"
         )}>
           <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-primary transition-colors mb-2">
             <ChevronLeft size={16} /> <span className="hidden sm:inline">Back to Chronicles</span><span className="sm:hidden">Back</span>
@@ -189,23 +331,60 @@ export const BlogDetailsPage: React.FC = () => {
       <main className={cn(
         "mx-auto px-6 md:px-12 transition-all duration-700",
         !isFocusMode
-          ? "w-full max-w-[1600px] grid grid-cols-1 gap-16 lg:gap-24" + (hasPersonalInsights ? " lg:grid-cols-[1fr_400px]" : " lg:grid-cols-1")
+          ? "w-full max-w-[1800px] grid grid-cols-1 gap-16 lg:gap-24" + (hasPersonalInsights ? " lg:grid-cols-[1fr_400px]" : " lg:grid-cols-1")
           : "max-w-5xl py-12 md:py-20"
       )}>
         <div className="w-full">
+          {/* Main Audio Narration Player */}
+          {!isFocusMode && (
+            <div ref={playerRef}>
+              <ArticleAudioPlayer
+                status={ttsStatus}
+                currentChunkIndex={currentChunkIndex}
+                rate={ttsRate}
+                voices={voices}
+                selectedVoiceName={selectedVoiceName}
+                chunks={narrationChunks}
+                readingTime={post.readingTime}
+                play={playTTS}
+                pause={pauseTTS}
+                stop={stopTTS}
+                skipForward={skipForwardTTS}
+                skipBackward={skipBackwardTTS}
+                setRate={setRateTTS}
+                setVoice={setVoiceTTS}
+              />
+            </div>
+          )}
+
           <div
             id="chronicle-content"
             className={cn(
               "prose prose-xl md:prose-2xl dark:prose-invert transition-all duration-500 font-medium max-w-none",
               fontTheme === 'serif' ? "font-editorial" : "font-sans leading-relaxed",
-              hasPersonalInsights ? "lg:max-w-[1100px] xl:max-w-[1200px]" : "max-w-[1300px]"
+              hasPersonalInsights ? "lg:max-w-[1200px] xl:max-w-[1300px]" : "max-w-[1450px]"
             )}
+            onMouseOver={handleGlossaryInteraction}
+            onMouseOut={handleGlossaryLeave}
+            onClick={handleGlossaryInteraction}
           >
-            {mainContentBlocks.map((block: any) => (
-              <div key={block.id} id={block.id} className="mb-12 scroll-mt-32">
-                {renderBlock(block, setActiveImage)}
-              </div>
-            ))}
+            {mainContentBlocks.map((block: any) => {
+              const isActive = block.id === currentBlockId;
+              return (
+                <div
+                  key={block.id}
+                  id={block.id}
+                  className={cn(
+                    "mb-12 scroll-mt-32 transition-all duration-500 rounded-3xl",
+                    isActive 
+                      ? "border-l-4 border-primary pl-6 dark:border-primary opacity-100"
+                      : "opacity-90 hover:opacity-100"
+                  )}
+                >
+                  {renderBlock(block, setActiveImage)}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -250,6 +429,52 @@ export const BlogDetailsPage: React.FC = () => {
         </aside>
         )}
       </main>
+
+      {/* Sticky Mini Player */}
+      <ArticleAudioMiniPlayer
+        status={ttsStatus}
+        currentChunkIndex={currentChunkIndex}
+        chunks={narrationChunks}
+        play={playTTS}
+        pause={pauseTTS}
+        stop={stopTTS}
+        skipForward={skipForwardTTS}
+        skipBackward={skipBackwardTTS}
+        visible={miniPlayerVisible}
+        scrollToPlayer={scrollToPlayer}
+      />
+
+      {/* Resume following overlay */}
+      {!autoFollow && ttsStatus === 'playing' && (
+        <div
+          onClick={() => setAutoFollow(true)}
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[140] px-5 py-2.5 bg-primary hover:bg-primary/95 text-white text-xs font-black uppercase tracking-widest rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+          <span>Resume Speaker Follow</span>
+        </div>
+      )}
+
+      {/* Floating Glossary Tooltip Popover */}
+      {activeTerm && (
+        <div
+          style={{
+            position: 'fixed',
+            left: `${tooltipPos.x}px`,
+            top: `${tooltipPos.y}px`,
+            transform: 'translate(-50%, -100%)',
+          }}
+          className="z-[250] w-72 p-5 bg-slate-950/95 dark:bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-md text-slate-100 pointer-events-none space-y-2 animate-in fade-in zoom-in-95 duration-200"
+        >
+          <div className="flex items-center gap-2 text-primary">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            <h4 className="font-black text-[10px] uppercase tracking-widest">{activeTerm.term}</h4>
+          </div>
+          <p className="text-xs text-slate-350 dark:text-slate-300 leading-relaxed font-medium">
+            {activeTerm.definition}
+          </p>
+        </div>
+      )}
     </div>
   );
 };
@@ -267,15 +492,15 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
       }[content.level as 1 | 2 | 3] || 'text-xl font-bold';
       return (
         <div className={cn("mb-12", type === 'subheading' && "pl-4 md:pl-8 border-l-4 border-primary/10 ml-2 md:ml-4")}>
-          <Tag className={cn(classes, "font-editorial italic", type === 'subheading' && "text-slate-800 dark:text-slate-200")} dangerouslySetInnerHTML={{ __html: content.text }} />
+          <Tag className={cn(classes, "font-editorial italic", type === 'subheading' && "text-slate-800 dark:text-slate-200")} dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />
           {content.subtext && (
-            <p className="text-xl md:text-2xl text-muted-foreground font-medium border-l-4 border-primary/20 pl-8 py-2 mt-4" dangerouslySetInnerHTML={{ __html: content.subtext }} />
+            <p className="text-xl md:text-2xl text-muted-foreground font-medium border-l-4 border-primary/20 pl-8 py-2 mt-4" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.subtext) }} />
           )}
         </div>
       );
 
     case 'paragraph':
-      return <div className="text-lg sm:text-xl md:text-2xl leading-[1.6] mb-10 text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: content.text }} />;
+      return <div className="text-lg sm:text-xl md:text-2xl leading-[1.6] mb-10 text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />;
 
     case 'image':
       return (
@@ -338,7 +563,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
       };
       return (
         <div className={cn("p-10 rounded-[3rem] border-l-[6px] my-16 shadow-sm", colors[content.type as keyof typeof colors])}>
-           <p className="font-bold text-xl md:text-2xl leading-relaxed" dangerouslySetInnerHTML={{ __html: content.text }} />
+           <p className="font-bold text-xl md:text-2xl leading-relaxed" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />
         </div>
       );
 
@@ -349,9 +574,9 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
             <div key={i} className="relative pl-16 group">
               <div className="absolute left-0 top-2 w-8 h-8 rounded-full bg-background border-4 border-primary shadow-[0_0_15px_rgba(59,130,246,0.5)] group-hover:scale-125 transition-transform" />
               <div className="space-y-2">
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-primary" dangerouslySetInnerHTML={{ __html: item.date }} />
-                <h4 className="text-2xl md:text-3xl font-black tracking-tight" dangerouslySetInnerHTML={{ __html: item.title }} />
-                <p className="text-slate-500 text-lg md:text-xl font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: item.description }} />
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-primary" dangerouslySetInnerHTML={{ __html: highlightGlossary(item.date) }} />
+                <h4 className="text-2xl md:text-3xl font-black tracking-tight" dangerouslySetInnerHTML={{ __html: highlightGlossary(item.title) }} />
+                <p className="text-slate-500 text-lg md:text-xl font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: highlightGlossary(item.description) }} />
               </div>
             </div>
           ))}
@@ -369,7 +594,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   <div className="text-base md:text-lg">
-                    <p className="font-bold text-slate-700 dark:text-slate-300 leading-snug" dangerouslySetInnerHTML={{ __html: item.citation }} />
+                    <p className="font-bold text-slate-700 dark:text-slate-300 leading-snug" dangerouslySetInnerHTML={{ __html: highlightGlossary(item.citation) }} />
                     {item.url && <a href={item.url} target="_blank" className="text-primary hover:underline block mt-2 opacity-70 hover:opacity-100 transition-opacity truncate max-w-xl">{item.url}</a>}
                   </div>
                 </li>
@@ -386,7 +611,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
           content.type === 'bullet' ? "list-disc pl-10" : "list-decimal pl-10"
         )}>
           {content.items.map((item: string, i: number) => (
-            <li key={i} className="text-lg md:text-2xl text-slate-700 dark:text-slate-300 leading-relaxed pl-2" dangerouslySetInnerHTML={{ __html: item }} />
+            <li key={i} className="text-lg md:text-2xl text-slate-700 dark:text-slate-300 leading-relaxed pl-2" dangerouslySetInnerHTML={{ __html: highlightGlossary(item) }} />
           ))}
         </ListTag>
       );
@@ -485,7 +710,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
         <div className="my-20 relative p-16 rounded-[4rem] bg-primary/5 border border-primary/10 group">
            <Quote className="absolute top-10 left-10 text-primary/20 group-hover:scale-110 transition-transform duration-700" size={80} />
            <div className="relative z-10 text-center space-y-8">
-              <p className="text-3xl md:text-5xl font-sans font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: content.text }} />
+              <p className="text-3xl md:text-5xl font-sans font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />
               {(content.author || content.source) && (
                 <div className="space-y-1">
                   {content.author && <p className="text-sm font-black uppercase tracking-[0.4em] text-primary">— <span dangerouslySetInnerHTML={{ __html: content.author }} /></p>}
@@ -502,19 +727,19 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
         <div className="my-20 relative p-16 rounded-[4rem] bg-primary/5 border border-primary/10 group overflow-hidden">
            <Quote className="absolute top-10 left-10 text-primary/20 group-hover:scale-110 transition-transform duration-700" size={80} />
            <div className="relative z-10 space-y-8 text-center">
-              <p className="text-3xl md:text-5xl font-sans font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: content.text }} />
+              <p className="text-3xl md:text-5xl font-sans font-black leading-[1.1] tracking-tighter text-slate-900 dark:text-white" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />
               
               {content.translation && (
                 <div className="pt-6 border-t border-slate-200/50 dark:border-white/10 max-w-2xl mx-auto">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 block mb-2">Translation</span>
-                  <p className="text-xl md:text-2xl font-serif italic text-slate-650 dark:text-slate-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: content.translation }} />
+                  <p className="text-xl md:text-2xl font-serif italic text-slate-650 dark:text-slate-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.translation) }} />
                 </div>
               )}
 
               {content.meaning && (
                 <div className="pt-6 border-t border-slate-200/50 dark:border-white/10 max-w-2xl mx-auto">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 block mb-2">Meaning</span>
-                  <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: content.meaning }} />
+                  <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.meaning) }} />
                 </div>
               )}
 

@@ -9,14 +9,17 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String   @default("VIEWER")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  posts     Post[]
+  id             String   @id @default(cuid())
+  email          String   @unique
+  password       String
+  name           String
+  role           String   @default("VIEWER")
+  mfaSecret      String?  @map("mfa_secret")
+  mfaEnabled     Boolean  @default(false) @map("mfa_enabled")
+  mfaBackupCodes String?  @map("mfa_backup_codes")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  posts          Post[]
 }
 
 model Post {
@@ -59,6 +62,7 @@ model Post {
   author            User       @relation(fields: [authorId], references: [id])
   revisions         Revision[]
   tags              Tag[]      @relation("PostToTag")
+  pageViews         PageView[]
 
   @@index([slug])
   @@index([status])
@@ -160,5 +164,41 @@ model NewsletterSubscriber {
 model SiteConfig {
   key   String @id
   value String
+}
+
+model GlossaryTerm {
+  id         String   @id @default(cuid())
+  term       String   @unique
+  definition String
+  category   String   // 'history' | 'technology' | 'cybersecurity'
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model SecurityLog {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now())
+  event     String   // 'LOGIN_SUCCESS', 'LOGIN_FAILURE', 'MFA_SETUP', 'MFA_FAILED', etc.
+  email     String
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  browser   String?
+  os        String?
+  location  String?
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  postId    String?
+  slug      String
+  timestamp DateTime @default(now())
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  browser   String?
+  os        String?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([timestamp])
 }
 
