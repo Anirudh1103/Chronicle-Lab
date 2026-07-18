@@ -36,3 +36,5 @@ logs/
 
 # Prisma
 /prisma/migrations/
+*.db
+backend/prisma/dev.db
