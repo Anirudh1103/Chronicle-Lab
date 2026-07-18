@@ -77,15 +77,15 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
   };
 
   return (
-    <div className="space-y-6 text-slate-900 dark:text-slate-100">
-      <div className="flex items-center gap-2 border-b border-slate-150 dark:border-white/5 pb-3">
+    <div className="space-y-8 text-slate-900 dark:text-slate-100">
+      <div className="flex items-center gap-2 border-b border-slate-150 dark:border-white/5 pb-4">
         <MessageSquare className="text-primary" size={16} />
-        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-900 dark:text-slate-200">Comments ({comments.length})</h3>
+        <h3 className="text-xs font-black uppercase tracking-[0.25em] text-slate-900 dark:text-slate-200">Comments & Discussion ({comments.length})</h3>
       </div>
-
+ 
       {/* Comment Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 gap-3">
+      <form onSubmit={handleSubmit} className="space-y-4 text-left">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="relative">
             <User size={13} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
             <input
@@ -93,7 +93,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your Name"
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-primary/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-bold text-xs"
+              className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-amber-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-bold text-xs transition-colors duration-300"
             />
           </div>
           <div className="relative">
@@ -103,7 +103,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Your Email"
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-primary/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-bold text-xs"
+              className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-amber-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-bold text-xs transition-colors duration-300"
             />
           </div>
         </div>
@@ -111,13 +111,13 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Share your thoughts on this chronicle..."
-          rows={3}
-          className="w-full p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-primary/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-semibold text-xs leading-relaxed resize-none"
+          rows={4}
+          className="w-full p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-amber-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-semibold text-xs leading-relaxed resize-none transition-colors duration-300"
         />
         <div className="flex justify-between items-center gap-4">
           {status && (
             <span className={cn(
-              "text-[9px] font-black uppercase tracking-widest",
+              "text-[9px] font-black uppercase tracking-widest animate-pulse",
               status.includes('successfully') ? "text-emerald-500" : "text-amber-500"
             )}>
               {status}
@@ -126,29 +126,29 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
           <button
             type="submit"
             disabled={commentMutation.isPending}
-            className="flex items-center gap-1.5 bg-primary text-white py-3 px-6 rounded-full font-black text-[9px] uppercase tracking-widest hover:opacity-90 transition-all shadow-md shrink-0 ml-auto select-none"
+            className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-white py-3.5 px-6 rounded-full font-black text-[9px] uppercase tracking-widest transition-all duration-300 shadow-md active:scale-95 shrink-0 ml-auto select-none cursor-pointer outline-none focus:outline-none"
           >
             <Send size={10} />
             <span>{commentMutation.isPending ? 'Sending...' : 'Post Comment'}</span>
           </button>
         </div>
       </form>
-
-      {/* Comments List */}
-      <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1 no-scrollbar border-t border-slate-150 dark:border-white/5 pt-4">
+ 
+      {/* Comments List - Rendered inline for bottom editorial layout */}
+      <div className="space-y-4 border-t border-slate-150 dark:border-white/5 pt-6">
         {isLoading ? (
-          <div className="animate-pulse space-y-3">
-            <div className="h-16 bg-slate-100 dark:bg-slate-900 rounded-2xl" />
-            <div className="h-16 bg-slate-100 dark:bg-slate-900 rounded-2xl" />
+          <div className="animate-pulse space-y-4">
+            <div className="h-20 bg-slate-100 dark:bg-slate-900 rounded-3xl" />
+            <div className="h-20 bg-slate-100 dark:bg-slate-900 rounded-3xl" />
           </div>
         ) : comments.length > 0 ? (
           comments.map((comment) => (
-            <div key={comment.id} className="p-4 rounded-[1.25rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-white/5 space-y-2">
+            <div key={comment.id} className="p-6 rounded-[2rem] bg-slate-50/70 dark:bg-slate-900/30 border border-slate-100 dark:border-white/5 space-y-3 transition-colors duration-300 hover:bg-slate-100/50 dark:hover:bg-slate-900/40">
               <div className="flex justify-between items-start gap-4">
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 text-left">
                   <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider truncate">{comment.authorName}</span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2.5 shrink-0">
                   <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1">
                     <Calendar size={10} />
                     {new Date(comment.createdAt).toLocaleDateString()}
@@ -156,7 +156,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
                   {isAdmin && (
                     <button
                       onClick={() => handleDeleteComment(comment.id)}
-                      className="text-red-500 hover:text-red-600 transition-colors p-1.5 hover:bg-red-500/10 rounded-xl"
+                      className="text-red-500 hover:text-red-650 transition-colors p-1.5 hover:bg-red-500/10 rounded-xl"
                       title="Delete comment"
                     >
                       <Trash2 size={12} />
@@ -164,11 +164,14 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
                   )}
                 </div>
               </div>
-              <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-semibold whitespace-pre-wrap break-words">{comment.content}</p>
+              <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-semibold whitespace-pre-wrap break-words text-left">{comment.content}</p>
             </div>
           ))
         ) : (
-          <p className="italic text-slate-400 dark:text-slate-500 text-[10px] text-center py-4">No comments yet. Be the first to share your thoughts!</p>
+          <div className="py-8 text-center space-y-2">
+            <p className="italic text-slate-450 dark:text-slate-500 text-[10px] uppercase tracking-widest font-black">No discussions yet</p>
+            <p className="text-slate-400 dark:text-slate-600 text-[10px] font-medium">Be the first to share your thoughts on this chronicle.</p>
+          </div>
         )}
       </div>
     </div>

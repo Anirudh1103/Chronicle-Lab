@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion, useScroll, useSpring } from 'framer-motion';
+import { motion, useScroll, useSpring, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 import { blogApi } from '../api/blog.api';
-import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote, Sparkles, Maximize2, BookOpen } from 'lucide-react';
+import { Clock, User, Calendar, ChevronLeft, Share2, Type, Eye, EyeOff, Quote, Sparkles, Maximize2, BookOpen, Compass, Home } from 'lucide-react';
 import { ReadingNavigator } from '../components/blog/ReadingNavigator';
+import { ReadingCompanion } from '../components/blog/ReadingCompanion';
+import { useReadingProgress } from '../hooks/useReadingProgress';
 import { Lightbox } from '../components/blog/Lightbox';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { stripHtml } from '../utils/stripHtml';
 
 // TTS & Glossary Imports
 import { highlightGlossary as highlightGlossaryOriginal } from '../utils/glossary';
@@ -21,6 +24,7 @@ import { CommentSection } from '../components/blog/CommentSection';
 import { createPortal } from 'react-dom';
 import { KnowledgeGraph } from '../components/blog/KnowledgeGraph';
 import { ChronicleCompletion } from '../components/blog/ChronicleCompletion';
+import { PostCard } from '../components/PostCard';
 import { useAuthStore } from '../store/authStore';
 import { X } from 'lucide-react';
 
@@ -103,13 +107,69 @@ export const BlogDetailsPage: React.FC = () => {
 
   globalGlossaryList = glossaryList;
 
+  // Load related posts from database
+  const { data: allPosts = [] } = useQuery<any[]>({
+    queryKey: ['posts'],
+    queryFn: async () => {
+      return blogApi.getAllPosts();
+    }
+  });
+
+  const relatedPosts = useMemo(() => {
+    if (!post) return [];
+    return allPosts
+      .filter((p: any) => p.id !== post.id && p.status === 'published' && p.category?.id === post.category?.id)
+      .slice(0, 3); // Display 3 related articles
+  }, [allPosts, post]);
+
   // Scroll variables
+  const [percent, setPercent] = useState(0);
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001
   });
+
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    setPercent(Math.round(latest * 100));
+  });
+
+  // Reading Companion Hooks
+  const { activeId } = useReadingProgress(post?.blocks || []);
+
+  const allHeadings = useMemo(() =>
+    (post?.blocks || []).filter((b: any) => (b.type === 'heading' || b.type === 'subheading') && b.content.level > 1 && stripHtml(b.content.text) !== ''),
+    [post?.blocks]
+  );
+
+  const activeHeadingBlock = useMemo(() => {
+    if (!activeId) return allHeadings[0] || null;
+    return allHeadings.find((h: any) => h.id === activeId) || allHeadings[0] || null;
+  }, [activeId, allHeadings]);
+
+  const remainingTimeMinutes = useMemo(() => {
+    const blocks = post?.blocks || [];
+    if (blocks.length === 0) return 0;
+
+    let activeBlockIndex = 0;
+    if (activeId) {
+      activeBlockIndex = blocks.findIndex((b: any) => b.id === activeId);
+      if (activeBlockIndex === -1) activeBlockIndex = 0;
+    }
+
+    let totalWords = 0;
+    for (let i = activeBlockIndex; i < blocks.length; i++) {
+      const block = blocks[i];
+      if (block.content && typeof block.content.text === 'string') {
+        const cleanText = stripHtml(block.content.text);
+        const words = cleanText.split(/\s+/).filter(Boolean).length;
+        totalWords += words;
+      }
+    }
+
+    return Math.max(1, Math.ceil(totalWords / 200));
+  }, [post?.blocks, activeId]);
 
   // TTS Narration Parsing
   const narrationChunks = useMemo(() => {
@@ -347,6 +407,27 @@ export const BlogDetailsPage: React.FC = () => {
                 <Share2 size={18} className="md:w-5 md:h-5" />
               </button>
             </div>
+
+            {/* Mobile/Tablet Reading Companion (Hidden on desktop) */}
+            <div className="block lg:hidden mt-6 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-4 text-left">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                <span className="text-amber-500">Active Reading Companion</span>
+                <span>{percent}% Read</span>
+              </div>
+              <div className="w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${percent}%` }} />
+              </div>
+              <div className="flex flex-col gap-2 pt-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                <div>
+                  <span className="text-slate-400 dark:text-slate-500 uppercase text-[9px] tracking-widest block mb-0.5">Current Section</span>
+                  <span className="text-slate-900 dark:text-white font-editorial italic text-sm">{activeHeadingBlock ? stripHtml(activeHeadingBlock.content.text) : 'Introduction'}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-white/5 mt-1">
+                  <span>Remaining Time:</span>
+                  <span className="font-black text-slate-900 dark:text-white">{remainingTimeMinutes} min left</span>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
       )}
@@ -354,7 +435,7 @@ export const BlogDetailsPage: React.FC = () => {
       <main className={cn(
         "mx-auto px-6 md:px-12 transition-all duration-700",
         !isFocusMode
-          ? "w-full max-w-[1800px] grid grid-cols-1 gap-16 lg:gap-24" + (hasPersonalInsights ? " lg:grid-cols-[1fr_400px]" : " lg:grid-cols-1")
+          ? "w-full max-w-[1800px] grid grid-cols-1 gap-16 lg:gap-24 lg:grid-cols-[1fr_400px]"
           : "max-w-5xl py-12 md:py-20"
       )}>
         <div className="w-full">
@@ -409,71 +490,81 @@ export const BlogDetailsPage: React.FC = () => {
               );
             })}
 
-            {/* Mobile Fallback: Reactions & Comments */}
-            <div className="block lg:hidden mt-12 pt-8 border-t border-slate-150 dark:border-white/5 space-y-8">
-              <Reactions postId={post.id} />
-              <CommentSection postId={post.id} />
-            </div>
           </div>
         </div>
-
+ 
         {/* Sidebar for desktop */}
         {!isFocusMode && (
           <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0">
             <div className="sticky top-32 space-y-8">
-              <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-6 shadow-sm backdrop-blur-xl">
-                <div className="flex items-center gap-3 text-primary">
-                  <User size={20} />
-                  <h4 className="text-xs font-black uppercase tracking-[0.2em]">Author</h4>
-                </div>
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-primary/20">
-                      {post.author.name[0]}
-                    </div>
-                    <div>
-                      <p className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-widest">{post.author.name}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Chronicle Lab</p>
-                    </div>
-                  </div>
-                  <p className="text-base text-slate-500 font-medium leading-relaxed border-t border-slate-100 dark:border-white/5 pt-6">
-                    {post.excerpt || "A deep dive exploration into the intersection of technology and history."}
-                  </p>
-                </div>
-              </div>
-
-              {hasPersonalInsights ? (
-                <>
-                  {/* Personal Insights Sidebar Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 px-6">
-                      <Sparkles size={14} className="text-primary" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Personal Insights</span>
-                    </div>
-                    {personalInsights.map((insight: any) => (
-                      <div key={insight.id} className="pl-6 py-4 border-l-4 border-primary bg-primary/5 dark:bg-primary/10 rounded-r-3xl rounded-l-none backdrop-blur-xl shadow-sm">
-                        <p className="text-sm md:text-base text-slate-850 dark:text-slate-100 font-bold leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
+              <AnimatePresence mode="wait">
+                {percent < 10 ? (
+                  <motion.div
+                    key="phase1"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.25 }}
+                    className="space-y-8 text-left"
+                  >
+                    {/* Author Card */}
+                    <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-6 shadow-sm backdrop-blur-xl">
+                      <div className="flex items-center gap-3 text-primary">
+                        <User size={20} />
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em]">Author</h4>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Likes/Dislikes & Comments */}
-                  <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-6">
-                    <Reactions postId={post.id} />
-                    <div className="border-t border-slate-150 dark:border-white/5 pt-6">
-                      <CommentSection postId={post.id} />
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-primary/20">
+                            {post.author.name[0]}
+                          </div>
+                          <div>
+                            <p className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-widest">{post.author.name}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Chronicle Lab</p>
+                          </div>
+                        </div>
+                        <p className="text-base text-slate-500 font-medium leading-relaxed border-t border-slate-100 dark:border-white/5 pt-6">
+                          {post.excerpt || "A deep dive exploration into the intersection of technology and history."}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </>
-              ) : (
-                /* In place of key insights: Likes/Dislikes & Comments */
-                <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-6">
-                  <Reactions postId={post.id} />
-                  <div className="border-t border-slate-150 dark:border-white/5 pt-6">
-                    <CommentSection postId={post.id} />
-                  </div>
-                </div>
-              )}
+
+                    {/* Personal Insights Card */}
+                    {hasPersonalInsights && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 px-6">
+                          <Sparkles size={14} className="text-primary" />
+                          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Personal Insights</span>
+                        </div>
+                        {personalInsights.map((insight: any) => (
+                          <div key={insight.id} className="pl-6 py-4 border-l-4 border-primary bg-primary/5 dark:bg-primary/10 rounded-r-3xl rounded-l-none backdrop-blur-xl shadow-sm">
+                            <p className="text-sm md:text-base text-slate-850 dark:text-slate-100 font-bold leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Rate Article Card */}
+                    <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-6 shadow-sm">
+                      <Reactions postId={post.id} />
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="phase2"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <ReadingCompanion
+                      blocks={post.blocks}
+                      activeId={activeId}
+                      percent={percent}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </aside>
         )}
@@ -487,6 +578,50 @@ export const BlogDetailsPage: React.FC = () => {
             user={user}
             activeSeconds={activeReadingSeconds}
           />
+
+          {/* Unified Reactions and Comments Section at the Bottom */}
+          <div className="p-8 md:p-12 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-8 max-w-4xl mx-auto">
+            <Reactions postId={post.id} />
+            <div className="border-t border-slate-150 dark:border-white/5 pt-8 text-left">
+              <CommentSection postId={post.id} />
+            </div>
+          </div>
+
+          {/* Related Articles - Continue Exploring */}
+          {relatedPosts.length > 0 && (
+            <div className="space-y-8 pt-8 border-t border-slate-100 dark:border-white/5 text-left max-w-5xl mx-auto select-none">
+              <div className="space-y-1">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Related Chronicles</h3>
+                <h2 className="text-2xl font-editorial italic font-black text-slate-900 dark:text-white">Continue Exploring</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                {relatedPosts.map((rPost, idx) => (
+                  <PostCard key={rPost.id} post={rPost} index={idx} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Relocated Goodbye Book Ending Footer */}
+          <div className="pt-8 text-center space-y-8 pb-10 max-w-xl mx-auto select-none">
+            <h3 className="font-editorial italic text-xl md:text-2xl font-black text-slate-900 dark:text-white leading-relaxed">
+              "Every chronicle ends, but curiosity never should."
+            </h3>
+            <div className="flex justify-center gap-4">
+              <Link
+                to="/library"
+                className="px-6 py-3.5 rounded-2xl border border-slate-200 dark:border-white/5 hover:border-primary text-slate-805 dark:text-white hover:text-primary text-xs font-black uppercase tracking-wider bg-white/30 dark:bg-slate-900/30 transition-all flex items-center gap-2"
+              >
+                <Compass size={14} /> Explore the Library
+              </Link>
+              <Link
+                to="/"
+                className="px-6 py-3.5 rounded-2xl bg-primary hover:bg-primary/95 text-white text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 shadow"
+              >
+                <Home size={14} /> Return Home
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 

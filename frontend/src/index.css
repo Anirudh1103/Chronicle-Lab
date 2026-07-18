@@ -184,3 +184,41 @@ table,
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   transition-duration: 500ms;
 }
+
+/* Typography and Spacing Overrides for Premium Editorial Width */
+#chronicle-content p {
+  max-width: 50rem; /* 800px - Perfect line length (~75-80 chars) for optimal readability */
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.8;
+}
+
+#chronicle-content h2, 
+#chronicle-content h3, 
+#chronicle-content h4 {
+  max-width: 50rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#chronicle-content ul, 
+#chronicle-content ol {
+  max-width: 50rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#chronicle-content blockquote {
+  max-width: 54rem; /* Slightly wider than standard paragraphs for visual accentuation */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#chronicle-content figure, 
+#chronicle-content table, 
+#chronicle-content .code-block,
+#chronicle-content .editor-image {
+  max-width: 100%; /* Allows rich media elements, tables, and pull quotes to scale to full layout width */
+  margin-left: auto;
+  margin-right: auto;
+}
