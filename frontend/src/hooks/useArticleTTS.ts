@@ -51,9 +51,9 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
         const loadedVoices = window.speechSynthesis.getVoices();
         setVoices(loadedVoices);
         
-        // Auto-select Google Hindi Female as default if no preference is stored or if it is Auto
+        // Auto-select Google Hindi Female as default if no preference is stored, if it is Auto, or if stored voice does not exist on this device (e.g. Google voice on iOS)
         const savedVoice = localStorage.getItem('chroniclelab_tts_voice');
-        if (!savedVoice || savedVoice === 'Auto') {
+        if (!savedVoice || savedVoice === 'Auto' || !loadedVoices.some(v => v.name === savedVoice)) {
           // 1. Try to find a female Hindi voice first (cfn is Google's Hindi Female voice code on Android)
           let googleHindi = loadedVoices.find(v => 
             v.lang.toLowerCase().startsWith('hi') && 
@@ -68,7 +68,7 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
             );
           }
 
-          // 3. Fall back to any Hindi voice
+          // 3. Fall back to any Hindi voice (like Lekha or Siri Hindi on iOS)
           if (!googleHindi) {
             googleHindi = loadedVoices.find(v => v.lang.toLowerCase().startsWith('hi'));
           }
@@ -99,13 +99,20 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
     if (voices.length === 0) return null;
 
     // 1. Respect user override if a specific voice is selected
-    if (selectedVoiceName !== 'Auto') {
-      const match = voices.find(v => v.name === selectedVoiceName);
-      if (match) return match;
+    let activeSelection = selectedVoiceName;
+    if (activeSelection !== 'Auto') {
+      const match = voices.find(v => v.name === activeSelection);
+      if (match) {
+        return match;
+      } else {
+        // Stored voice name does not exist on this device (e.g. Google voice on iOS)
+        // Fallback to Auto routing
+        activeSelection = 'Auto';
+      }
     }
 
-    // 2. Prioritize Google Hindi Female for any content (default voice model) if voice setting is Auto
-    if (selectedVoiceName === 'Auto') {
+    // 2. Prioritize Google Hindi Female for any content (default voice model) if voice setting is Auto or fallback is active
+    if (activeSelection === 'Auto') {
       let googleHindiVoice = voices.find(v => 
         v.lang.toLowerCase().startsWith('hi') && 
         (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('cfn') || v.name.toLowerCase().includes('woman'))
@@ -123,13 +130,13 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
     }
 
     // 3. Prioritize Microsoft Mark as default if using Auto
-    if (selectedVoiceName === 'Auto') {
+    if (activeSelection === 'Auto') {
       const markVoice = voices.find(v => v.name.toLowerCase().includes('microsoft mark'));
       if (markVoice) return markVoice;
     }
 
     // 4. Prioritize Indian English (en-IN) voices for English content if Mark isn't available
-    if (selectedVoiceName === 'Auto' && lang.toLowerCase().startsWith('en')) {
+    if (activeSelection === 'Auto' && lang.toLowerCase().startsWith('en')) {
       const indianVoice = voices.find(v => v.lang.toLowerCase() === 'en-in' || v.lang.toLowerCase().startsWith('en-in'));
       if (indianVoice) return indianVoice;
     }

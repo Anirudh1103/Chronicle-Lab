@@ -23,7 +23,7 @@ out/
 
 # Backend specific
 backend/.env
-backend/uploads/*
+# backend/uploads/*
 !backend/uploads/.gitkeep
 backend/dist/
 
