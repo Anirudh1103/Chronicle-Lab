@@ -36,9 +36,12 @@ model Post {
   coverImageCaption String?
   views             Int        @default(0)
   likes             Int        @default(0)
+  dislikes          Int        @default(0)
+  shares            Int        @default(0)
   reactionHistoric  Int        @default(0)
   reactionBrilliant Int        @default(0)
   reactionInsightful Int       @default(0)
+  comments          Comment[]
   readingTime       Int        @default(0)
   wordCount         Int        @default(0)
   authorId          String
@@ -53,6 +56,8 @@ model Post {
   twitterImage      String?
   schemaType        String     @default("Article")
   robotsIndex       Boolean    @default(true)
+  completionQuote   String?
+  completionQuoteAuthor String?
   publishedAt       DateTime?
   scheduledAt       DateTime?
   createdAt         DateTime   @default(now())
@@ -200,5 +205,17 @@ model PageView {
 
   @@index([postId])
   @@index([timestamp])
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  postId      String
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorName  String
+  authorEmail String
+  content     String
+  createdAt   DateTime @default(now())
+  isHidden    Boolean  @default(false)
+  adminReply  String?
 }
 

@@ -19,6 +19,7 @@ import { NewsletterUnsubscribePage } from './pages/NewsletterUnsubscribePage';
 
 import { BlogEditorPage } from './pages/BlogEditorPage';
 import { CommandCenter } from './components/CommandCenter';
+import { cn } from './utils/cn';
 
 function App() {
   const [showIntro, setShowIntro] = useState(() => {
@@ -57,7 +58,7 @@ function App() {
     if (!user || !logout) return;
 
     let timeoutId: any;
-    const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutes
+    const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 minutes
 
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
@@ -133,7 +134,10 @@ function App() {
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1 flex flex-col relative z-10"
             >
-              <main className="pt-24 px-6 max-w-7xl mx-auto flex-1 w-full">
+              <main className={cn(
+                "pt-24 flex-1 w-full",
+                isAdminPath ? "px-0 max-w-full" : "px-6 max-w-7xl mx-auto"
+              )}>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />

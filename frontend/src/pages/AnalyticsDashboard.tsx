@@ -30,6 +30,8 @@ interface TopPost {
   slug: string;
   views: number;
   likes: number;
+  dislikes: number;
+  shares?: number;
   category?: { name: string };
 }
 
@@ -283,9 +285,18 @@ export function AnalyticsDashboard() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 text-right shrink-0">
-                        <span className="text-xs font-black">{post.views}</span>
-                        <Eye size={12} className="text-slate-400" />
+                      <div className="flex items-center gap-4 text-right shrink-0 text-xs font-bold text-slate-400">
+                        <div className="flex items-center gap-1">
+                          <span>{post.views}</span>
+                          <Eye size={12} />
+                        </div>
+                        <div className="flex items-center gap-2 border-l border-white/10 pl-3">
+                          <span className="text-emerald-500">{post.likes} 👍</span>
+                          <span className="text-red-500">{post.dislikes || 0} 👎</span>
+                        </div>
+                        <div className="flex items-center gap-1 border-l border-white/10 pl-3">
+                          <span>{post.shares || 0} 🗣️</span>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -417,7 +428,9 @@ export function AnalyticsDashboard() {
                             {log.event}
                           </span>
                         </td>
-                        <td className="p-4 text-slate-400 font-mono">{log.ipAddress || 'unknown'}</td>
+                        <td className="p-4 text-slate-400 font-mono">
+                          {log.ipAddress === '::1' || log.ipAddress === '127.0.0.1' ? '127.0.0.1 (Localhost)' : (log.ipAddress || 'unknown')}
+                        </td>
                         <td className="p-4 text-slate-400 font-medium">{log.os || 'unknown'}</td>
                         <td className="p-4 text-slate-400 font-medium">{log.browser || 'unknown'}</td>
                       </tr>

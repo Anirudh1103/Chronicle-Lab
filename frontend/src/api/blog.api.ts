@@ -54,6 +54,51 @@ export const blogApi = {
     return response.data;
   },
 
+  likePost: async (id: string) => {
+    const response = await api.post(`/posts/${id}/like`);
+    return response.data;
+  },
+
+  dislikePost: async (id: string) => {
+    const response = await api.post(`/posts/${id}/dislike`);
+    return response.data;
+  },
+
+  sharePost: async (id: string) => {
+    const response = await api.post(`/posts/${id}/share`);
+    return response.data;
+  },
+
+  getComments: async (postId: string) => {
+    const response = await api.get(`/posts/${postId}/comments`);
+    return response.data;
+  },
+
+  addComment: async (postId: string, payload: { authorName: string; authorEmail: string; content: string }) => {
+    const response = await api.post(`/posts/${postId}/comments`, payload);
+    return response.data;
+  },
+
+  getAllComments: async () => {
+    const response = await api.get('/posts/admin/comments');
+    return response.data;
+  },
+
+  deleteComment: async (id: string) => {
+    const response = await api.delete(`/posts/admin/comments/${id}`);
+    return response.data;
+  },
+
+  toggleCommentVisibility: async (id: string) => {
+    const response = await api.patch(`/posts/admin/comments/${id}/visibility`);
+    return response.data;
+  },
+
+  replyToComment: async (id: string, reply: string) => {
+    const response = await api.patch(`/posts/admin/comments/${id}/reply`, { reply });
+    return response.data;
+  },
+
   getStats: async () => {
     const response = await api.get('/posts/stats');
     return response.data;

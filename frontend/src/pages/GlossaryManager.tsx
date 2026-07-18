@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Plus, Trash2, Edit3, X, AlertCircle, Save } from 'lucide-react';
 import api from '../api/client';
 import { cn } from '../utils/cn';
+import { createPortal } from 'react-dom';
 
 interface GlossaryTerm {
   id: string;
   term: string;
   definition: string;
-  category: 'history' | 'technology' | 'cybersecurity';
+  category: string;
   createdAt: string;
 }
 
@@ -21,7 +22,7 @@ export function GlossaryManager() {
   // Form fields
   const [term, setTerm] = useState('');
   const [definition, setDefinition] = useState('');
-  const [category, setCategory] = useState<'history' | 'technology' | 'cybersecurity'>('history');
+  const [category, setCategory] = useState<string>('history');
   const [error, setError] = useState<string | null>(null);
 
   // Fetch glossary terms
@@ -31,6 +32,20 @@ export function GlossaryManager() {
       const { data } = await api.get('glossary');
       return data;
     }
+  });
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+
+  const filteredTerms = terms.filter((item) => {
+    const matchesSearch = 
+      item.term.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.definition.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const matchesCategory = filterCategory === 'all' || item.category.toLowerCase() === filterCategory.toLowerCase();
+    
+    return matchesSearch && matchesCategory;
   });
 
   // Create/Update Mutation
@@ -117,10 +132,37 @@ export function GlossaryManager() {
         </div>
         <button
           onClick={openNewForm}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 rounded-2xl font-black hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+          className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3.5 rounded-2xl font-black hover:opacity-90 transition-all shadow-lg shadow-primary/20 hover:scale-105 active:scale-95"
         >
           <Plus size={20} /> Add Term
         </button>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="flex flex-col md:flex-row gap-4 w-full glass p-4 rounded-3xl border border-white/5">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search glossary by word, definition or category..."
+          className="flex-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-2xl py-3 px-5 outline-none focus:border-primary/50 text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+        />
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-2xl py-3 px-5 outline-none focus:border-primary/50 text-xs font-bold text-slate-800 dark:text-white"
+        >
+          <option value="all">All Categories</option>
+          <option value="history">History</option>
+          <option value="technology">Technology</option>
+          <option value="cybersecurity">Cyber Security</option>
+          <option value="military">Military</option>
+          <option value="politics">Politics</option>
+          <option value="android">Android</option>
+          <option value="networking">Networking</option>
+          <option value="programming">Programming</option>
+          <option value="general">General</option>
+        </select>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
@@ -138,22 +180,30 @@ export function GlossaryManager() {
             <p className="italic font-medium text-muted-foreground">The glossary dictionary is empty.</p>
             <p className="text-[10px] uppercase font-black tracking-widest opacity-40">Add terms to trigger automatic inline hover definitions</p>
           </div>
+        ) : filteredTerms.length === 0 ? (
+          <div className="glass p-20 rounded-[3rem] text-center border-white/5 space-y-4">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto opacity-20">
+              <X size={32} />
+            </div>
+            <p className="italic font-medium text-muted-foreground">No matches found for your search query.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {terms.map((item) => (
+            {filteredTerms.map((item) => (
               <motion.div
                 layout
                 key={item.id}
-                className="glass p-6 rounded-[2rem] border-white/5 space-y-4 flex flex-col justify-between"
+                className="glass p-6 rounded-[2rem] border-white/5 space-y-4 flex flex-col justify-between hover:border-primary/20 transition-all duration-300"
               >
                 <div className="space-y-2">
                   <div className="flex justify-between items-start gap-4">
                     <h3 className="text-2xl font-black tracking-tight">{item.term}</h3>
                     <span className={cn(
-                      "text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-full text-white",
-                      item.category === 'history' && 'bg-amber-500/20 text-amber-400 border border-amber-500/20',
-                      item.category === 'technology' && 'bg-blue-500/20 text-blue-400 border border-blue-500/20',
-                      item.category === 'cybersecurity' && 'bg-red-500/20 text-red-400 border border-red-500/20'
+                      "text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-full text-white border",
+                      item.category.toLowerCase() === 'history' ? 'bg-amber-500/20 text-amber-400 border-amber-500/20' :
+                      item.category.toLowerCase() === 'technology' ? 'bg-blue-500/20 text-blue-400 border-blue-500/20' :
+                      item.category.toLowerCase() === 'cybersecurity' ? 'bg-red-500/20 text-red-400 border-red-500/20' :
+                      'bg-slate-500/20 text-slate-400 border-slate-500/20'
                     )}>
                       {item.category}
                     </span>
@@ -183,19 +233,19 @@ export function GlossaryManager() {
 
       {/* Editor Modal */}
       <AnimatePresence>
-        {isEditing && (
+        {isEditing && createPortal(
           <div className="fixed inset-0 z-[20000] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass p-8 rounded-[2.5rem] w-full max-w-lg space-y-6 shadow-2xl border-white/10 relative overflow-hidden"
+              className="glass p-8 rounded-[2.5rem] w-full max-w-lg space-y-6 shadow-2xl border-white/10 relative overflow-hidden text-slate-900 dark:text-white"
             >
               <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-black tracking-tight">
+                <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
                   {selectedTerm ? 'Edit Term' : 'Add Term'}
                 </h2>
-                <button onClick={closeForm} className="p-2 hover:bg-white/10 rounded-full transition-all text-slate-400 hover:text-white">
+                <button onClick={closeForm} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all text-slate-400 hover:text-slate-800 dark:hover:text-white">
                   <X size={20} />
                 </button>
               </div>
@@ -215,7 +265,7 @@ export function GlossaryManager() {
                     value={term}
                     onChange={(e) => setTerm(e.target.value)}
                     placeholder="e.g. Deccan"
-                    className="w-full bg-slate-900 border border-white/10 rounded-2xl py-4 px-5 outline-none focus:border-primary/50 text-white font-bold"
+                    className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl py-4 px-5 outline-none focus:border-primary/50 text-slate-900 dark:text-white font-bold"
                   />
                   {selectedTerm && (
                     <p className="text-[9px] text-slate-500 font-medium px-1">
@@ -231,7 +281,7 @@ export function GlossaryManager() {
                     onChange={(e) => setDefinition(e.target.value)}
                     placeholder="Provide a clear, brief historical or technical definition..."
                     rows={4}
-                    className="w-full bg-slate-900 border border-white/10 rounded-2xl py-4 px-5 outline-none focus:border-primary/50 text-white font-medium leading-relaxed resize-none"
+                    className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl py-4 px-5 outline-none focus:border-primary/50 text-slate-900 dark:text-white font-medium leading-relaxed resize-none"
                   />
                 </div>
 
@@ -239,12 +289,18 @@ export function GlossaryManager() {
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Category Tag</label>
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-white/10 rounded-2xl py-4 px-5 outline-none focus:border-primary/50 text-white font-bold"
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl py-4 px-5 outline-none focus:border-primary/50 text-slate-900 dark:text-white font-bold"
                   >
                     <option value="history">History</option>
                     <option value="technology">Technology</option>
-                    <option value="cybersecurity">CyberSecurity</option>
+                    <option value="cybersecurity">Cyber Security</option>
+                    <option value="military">Military</option>
+                    <option value="politics">Politics</option>
+                    <option value="android">Android</option>
+                    <option value="networking">Networking</option>
+                    <option value="programming">Programming</option>
+                    <option value="general">General</option>
                   </select>
                 </div>
 
@@ -257,7 +313,8 @@ export function GlossaryManager() {
                 </button>
               </form>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
     </div>

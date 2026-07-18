@@ -251,20 +251,20 @@ export function ArticleAudioPlayer({
                 </button>
 
                 {showVoiceMenu && (
-                  <div className="absolute right-0 bottom-full mb-2 w-64 max-h-60 overflow-y-auto no-scrollbar bg-slate-900 border border-white/10 rounded-2xl shadow-xl py-1.5 z-[210] animate-in fade-in slide-in-from-bottom-2 duration-200">
+                  <div className="absolute right-0 bottom-full mb-2 w-64 max-h-60 overflow-y-auto no-scrollbar bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl py-1.5 z-[210] animate-in fade-in slide-in-from-bottom-2 duration-200">
                     <button
                       onClick={() => {
                         setVoice('Auto');
                         setShowVoiceMenu(false);
                       }}
                       className={cn(
-                        "w-full text-left px-4 py-2 text-xs font-bold transition-colors text-slate-400 hover:text-white hover:bg-white/5",
+                        "w-full text-left px-4 py-2 text-xs font-bold transition-colors text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5",
                         selectedVoiceName === 'Auto' && "text-primary hover:text-primary bg-primary/5"
                       )}
                     >
                       System Default (Auto)
                     </button>
-                    <div className="h-px bg-white/5 my-1" />
+                    <div className="h-px bg-slate-200 dark:bg-white/5 my-1" />
                     {voices.map((v) => (
                       <button
                         key={v.name}
@@ -273,12 +273,12 @@ export function ArticleAudioPlayer({
                           setShowVoiceMenu(false);
                         }}
                         className={cn(
-                          "w-full text-left px-4 py-2 text-xs font-bold transition-colors text-slate-400 hover:text-white hover:bg-white/5 flex flex-col gap-0.5",
+                          "w-full text-left px-4 py-2 text-xs font-bold transition-colors text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 flex flex-col gap-0.5",
                           selectedVoiceName === v.name && "text-primary hover:text-primary bg-primary/5"
                         )}
                       >
                         <span className="truncate">{v.name}</span>
-                        <span className="text-[9px] text-slate-500 font-medium">({v.lang})</span>
+                        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">({v.lang})</span>
                       </button>
                     ))}
                   </div>

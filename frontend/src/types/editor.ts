@@ -46,6 +46,8 @@ export interface PostMetadata {
   categoryId?: string;
   tagIds: string[];
   authorId: string;
+  completionQuote?: string;
+  completionQuoteAuthor?: string;
 }
 
 export interface SEOMetadata {

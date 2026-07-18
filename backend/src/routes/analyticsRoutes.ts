@@ -139,6 +139,8 @@ router.get('/overview', protect, admin, async (req, res) => {
         slug: true,
         views: true,
         likes: true,
+        dislikes: true,
+        shares: true,
         category: { select: { name: true } }
       }
     });

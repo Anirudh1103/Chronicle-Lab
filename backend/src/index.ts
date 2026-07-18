@@ -73,13 +73,88 @@ async function ensureCategories() {
   console.log('Default categories verified/created successfully.');
 }
 
+async function deduplicateAndSetupIndexes() {
+  try {
+    // 1. De-duplicate GlossaryTerm
+    const glossaryTerms = await prisma.glossaryTerm.findMany();
+    const glossarySeen = new Map<string, string>();
+    
+    for (const gt of glossaryTerms) {
+      const normalized = gt.term.trim().replace(/\s+/g, ' ').toLowerCase();
+      if (glossarySeen.has(normalized)) {
+        const keepId = glossarySeen.get(normalized)!;
+        const keepGt = glossaryTerms.find(x => x.id === keepId)!;
+        if (gt.definition.length > keepGt.definition.length) {
+          await prisma.glossaryTerm.delete({ where: { id: keepId } });
+          glossarySeen.set(normalized, gt.id);
+          console.log(`De-duplicated Glossary: Removed duplicate for "${gt.term}"`);
+        } else {
+          await prisma.glossaryTerm.delete({ where: { id: gt.id } });
+          console.log(`De-duplicated Glossary: Removed duplicate for "${gt.term}"`);
+        }
+      } else {
+        glossarySeen.set(normalized, gt.id);
+      }
+    }
+
+    // 2. De-duplicate Quotes
+    const quotes = await prisma.quote.findMany();
+    const quotesSeen = new Map<string, string>();
+
+    for (const q of quotes) {
+      const normalized = q.text.trim().replace(/\s+/g, ' ').toLowerCase();
+      if (quotesSeen.has(normalized)) {
+        const keepId = quotesSeen.get(normalized)!;
+        const keepQ = quotes.find(x => x.id === keepId)!;
+        const qScore = (q.meaning?.length || 0) + (q.translation?.length || 0);
+        const keepScore = (keepQ.meaning?.length || 0) + (keepQ.translation?.length || 0);
+        if (qScore > keepScore) {
+          await prisma.quote.delete({ where: { id: keepId } });
+          quotesSeen.set(normalized, q.id);
+          console.log(`De-duplicated Quote: Kept richer translation/meaning version`);
+        } else {
+          await prisma.quote.delete({ where: { id: q.id } });
+          console.log(`De-duplicated Quote: Removed duplicate version`);
+        }
+      } else {
+        quotesSeen.set(normalized, q.id);
+      }
+    }
+
+    // 3. Create Case-Insensitive Unique Indexes in PostgreSQL
+    await prisma.$executeRawUnsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS glossary_term_lower_idx ON "GlossaryTerm" (LOWER(TRIM(regexp_replace(term, '\\s+', ' ', 'g'))));
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS quote_text_lower_idx ON "Quote" (LOWER(TRIM(regexp_replace(text, '\\s+', ' ', 'g'))));
+    `);
+    console.log('PostgreSQL case-insensitive unique indexes verified/created successfully.');
+  } catch (err) {
+    console.error('Error during deduplicateAndSetupIndexes:', err);
+  }
+}
+
 async function ensureGlossaryTerms() {
   for (const item of DEFAULT_GLOSSARY) {
-    await prisma.glossaryTerm.upsert({
-      where: { term: item.term },
-      update: { definition: item.definition, category: item.category },
-      create: item,
+    const normalized = item.term.trim().replace(/\s+/g, ' ').toLowerCase();
+    const existing = await prisma.glossaryTerm.findFirst({
+      where: {
+        term: {
+          equals: normalized,
+          mode: 'insensitive'
+        }
+      }
     });
+    if (existing) {
+      await prisma.glossaryTerm.update({
+        where: { id: existing.id },
+        data: { term: item.term, definition: item.definition, category: item.category }
+      });
+    } else {
+      await prisma.glossaryTerm.create({
+        data: item
+      });
+    }
   }
   console.log('Default glossary terms verified/created successfully.');
 }
@@ -89,7 +164,9 @@ app.listen(port, () => {
   ensureCategories().catch(err => {
     console.error('Error ensuring default categories:', err);
   });
-  ensureGlossaryTerms().catch(err => {
-    console.error('Error ensuring default glossary terms:', err);
+  deduplicateAndSetupIndexes().then(() => {
+    ensureGlossaryTerms().catch(err => {
+      console.error('Error ensuring default glossary terms:', err);
+    });
   });
 });

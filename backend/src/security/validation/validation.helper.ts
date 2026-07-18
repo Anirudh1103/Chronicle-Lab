@@ -22,5 +22,5 @@ export const mfaVerifySchema = z.object({
 export const glossaryTermSchema = z.object({
   term: z.string().min(1, 'Glossary term is required'),
   definition: z.string().min(1, 'Definition description is required'),
-  category: z.enum(['history', 'technology', 'cybersecurity']),
+  category: z.string().min(1, 'Category tag is required'),
 });

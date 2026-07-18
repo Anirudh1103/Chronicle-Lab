@@ -2,8 +2,8 @@ export const SECURITY_CONFIG = {
   // Only email address allowed to access Admin Portal
   ADMIN_EMAIL: 'cmanirudh03@gmail.com',
 
-  // Session activity timeouts (15 minutes in milliseconds)
-  SESSION_TIMEOUT_MS: 15 * 60 * 1000,
+  // Session activity timeouts (10 minutes in milliseconds)
+  SESSION_TIMEOUT_MS: 10 * 60 * 1000,
 
   // Authentication Lockout controls
   RATE_LIMIT: {

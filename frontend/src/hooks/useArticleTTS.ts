@@ -50,7 +50,13 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
       if (match) return match;
     }
 
-    // 2. Prioritize Indian English (en-IN) voices for English content if using Auto
+    // 2. Prioritize Microsoft Mark as default if using Auto
+    if (selectedVoiceName === 'Auto') {
+      const markVoice = voices.find(v => v.name.toLowerCase().includes('microsoft mark'));
+      if (markVoice) return markVoice;
+    }
+
+    // 3. Prioritize Indian English (en-IN) voices for English content if Mark isn't available
     if (selectedVoiceName === 'Auto' && lang.toLowerCase().startsWith('en')) {
       const indianVoice = voices.find(v => v.lang.toLowerCase() === 'en-in' || v.lang.toLowerCase().startsWith('en-in'));
       if (indianVoice) return indianVoice;

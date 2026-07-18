@@ -16,6 +16,13 @@ import { ArticleAudioPlayer } from '../components/blog/ArticleAudioPlayer';
 import { ArticleAudioMiniPlayer } from '../components/blog/ArticleAudioMiniPlayer';
 import { useQuery } from '@tanstack/react-query';
 import api from '../api/client';
+import { Reactions } from '../components/blog/Reactions';
+import { CommentSection } from '../components/blog/CommentSection';
+import { createPortal } from 'react-dom';
+import { KnowledgeGraph } from '../components/blog/KnowledgeGraph';
+import { ChronicleCompletion } from '../components/blog/ChronicleCompletion';
+import { useAuthStore } from '../store/authStore';
+import { X } from 'lucide-react';
 
 const CodeBlockDetails: React.FC<{ content: any }> = ({ content }) => {
   const [copied, setCopied] = useState(false);
@@ -61,6 +68,25 @@ export const BlogDetailsPage: React.FC = () => {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [fontTheme, setFontTheme] = useState<'serif' | 'sans'>('serif');
   const [activeImage, setActiveImage] = useState<{src: string, alt?: string, caption?: string} | null>(null);
+
+  const { user } = useAuthStore();
+  const [selectedGlossaryTerm, setSelectedGlossaryTerm] = useState<{ term: string; definition: string } | null>(null);
+  const [activeReadingSeconds, setActiveReadingSeconds] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        setActiveReadingSeconds(prev => prev + 1);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTimer = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Glossary states
   const [activeTerm, setActiveTerm] = useState<{ term: string; definition: string } | null>(null);
@@ -177,17 +203,6 @@ export const BlogDetailsPage: React.FC = () => {
     setActiveTerm(null);
   };
 
-  const handleGlossaryLeave = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const relatedTarget = e.relatedTarget as HTMLElement;
-    
-    if (target.classList.contains('glossary-term')) {
-      if (!relatedTarget || !relatedTarget.classList.contains('glossary-term')) {
-        setActiveTerm(null);
-      }
-    }
-  };
-
   const scrollToPlayer = () => {
     if (playerRef.current) {
       playerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -226,6 +241,9 @@ export const BlogDetailsPage: React.FC = () => {
     };
 
     try {
+      if (post?.id) {
+        await blogApi.sharePost(post.id);
+      }
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
@@ -264,6 +282,11 @@ export const BlogDetailsPage: React.FC = () => {
 
       {/* Reader Controls Toolbar */}
       <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-2 p-2 glass rounded-2xl border border-white/10 shadow-2xl">
+         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-xl font-mono text-[10px] font-black tracking-wider select-none shrink-0">
+           <Clock size={11} className="animate-spin" style={{ animationDuration: '8s' }} />
+           <span>{formatTimer(activeReadingSeconds)}</span>
+         </div>
+         <div className="w-px h-4 bg-slate-200 dark:bg-slate-800" />
          <button
           onClick={() => setIsFocusMode(!isFocusMode)}
           className={cn("p-2 rounded-xl transition-all", isFocusMode ? "bg-primary text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500")}
@@ -365,7 +388,7 @@ export const BlogDetailsPage: React.FC = () => {
               hasPersonalInsights ? "lg:max-w-[1200px] xl:max-w-[1300px]" : "max-w-[1450px]"
             )}
             onMouseOver={handleGlossaryInteraction}
-            onMouseOut={handleGlossaryLeave}
+            onMouseLeave={() => setActiveTerm(null)}
             onClick={handleGlossaryInteraction}
           >
             {mainContentBlocks.map((block: any) => {
@@ -385,50 +408,111 @@ export const BlogDetailsPage: React.FC = () => {
                 </div>
               );
             })}
+
+            {/* Mobile Fallback: Reactions & Comments */}
+            <div className="block lg:hidden mt-12 pt-8 border-t border-slate-150 dark:border-white/5 space-y-8">
+              <Reactions postId={post.id} />
+              <CommentSection postId={post.id} />
+            </div>
           </div>
         </div>
 
         {/* Sidebar for desktop */}
-        {!isFocusMode && hasPersonalInsights && (
-          <aside className="hidden lg:block">
-           <div className="sticky top-32 space-y-12">
-              <div className="p-10 rounded-[3rem] bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-8 shadow-sm backdrop-blur-xl">
-                 <div className="flex items-center gap-3 text-primary">
-                    <User size={20} />
-                    <h4 className="text-xs font-black uppercase tracking-[0.2em]">Author</h4>
-                 </div>
-                 <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                       <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-primary/20">
-                          {post.author.name[0]}
-                       </div>
-                       <div>
-                          <p className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-widest">{post.author.name}</p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Chronicle Lab</p>
-                       </div>
+        {!isFocusMode && (
+          <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0">
+            <div className="sticky top-32 space-y-8">
+              <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-6 shadow-sm backdrop-blur-xl">
+                <div className="flex items-center gap-3 text-primary">
+                  <User size={20} />
+                  <h4 className="text-xs font-black uppercase tracking-[0.2em]">Author</h4>
+                </div>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-primary/20">
+                      {post.author.name[0]}
                     </div>
-                    <p className="text-base text-slate-500 font-medium leading-relaxed border-t border-slate-100 dark:border-white/5 pt-6">
-                      {post.excerpt || "A deep dive exploration into the intersection of technology and history."}
-                    </p>
-                 </div>
+                    <div>
+                      <p className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-widest">{post.author.name}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Chronicle Lab</p>
+                    </div>
+                  </div>
+                  <p className="text-base text-slate-500 font-medium leading-relaxed border-t border-slate-100 dark:border-white/5 pt-6">
+                    {post.excerpt || "A deep dive exploration into the intersection of technology and history."}
+                  </p>
+                </div>
               </div>
 
-              {/* Personal Insights Sidebar Section */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-2 px-6">
-                  <Sparkles size={14} className="text-primary" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Personal Insights</span>
-                </div>
-                {personalInsights.map((insight: any) => (
-                  <div key={insight.id} className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-white/5 backdrop-blur-xl shadow-sm dark:shadow-xl">
-                      <p className="text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
+              {hasPersonalInsights ? (
+                <>
+                  {/* Personal Insights Sidebar Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-6">
+                      <Sparkles size={14} className="text-primary" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Personal Insights</span>
+                    </div>
+                    {personalInsights.map((insight: any) => (
+                      <div key={insight.id} className="pl-6 py-4 border-l-4 border-primary bg-primary/5 dark:bg-primary/10 rounded-r-3xl rounded-l-none backdrop-blur-xl shadow-sm">
+                        <p className="text-sm md:text-base text-slate-850 dark:text-slate-100 font-bold leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-           </div>
-        </aside>
+
+                  {/* Likes/Dislikes & Comments */}
+                  <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-6">
+                    <Reactions postId={post.id} />
+                    <div className="border-t border-slate-150 dark:border-white/5 pt-6">
+                      <CommentSection postId={post.id} />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* In place of key insights: Likes/Dislikes & Comments */
+                <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-6">
+                  <Reactions postId={post.id} />
+                  <div className="border-t border-slate-150 dark:border-white/5 pt-6">
+                    <CommentSection postId={post.id} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </aside>
         )}
       </main>
+
+      {/* Chronicle Reading Completion Experience */}
+      {!isFocusMode && (
+        <div className="max-w-7xl mx-auto px-6 mt-16 space-y-16">
+          <ChronicleCompletion
+            post={post}
+            user={user}
+            activeSeconds={activeReadingSeconds}
+          />
+        </div>
+      )}
+
+      {/* Selected Glossary Modal */}
+      {selectedGlossaryTerm && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="glass max-w-lg w-full p-8 rounded-[3rem] border border-slate-200 dark:border-white/10 relative shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+            <button
+              onClick={() => setSelectedGlossaryTerm(null)}
+              className="absolute top-6 right-6 p-2.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all hover:bg-slate-200 dark:hover:bg-white/10"
+            >
+              <X size={16} />
+            </button>
+            <div className="flex items-center gap-3 text-primary">
+              <BookOpen size={24} />
+              <h4 className="font-black text-xs uppercase tracking-[0.2em]">Glossary Definition</h4>
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-3xl font-editorial italic font-black text-slate-900 dark:text-white">{selectedGlossaryTerm.term}</h3>
+              <p className="text-slate-650 dark:text-slate-300 leading-relaxed font-medium">
+                {selectedGlossaryTerm.definition}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sticky Mini Player */}
       <ArticleAudioMiniPlayer
@@ -456,7 +540,7 @@ export const BlogDetailsPage: React.FC = () => {
       )}
 
       {/* Floating Glossary Tooltip Popover */}
-      {activeTerm && (
+      {activeTerm && createPortal(
         <div
           style={{
             position: 'fixed',
@@ -464,7 +548,7 @@ export const BlogDetailsPage: React.FC = () => {
             top: `${tooltipPos.y}px`,
             transform: 'translate(-50%, -100%)',
           }}
-          className="z-[250] w-72 p-5 bg-slate-950/95 dark:bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-md text-slate-100 pointer-events-none space-y-2 animate-in fade-in zoom-in-95 duration-200"
+          className="z-[9999] w-72 p-5 bg-slate-950/95 dark:bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-md text-slate-100 pointer-events-none space-y-2 animate-in fade-in zoom-in-95 duration-200"
         >
           <div className="flex items-center gap-2 text-primary">
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
@@ -473,7 +557,8 @@ export const BlogDetailsPage: React.FC = () => {
           <p className="text-xs text-slate-350 dark:text-slate-300 leading-relaxed font-medium">
             {activeTerm.definition}
           </p>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

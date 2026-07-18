@@ -62,6 +62,8 @@ export const BlogEditorPage: React.FC = () => {
             coverImageCaption: post.coverImageCaption,
             categoryId: post.categoryId,
             tagIds: post.tags?.map((t: any) => t.id) || [],
+            completionQuote: post.completionQuote || '',
+            completionQuoteAuthor: post.completionQuoteAuthor || '',
           });
           setSEO({
             seoTitle: post.seoTitle,

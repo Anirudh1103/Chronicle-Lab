@@ -20,6 +20,10 @@ router.get('/', async (req, res) => {
   }
 });
 
+function normalizeTerm(str: string): string {
+  return str.trim().replace(/\s+/g, ' ');
+}
+
 /**
  * Admin endpoint: Create or update a glossary definition.
  */
@@ -30,10 +34,28 @@ router.post('/', protect, admin, async (req, res) => {
     // Validate core fields
     glossaryTermSchema.parse({ term, definition, category });
 
+    const normalizedTerm = normalizeTerm(term);
+
+    // Case-insensitive duplicate check
+    const existing = await prisma.glossaryTerm.findFirst({
+      where: {
+        term: {
+          equals: normalizedTerm,
+          mode: 'insensitive'
+        }
+      }
+    });
+
+    if (existing) {
+      if (!id || existing.id !== id) {
+        return res.status(400).json({ message: 'This glossary term already exists.' });
+      }
+    }
+
     const result = await prisma.glossaryTerm.upsert({
-      where: id ? { id } : { term },
-      update: { term, definition, category },
-      create: { term, definition, category }
+      where: id ? { id } : { term: normalizedTerm },
+      update: { term: normalizedTerm, definition, category },
+      create: { term: normalizedTerm, definition, category }
     });
     res.status(201).json(result);
   } catch (error: any) {

@@ -100,6 +100,28 @@ export const EditorSidebar: React.FC = () => {
                   placeholder="Short summary for cards..."
                 />
               </label>
+
+              <label className="block pt-2">
+                <span className="text-xs font-bold text-slate-500 uppercase">Completion Quote</span>
+                <textarea
+                  value={metadata.completionQuote || ''}
+                  onChange={(e) => setMetadata({ completionQuote: e.target.value })}
+                  rows={3}
+                  className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-800 dark:border-slate-700"
+                  placeholder="History belongs to..."
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-bold text-slate-500 uppercase">Completion Quote Author</span>
+                <input
+                  type="text"
+                  value={metadata.completionQuoteAuthor || ''}
+                  onChange={(e) => setMetadata({ completionQuoteAuthor: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-800 dark:border-slate-700"
+                  placeholder="Chronicle Lab"
+                />
+              </label>
             </section>
 
             {/* Classification */}

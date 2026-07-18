@@ -20,7 +20,11 @@ import {
   X,
   BookOpen,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  TrendingUp,
+  ThumbsUp,
+  ThumbsDown,
+  Share2
 } from 'lucide-react';
 import { EditorPage } from './EditorPage';
 import { MediaLibrary } from './MediaLibrary';
@@ -30,6 +34,8 @@ import { cn } from '../utils/cn';
 import { GlossaryManager } from './GlossaryManager';
 import api from '../api/client';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { FeedbackManager } from './FeedbackManager';
+import { CommentsManager } from './CommentsManager';
 
 export function AdminDashboard() {
   const location = useLocation();
@@ -48,6 +54,7 @@ export function AdminDashboard() {
     { icon: <FolderTree size={20} />, label: 'Categories', path: '/admin/categories' },
     { icon: <Tag size={20} />, label: 'Tags', path: '/admin/tags' },
     { icon: <MessageSquare size={20} />, label: 'Comments', path: '/admin/comments' },
+    { icon: <MessageSquare size={20} />, label: 'Feedback', path: '/admin/feedback' },
     { icon: <Quote size={20} />, label: 'Quotes', path: '/admin/quotes' },
     { icon: <BookOpen size={20} />, label: 'Glossary', path: '/admin/glossary' },
     { icon: <BarChart3 size={20} />, label: 'Analytics', path: '/admin/analytics' },
@@ -133,7 +140,8 @@ export function AdminDashboard() {
           <Route path="/media" element={<MediaLibrary />} />
           <Route path="/categories" element={<CategoriesManager />} />
           <Route path="/tags" element={<PlaceholderSection title="Tags Manager" />} />
-          <Route path="/comments" element={<PlaceholderSection title="Comments Manager" />} />
+          <Route path="/comments" element={<CommentsManager />} />
+          <Route path="/feedback" element={<FeedbackManager />} />
           <Route path="/quotes" element={<QuotesPage />} />
           <Route path="/glossary" element={<GlossaryManager />} />
           <Route path="/analytics" element={<AnalyticsDashboard />} />
@@ -276,6 +284,7 @@ function QuotesPage() {
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newQuote, setNewQuote] = useState({ text: '', translation: '', meaning: '', author: '', category: 'History' });
+  const [error, setError] = useState<string | null>(null);
 
   const fetchQuotes = async () => {
     setLoading(true);
@@ -294,14 +303,19 @@ function QuotesPage() {
   }, []);
 
   const handleAdd = async () => {
-    if (!newQuote.text || !newQuote.author) return;
+    if (!newQuote.text || !newQuote.author) {
+      setError('Text and author are required.');
+      return;
+    }
+    setError(null);
     try {
       const q = await blogApi.addQuote(newQuote);
       setQuotes([q, ...quotes]);
       setNewQuote({ text: '', translation: '', meaning: '', author: '', category: 'History' });
       setIsAdding(false);
-    } catch (err) {
-      alert('Failed to add quote.');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Failed to add quote.';
+      setError(msg);
     }
   };
 
@@ -323,7 +337,7 @@ function QuotesPage() {
           <p className="text-muted-foreground font-medium">Manage historical and inspirational thoughts.</p>
         </div>
         <button
-          onClick={() => setIsAdding(!isAdding)}
+          onClick={() => { setError(null); setIsAdding(!isAdding); }}
           className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
         >
           {isAdding ? <X size={18} /> : <Plus size={18} />} {isAdding ? 'Close Portal' : 'New Broadcast'}
@@ -338,6 +352,13 @@ function QuotesPage() {
             exit={{ opacity: 0, y: -20 }}
             className="glass p-8 md:p-10 rounded-[3rem] border-white/5 shadow-2xl space-y-6"
           >
+            {error && (
+              <div className="bg-red-500/10 text-red-500 p-4 rounded-xl flex items-center gap-3 text-xs font-bold border border-red-500/20">
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">The Message</label>
               <textarea
@@ -801,7 +822,9 @@ function SettingsPage() {
                             {log.event}
                           </span>
                         </td>
-                        <td className="p-4 text-slate-400 font-mono">{log.ipAddress || 'unknown'}</td>
+                        <td className="p-4 text-slate-400 font-mono">
+                          {log.ipAddress === '::1' || log.ipAddress === '127.0.0.1' ? '127.0.0.1 (Localhost)' : (log.ipAddress || 'unknown')}
+                        </td>
                         <td className="p-4 text-slate-400 font-medium">{log.os || 'unknown'}</td>
                         <td className="p-4 text-slate-400 font-medium">{log.browser || 'unknown'}</td>
                       </tr>
@@ -817,23 +840,189 @@ function SettingsPage() {
   );
 }
 
+function CommentItemRow({
+  item,
+  onToggleVisibility,
+  onReply
+}: {
+  item: any;
+  onToggleVisibility: (id: string) => Promise<void>;
+  onReply: (id: string, text: string) => Promise<void>;
+}) {
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyText, setReplyText] = useState(item.adminReply || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmitReply = async () => {
+    if (!replyText.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await onReply(item.id, replyText);
+      setIsReplying(false);
+    } catch (err) {
+      alert('Failed to save reply.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className={cn(
+      "p-4 rounded-[1.5rem] border transition-all text-xs space-y-2.5 relative group",
+      item.isHidden
+        ? "bg-red-500/10 border-red-500/20 opacity-70"
+        : "bg-slate-50 dark:bg-white/5 border-slate-150 dark:border-white/5 hover:border-primary/30"
+    )}>
+      <div className="flex justify-between items-start">
+        <div className="min-w-0">
+          <span className="font-black text-slate-900 dark:text-white truncate block text-sm">{item.authorName}</span>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {item.isHidden && (
+            <span className="text-[8px] font-black text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded uppercase tracking-wider">
+              Hidden
+            </span>
+          )}
+          <button
+            onClick={() => onToggleVisibility(item.id)}
+            className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+            title={item.isHidden ? "Show Comment" : "Hide Comment"}
+          >
+            {item.isHidden ? <Eye size={12} /> : <EyeOff size={12} />}
+          </button>
+        </div>
+      </div>
+
+      <p className="text-[12px] leading-relaxed text-slate-800 dark:text-slate-200 font-medium whitespace-pre-wrap">{item.content}</p>
+      
+      <div className="text-[8.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider flex flex-wrap items-center gap-1.5">
+        <span className="truncate max-w-[150px]">Article: {item.post?.title || 'Unknown'}</span>
+        <span>•</span>
+        <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+      </div>
+
+      {item.adminReply && !isReplying && (
+        <div className="border-l-2 border-primary/30 pl-3 py-1.5 mt-2 bg-primary/5 rounded-r-xl space-y-1">
+          <p className="text-[8px] uppercase tracking-widest font-black text-primary">Admin Response</p>
+          <p className="italic font-medium text-slate-700 dark:text-slate-300">"{item.adminReply}"</p>
+          <button
+            onClick={() => setIsReplying(true)}
+            className="text-[9px] text-slate-400 hover:text-primary font-bold mt-1 inline-block"
+          >
+            Edit Response
+          </button>
+        </div>
+      )}
+
+      {!item.adminReply && !isReplying && (
+        <button
+          onClick={() => setIsReplying(true)}
+          className="text-[9px] text-slate-400 hover:text-primary font-bold flex items-center gap-1 mt-1"
+        >
+          <MessageSquare size={10} /> Reply Professionally
+        </button>
+      )}
+
+      {isReplying && (
+        <div className="space-y-2 mt-2 pt-2 border-t border-slate-100 dark:border-white/5 animate-in fade-in duration-200">
+          <textarea
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            className="w-full bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-[11px] leading-normal outline-none focus:ring-1 focus:ring-primary/20 text-slate-800 dark:text-white resize-none font-medium"
+            rows={2}
+            placeholder="Type absolute professional response..."
+          />
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => setIsReplying(false)}
+              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-slate-900 dark:hover:text-white text-[9px] font-black uppercase tracking-wider"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmitReply}
+              disabled={isSubmitting}
+              className="px-2.5 py-1 rounded bg-primary text-white hover:bg-primary/95 text-[9px] font-black uppercase tracking-wider shadow"
+            >
+              {isSubmitting ? 'Posting...' : 'Post Reply'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Overview() {
   const [stats, setStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trafficData, setTrafficData] = useState<any[]>([]);
+  const [trafficLoading, setTrafficLoading] = useState(true);
+  const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);
+  const [comments, setComments] = useState<any[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    try {
+      const data = await blogApi.getStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTraffic = async () => {
+    setTrafficLoading(true);
+    try {
+      const { data } = await api.get('analytics/overview');
+      if (data && data.trafficChart) {
+        setTrafficData(data.trafficChart);
+      }
+    } catch (error) {
+      console.error('Failed to fetch traffic metrics:', error);
+    } finally {
+      setTrafficLoading(false);
+    }
+  };
+
+  const fetchComments = async () => {
+    setCommentsLoading(true);
+    try {
+      const data = await blogApi.getAllComments();
+      setComments(data);
+    } catch (error) {
+      console.error('Failed to fetch comments:', error);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const data = await blogApi.getStats();
-        setStats(data);
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchStats();
+    fetchTraffic();
+    fetchComments();
   }, []);
+
+  const handleToggleVisibility = async (id: string) => {
+    try {
+      const updated = await blogApi.toggleCommentVisibility(id);
+      setComments(prev => prev.map(c => c.id === id ? { ...c, isHidden: updated.isHidden } : c));
+    } catch (err) {
+      alert('Failed to update comment visibility.');
+    }
+  };
+
+  const handleReply = async (id: string, text: string) => {
+    try {
+      const updated = await blogApi.replyToComment(id, text);
+      setComments(prev => prev.map(c => c.id === id ? { ...c, adminReply: updated.adminReply } : c));
+    } catch (err) {
+      alert('Failed to post reply.');
+    }
+  };
 
   return (
     <div className="space-y-12 pb-10">
@@ -863,19 +1052,148 @@ function Overview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="glass p-8 rounded-[2.5rem] h-80 flex flex-col items-center justify-center text-muted-foreground border-white/5 space-y-4">
-          <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full">
-            <BarChart3 size={32} className="opacity-20" />
+        {/* Left card: Views traffic graph */}
+        <div className="glass p-6 rounded-[2.5rem] h-[340px] flex flex-col justify-between border-white/5 space-y-4 shadow-2xl relative overflow-hidden">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-base font-black tracking-tight text-slate-800 dark:text-slate-100">Daily Traffic</h3>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Reader hits tracked over the last 30 days.</p>
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-wider text-primary flex items-center gap-1">
+              <TrendingUp size={12} /> 30-Day Trend
+            </span>
           </div>
-          <p className="italic font-medium">Analytics engine initializing...</p>
-          <p className="text-xs uppercase tracking-widest font-black opacity-40">Collect more data to reveal insights</p>
+
+          <div className="flex-1 w-full bg-slate-150/40 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-2xl p-4 flex items-end justify-between relative overflow-visible h-48">
+            {trafficLoading ? (
+              <div className="m-auto flex flex-col items-center justify-center gap-2">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-[10px] font-medium text-slate-400">Loading metrics...</p>
+              </div>
+            ) : trafficData.length > 0 ? (
+              (() => {
+                const maxCount = Math.max(1, ...trafficData.map(c => c.count));
+                const points = trafficData.map((d, i) => {
+                  const x = (i / (trafficData.length - 1)) * 500;
+                  const y = 160 - (d.count / maxCount) * 130;
+                  return { x, y };
+                });
+
+                const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+                const areaPath = `${linePath} L 500 180 L 0 180 Z`;
+
+                return (
+                  <div className="w-full relative">
+                    <div className="absolute -top-12 left-0 right-0 flex justify-between items-center px-1 animate-in fade-in duration-200 min-h-[28px]">
+                      {hoveredPointIdx !== null ? (
+                        <div className="glass px-2.5 py-1 rounded-xl border border-primary/20 flex items-center gap-1.5 shadow-sm">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                          <span className="text-[10px] font-black text-slate-800 dark:text-slate-100">{trafficData[hoveredPointIdx].count} Views</span>
+                          <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{new Date(trafficData[hoveredPointIdx].date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                        </div>
+                      ) : (
+                        <div className="text-[9px] text-slate-400 dark:text-slate-500 italic font-semibold">Hover line nodes to monitor details</div>
+                      )}
+                    </div>
+
+                    <svg viewBox="0 0 500 180" className="w-full h-40 overflow-visible">
+                      <defs>
+                        <linearGradient id="stockAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="rgb(59, 130, 246)" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="rgb(59, 130, 246)" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Grid lines */}
+                      <line x1="0" y1="30" x2="500" y2="30" className="stroke-slate-200 dark:stroke-white/5 stroke-px stroke-dasharray-4" />
+                      <line x1="0" y1="95" x2="500" y2="95" className="stroke-slate-200 dark:stroke-white/5 stroke-px stroke-dasharray-4" />
+                      <line x1="0" y1="160" x2="500" y2="160" className="stroke-slate-200 dark:stroke-white/5 stroke-px stroke-dasharray-4" />
+
+                      {/* Filled Area */}
+                      <path d={areaPath} fill="url(#stockAreaGradient)" className="transition-all duration-500" />
+
+                      {/* Sparkline Line */}
+                      <path
+                        d={linePath}
+                        fill="none"
+                        stroke="rgb(59, 130, 246)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="transition-all duration-500 drop-shadow-[0_2px_6px_rgba(59,130,246,0.25)]"
+                      />
+
+                      {/* Active Hover Nodes */}
+                      {points.map((p, idx) => (
+                        <g
+                          key={idx}
+                          onMouseEnter={() => setHoveredPointIdx(idx)}
+                          onMouseLeave={() => setHoveredPointIdx(null)}
+                          className="cursor-pointer"
+                        >
+                          <rect
+                            x={p.x - 8}
+                            y={0}
+                            width={16}
+                            height={180}
+                            fill="transparent"
+                          />
+                          {hoveredPointIdx === idx && (
+                            <line
+                              x1={p.x}
+                              y1={0}
+                              x2={p.x}
+                              y2={180}
+                              className="stroke-primary/20 stroke-px"
+                            />
+                          )}
+                          <circle
+                            cx={p.x}
+                            cy={p.y}
+                            r={hoveredPointIdx === idx ? 4.5 : 0}
+                            className="fill-primary stroke-white dark:stroke-slate-900 stroke-2 transition-all duration-100"
+                          />
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="m-auto text-muted-foreground text-xs italic">No traffic data recorded in this scope window.</div>
+            )}
+          </div>
         </div>
-        <div className="glass p-8 rounded-[2.5rem] h-80 flex flex-col items-center justify-center text-muted-foreground border-white/5 space-y-4">
-          <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full">
-            <MessageSquare size={32} className="opacity-20" />
+
+        {/* Right card: scrollable comments feed with professional replies and toggling */}
+        <div className="glass p-6 rounded-[2.5rem] h-[340px] flex flex-col justify-between border-white/5 space-y-4 shadow-2xl relative">
+          <div>
+            <h3 className="text-base font-black tracking-tight text-slate-800 dark:text-slate-100">Discussions Feed</h3>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Moderate recent activity and reply professionals.</p>
           </div>
-          <p className="italic font-medium">No recent activity detected.</p>
-          <p className="text-xs uppercase tracking-widest font-black opacity-40">Your laboratory is currently silent</p>
+
+          <div className="flex-1 w-full overflow-y-auto no-scrollbar space-y-3 pr-1">
+            {commentsLoading ? (
+              <div className="flex flex-col items-center justify-center h-full gap-2">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-[10px] font-medium text-slate-400">Syncing discussions...</p>
+              </div>
+            ) : comments.length > 0 ? (
+              comments.slice(0, 5).map((item) => (
+                <CommentItemRow
+                  key={item.id}
+                  item={item}
+                  onToggleVisibility={handleToggleVisibility}
+                  onReply={handleReply}
+                />
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-center space-y-2 opacity-40">
+                <MessageSquare size={24} />
+                <p className="italic text-xs font-medium">Your laboratory is currently silent</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -934,6 +1252,8 @@ function PostsList() {
               <th className="px-8 py-5 font-bold uppercase text-xs tracking-widest text-muted-foreground">Title</th>
               <th className="px-8 py-5 font-bold uppercase text-xs tracking-widest text-muted-foreground">Status</th>
               <th className="px-8 py-5 font-bold uppercase text-xs tracking-widest text-muted-foreground">Views</th>
+              <th className="px-8 py-5 font-bold uppercase text-xs tracking-widest text-muted-foreground">Likes / Dislikes</th>
+              <th className="px-8 py-5 font-bold uppercase text-xs tracking-widest text-muted-foreground">Shares</th>
               <th className="px-8 py-5 font-bold uppercase text-xs tracking-widest text-muted-foreground">Date</th>
               <th className="px-8 py-5 font-bold uppercase text-xs tracking-widest text-muted-foreground"></th>
             </tr>
@@ -942,12 +1262,12 @@ function PostsList() {
             {loading ? (
               [1, 2, 3].map(i => (
                 <tr key={i} className="animate-pulse">
-                  <td colSpan={5} className="px-8 py-6 h-16 bg-slate-50/50 dark:bg-slate-800/50" />
+                  <td colSpan={7} className="px-8 py-6 h-16 bg-slate-50/50 dark:bg-slate-800/50" />
                 </tr>
               ))
             ) : posts.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-8 py-12 text-center text-muted-foreground italic">
+                <td colSpan={7} className="px-8 py-12 text-center text-muted-foreground italic">
                   No posts found. Start by creating your first chronicle!
                 </td>
               </tr>
@@ -972,6 +1292,23 @@ function PostsList() {
                     </span>
                   </td>
                   <td className="px-8 py-6 text-muted-foreground font-medium">{post.views}</td>
+                   <td className="px-8 py-6 text-muted-foreground font-medium">
+                     <span className="inline-flex items-center gap-1 text-emerald-500">
+                       <ThumbsUp size={12} className="stroke-[2.5]" />
+                       {post.likes}
+                     </span>
+                     <span className="mx-2 text-slate-300 dark:text-white/10">/</span>
+                     <span className="inline-flex items-center gap-1 text-red-500">
+                       <ThumbsDown size={12} className="stroke-[2.5]" />
+                       {post.dislikes || 0}
+                     </span>
+                   </td>
+                   <td className="px-8 py-6 text-muted-foreground font-medium">
+                     <span className="inline-flex items-center gap-1 text-primary">
+                       <Share2 size={12} />
+                       {post.shares || 0}
+                     </span>
+                   </td>
                   <td className="px-8 py-6 text-muted-foreground font-medium">
                     {new Date(post.createdAt).toLocaleDateString()}
                   </td>

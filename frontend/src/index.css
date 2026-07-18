@@ -149,3 +149,38 @@ b, strong, .font-bold, .prose strong {
 :root {
   --primary: 221.2 83.2% 53.3%;
 }
+
+/* Smooth global theme transitions (excludes transform to prevent interference with Framer Motion spring physics) */
+body, 
+.glass, 
+header, 
+footer, 
+main,
+section,
+nav,
+aside,
+article,
+input,
+textarea,
+select,
+button,
+h1, h2, h3, h4, h5, h6,
+p, 
+span, 
+a,
+svg,
+li,
+ul,
+ol,
+tr,
+td,
+th,
+thead,
+tbody,
+table,
+.group,
+.group-hover {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, opacity;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: 500ms;
+}

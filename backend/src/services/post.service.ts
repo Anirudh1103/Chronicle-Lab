@@ -25,6 +25,8 @@ export interface PostInput {
   authorId: string;
   categoryId?: string;
   tagIds?: string[];
+  completionQuote?: string;
+  completionQuoteAuthor?: string;
 
   // SEO
   seoTitle?: string;
@@ -264,8 +266,88 @@ export class PostService {
     });
   }
 
+  static async likePost(postId: string) {
+    return await prisma.post.update({
+      where: { id: postId },
+      data: {
+        likes: { increment: 1 }
+      }
+    });
+  }
+
+  static async dislikePost(postId: string) {
+    return await prisma.post.update({
+      where: { id: postId },
+      data: {
+        dislikes: { increment: 1 }
+      }
+    });
+  }
+
+  static async sharePost(postId: string) {
+    return await prisma.post.update({
+      where: { id: postId },
+      data: {
+        shares: { increment: 1 }
+      }
+    });
+  }
+
   static async deletePost(id: string) {
     return await prisma.post.delete({
+      where: { id }
+    });
+  }
+
+  static async addComment(postId: string, authorName: string, authorEmail: string, content: string) {
+    return await prisma.comment.create({
+      data: {
+        postId,
+        authorName,
+        authorEmail,
+        content
+      }
+    });
+  }
+
+  static async getComments(postId: string) {
+    return await prisma.comment.findMany({
+      where: { postId, isHidden: false },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  static async getAllComments() {
+    return await prisma.comment.findMany({
+      include: {
+        post: {
+          select: { title: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  static async toggleCommentVisibility(id: string) {
+    const comment = await prisma.comment.findUnique({
+      where: { id }
+    });
+    if (!comment) throw new Error('Comment not found');
+    return await prisma.comment.update({
+      where: { id },
+      data: { isHidden: !comment.isHidden }
+    });
+  }
+
+  static async replyToComment(id: string, reply: string) {
+    return await prisma.comment.update({
+      where: { id },
+      data: { adminReply: reply }
+    });
+  }
+
+  static async deleteComment(id: string) {
+    return await prisma.comment.delete({
       where: { id }
     });
   }

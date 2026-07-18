@@ -118,3 +118,98 @@ export const deletePost = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to delete post' });
   }
 };
+
+export const likePost = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const post = await PostService.likePost(id);
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to like post' });
+  }
+};
+
+export const dislikePost = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const post = await PostService.dislikePost(id);
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to dislike post' });
+  }
+};
+
+export const sharePost = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const post = await PostService.sharePost(id);
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to log share count' });
+  }
+};
+
+export const addComment = async (req: Request, res: Response) => {
+  try {
+    const { id: postId } = req.params;
+    const { authorName, authorEmail, content } = req.body;
+    if (!authorName || !authorEmail || !content) {
+      res.status(400).json({ error: 'Name, email, and content are required' });
+      return;
+    }
+    const comment = await PostService.addComment(postId, authorName, authorEmail, content);
+    res.status(211).json(comment);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to submit comment' });
+  }
+};
+
+export const getComments = async (req: Request, res: Response) => {
+  try {
+    const { id: postId } = req.params;
+    const comments = await PostService.getComments(postId);
+    res.json(comments);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve comments' });
+  }
+};
+
+export const getAllComments = async (req: Request, res: Response) => {
+  try {
+    const comments = await PostService.getAllComments();
+    res.json(comments);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve comments database' });
+  }
+};
+
+export const deleteComment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await PostService.deleteComment(id);
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete comment' });
+  }
+};
+
+export const toggleCommentVisibility = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const comment = await PostService.toggleCommentVisibility(id);
+    res.json(comment);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to toggle comment visibility' });
+  }
+};
+
+export const replyToComment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reply } = req.body;
+    const comment = await PostService.replyToComment(id, reply);
+    res.json(comment);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to reply to comment' });
+  }
+};

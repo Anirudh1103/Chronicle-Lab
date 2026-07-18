@@ -32,7 +32,14 @@ A cybersecurity-themed administrative environment for total platform control.
 - **Restricted Access**: Strict admin-only permissions and a terminal-style login interface.
 - **Lifecycle Management**: One-click **Visibility Toggles** to Publish, Hide, or Archive chronicles without data loss.
 - **Quotes Library**: A dedicated module to broadcast historical wisdom and technical insights to the home screen.
+- **Auditing Dashboard**: Dedicated modules for reading user feedback messages, managing inline glossary definitions, and reviewing reader comments.
 - **System Settings**: Live control over platform identity, including footer taglines and contact signals.
+
+### 🗣️ Discussion & Reader Reactions
+- **Professional Likes/Dislikes**: Sleek, pill-shaped reaction widget with thin borders and minimal animations, hiding counts from the public but visible to administrators.
+- **Live Comments Thread**: Fully-functional post-level discussion thread storing names, emails, and comments securely in the database.
+- **Premium Audio Player**: Elegant browser-based text-to-speech audio control featuring adjustable rates and dynamic light/dark mode voice selectors.
+- **Portal-Rendered Glossary**: Hovering over ancient or advanced terms reveals clean, viewport-independent popover overlay cards.
 
 ---
 
@@ -50,6 +57,26 @@ A cybersecurity-themed administrative environment for total platform control.
 - **Server**: Node.js + Express
 - **Database**: SQLite / PostgreSQL (via Prisma ORM)
 - **Security**: JWT (HttpOnly Cookies), Bcrypt, and Custom Identity Middleware
+
+---
+
+## 🔒 Security Infrastructure
+
+Chronicle Lab implements a strict, multi-layered security model tailored for high-security administrative environments:
+
+### 1. Cryptographic MFA (Multi-Factor Authentication)
+- **TOTP Standards**: Integrated support for hardware/app-based authenticators (e.g., Google Authenticator, Authy) utilizing Time-Based One-Time Password (TOTP) algorithms.
+- **Secure Secret Storage**: Symmetric encryption of MFA secrets inside the database.
+
+### 2. Session Integrity & Idle Control
+- **Inactivity Timeout**: Automatic administrative session termination after exactly **10 minutes** of inactivity. Synchronized through active state watchers on the frontend and session validity validators on the backend.
+- **Strict IP Whitelisting**: Restricted route entry points that validate identity and log connection credentials.
+
+### 3. Audit Trails
+- **Security Logs**: Real-time logging of authentication milestones (logins, MFA attempts, logouts) including agent metadata, timestamps, and client IP addresses, with local loopbacks automatically formatted to `127.0.0.1 (Localhost)`.
+
+### 4. DOM Isolation & Sanitization
+- **Tree-Based Highlights**: Safe inline glossary highlighting utilizing client-side DOM Parser node walks rather than recursive regex replacements, eliminating nested span vulnerabilities and rendering anomalies.
 
 ---
 
