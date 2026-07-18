@@ -71,6 +71,33 @@ app.get('/', (req, res) => {
   res.send('Blog API is running');
 });
 
+app.get('/health', async (req, res) => {
+  try {
+    // Perform a quick query to verify database connectivity
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      status: 'OK',
+      timestamp: new Date(),
+      uptime: process.uptime(),
+      services: {
+        database: 'UP',
+        server: 'UP'
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 'ERROR',
+      timestamp: new Date(),
+      uptime: process.uptime(),
+      services: {
+        database: 'DOWN',
+        server: 'UP'
+      },
+      error: error.message
+    });
+  }
+});
+
 
 async function ensureCategories() {
   const categories = [
