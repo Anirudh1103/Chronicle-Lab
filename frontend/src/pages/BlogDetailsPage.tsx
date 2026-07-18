@@ -27,6 +27,7 @@ import { ChronicleCompletion } from '../components/blog/ChronicleCompletion';
 import { PostCard } from '../components/PostCard';
 import { useAuthStore } from '../store/authStore';
 import { X } from 'lucide-react';
+import { getUploadUrl } from '../utils/url';
 
 const CodeBlockDetails: React.FC<{ content: any }> = ({ content }) => {
   const [copied, setCopied] = useState(false);
@@ -876,11 +877,11 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
             {/* Museum Exhibit Card Container */}
             <div 
               className="p-4 md:p-6 bg-slate-50/50 dark:bg-slate-900/10 border border-slate-150 dark:border-white/5 rounded-[2.5rem] md:rounded-[3rem] shadow-sm cursor-zoom-in relative overflow-hidden group/image"
-              onClick={() => onImageClick?.({src: content.url, alt: content.alt, caption: content.caption})}
+              onClick={() => onImageClick?.({src: getUploadUrl(content.url), alt: content.alt, caption: content.caption})}
             >
               <div className="relative rounded-2xl md:rounded-[2rem] overflow-hidden bg-slate-100 dark:bg-slate-950">
                 <motion.img
-                  src={content.url}
+                  src={getUploadUrl(content.url)}
                   alt={content.alt}
                   className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover/image:scale-[1.03]"
                   loading="lazy"
@@ -1127,9 +1128,9 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
               key={i}
               whileHover={{ scale: 1.02 }}
               className="relative aspect-square rounded-3xl overflow-hidden cursor-zoom-in shadow-xl"
-              onClick={() => onImageClick?.({src: img.url})}
+              onClick={() => onImageClick?.({src: getUploadUrl(img.url)})}
             >
-              <img src={img.url} className="w-full h-full object-cover" />
+              <img src={getUploadUrl(img.url)} className="w-full h-full object-cover" />
             </motion.div>
           ))}
         </div>

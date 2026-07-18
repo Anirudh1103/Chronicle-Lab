@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Trash2, Search, Image as ImageIcon, CheckCircle2, X } from 'lucide-react';
+import { getUploadUrl } from '../utils/url';
 
 interface MediaFile {
   id: string;
@@ -74,7 +75,7 @@ export function MediaLibrary() {
     m.filename.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getFullUrl = (filename: string) => `http://localhost:5000/uploads/${filename}`;
+  const getFullUrl = (filename: string) => getUploadUrl(filename);
 
   return (
     <div

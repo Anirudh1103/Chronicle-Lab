@@ -1,0 +1,17 @@
+export const getUploadUrl = (filename: string | null | undefined): string => {
+  if (!filename) return '';
+
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const baseUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : (apiUrl.endsWith('/api/') ? apiUrl.slice(0, -5) : apiUrl);
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+  // If the filename is already a full URL, check if we need to rewrite localhost
+  if (filename.startsWith('http://') || filename.startsWith('https://')) {
+    if (filename.includes('localhost:5000')) {
+      return filename.replace('http://localhost:5000', cleanBase);
+    }
+    return filename;
+  }
+  
+  return `${cleanBase}/uploads/${filename}`;
+};

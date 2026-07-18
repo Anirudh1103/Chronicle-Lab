@@ -48,7 +48,19 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
   useEffect(() => {
     const updateVoices = () => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
-        setVoices(window.speechSynthesis.getVoices());
+        const loadedVoices = window.speechSynthesis.getVoices();
+        setVoices(loadedVoices);
+        
+        // Auto-select Google Hindi as default if no user preference is stored
+        if (!localStorage.getItem('chroniclelab_tts_voice')) {
+          const googleHindi = loadedVoices.find(v => 
+            v.lang.toLowerCase().startsWith('hi') && 
+            (v.name.toLowerCase().includes('google') || v.name.includes('हिन्दी') || v.name.toLowerCase().includes('hindi'))
+          );
+          if (googleHindi) {
+            setSelectedVoiceName(googleHindi.name);
+          }
+        }
       }
     };
 
@@ -73,8 +85,8 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
       if (match) return match;
     }
 
-    // 2. Prioritize Google Hindi for Hindi content if voice setting is Auto
-    if (selectedVoiceName === 'Auto' && lang.toLowerCase().startsWith('hi')) {
+    // 2. Prioritize Google Hindi for any content (default voice model) if voice setting is Auto
+    if (selectedVoiceName === 'Auto') {
       const googleHindiVoice = voices.find(v => 
         v.lang.toLowerCase().startsWith('hi') && 
         (v.name.toLowerCase().includes('google') || v.name.includes('हिन्दी') || v.name.toLowerCase().includes('hindi'))

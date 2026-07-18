@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, Image as ImageIcon } from 'lucide-react';
+import { getUploadUrl } from '../../utils/url';
 
 interface MediaFile {
   id: string;
@@ -24,7 +25,7 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
     },
   });
 
-  const getFullUrl = (path: string) => `http://localhost:5000/uploads/${path}`;
+  const getFullUrl = (path: string) => getUploadUrl(path);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">

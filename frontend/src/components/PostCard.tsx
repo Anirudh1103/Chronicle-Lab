@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock, User, ArrowUpRight, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getUploadUrl } from '../utils/url';
 
 interface PostCardProps {
   post: {
@@ -31,7 +32,7 @@ export function PostCard({ post, index }: PostCardProps) {
         <div className="relative aspect-[16/10] rounded-[2.5rem] overflow-hidden bg-muted">
           {post.coverImage ? (
             <img
-              src={post.coverImage}
+              src={getUploadUrl(post.coverImage)}
               alt={post.title}
               className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700"
             />

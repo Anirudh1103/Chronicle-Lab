@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { GooglePreview } from './GooglePreview';
+import { getUploadUrl } from '../../utils/url';
 
 export const EditorSidebar: React.FC = () => {
   const { metadata, seo, setMetadata, setSEO } = useEditorStore();
@@ -45,7 +46,7 @@ export const EditorSidebar: React.FC = () => {
 
     try {
       const { data } = await api.post('media/upload', formData);
-      const url = `http://localhost:5000/uploads/${data.path}`;
+      const url = getUploadUrl(data.path);
       setMetadata({ coverImage: url });
     } catch (error) {
       console.error('Upload failed:', error);
@@ -226,7 +227,7 @@ export const EditorSidebar: React.FC = () => {
                >
                  {metadata.coverImage ? (
                    <div className="relative rounded-lg overflow-hidden group">
-                      <img src={metadata.coverImage} className="w-full aspect-video object-cover" />
+                      <img src={getUploadUrl(metadata.coverImage)} className="w-full aspect-video object-cover" />
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
                         <button
                           onClick={() => fileInputRef.current?.click()}
