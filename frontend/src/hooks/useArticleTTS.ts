@@ -54,19 +54,23 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
         // Auto-select Google Hindi Female as default if no preference is stored or if it is Auto
         const savedVoice = localStorage.getItem('chroniclelab_tts_voice');
         if (!savedVoice || savedVoice === 'Auto') {
-          // 1. Try to find a female Google Hindi voice first (cfn is Google's Hindi Female voice code on Android)
+          // 1. Try to find a female Hindi voice first (cfn is Google's Hindi Female voice code on Android)
           let googleHindi = loadedVoices.find(v => 
             v.lang.toLowerCase().startsWith('hi') && 
-            (v.name.toLowerCase().includes('google') || v.name.includes('हिन्दी') || v.name.toLowerCase().includes('hindi')) &&
             (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('cfn') || v.name.toLowerCase().includes('woman'))
           );
           
-          // 2. Fall back to any Google Hindi voice
+          // 2. Try to find any standard Google Hindi voice
           if (!googleHindi) {
             googleHindi = loadedVoices.find(v => 
               v.lang.toLowerCase().startsWith('hi') && 
               (v.name.toLowerCase().includes('google') || v.name.includes('हिन्दी') || v.name.toLowerCase().includes('hindi'))
             );
+          }
+
+          // 3. Fall back to any Hindi voice
+          if (!googleHindi) {
+            googleHindi = loadedVoices.find(v => v.lang.toLowerCase().startsWith('hi'));
           }
 
           if (googleHindi) {
@@ -104,7 +108,6 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
     if (selectedVoiceName === 'Auto') {
       let googleHindiVoice = voices.find(v => 
         v.lang.toLowerCase().startsWith('hi') && 
-        (v.name.toLowerCase().includes('google') || v.name.includes('हिन्दी') || v.name.toLowerCase().includes('hindi')) &&
         (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('cfn') || v.name.toLowerCase().includes('woman'))
       );
       if (!googleHindiVoice) {
@@ -112,6 +115,9 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
           v.lang.toLowerCase().startsWith('hi') && 
           (v.name.toLowerCase().includes('google') || v.name.includes('हिन्दी') || v.name.toLowerCase().includes('hindi'))
         );
+      }
+      if (!googleHindiVoice) {
+        googleHindiVoice = voices.find(v => v.lang.toLowerCase().startsWith('hi'));
       }
       if (googleHindiVoice) return googleHindiVoice;
     }
