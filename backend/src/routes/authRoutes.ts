@@ -11,7 +11,8 @@ import {
   enableMfa,
   disableMfa,
   getSecurityLogs,
-  getFeedback
+  getFeedback,
+  updatePassword
 } from '../controllers/authController';
 import { protect, admin } from '../security/middleware/auth.middleware';
 
@@ -24,6 +25,7 @@ router.get('/me', protect, getMe);
 router.post('/subscribe', subscribe);
 router.post('/feedback', submitFeedback);
 router.get('/feedback', protect, admin, getFeedback);
+router.post('/update-password', protect, updatePassword);
 
 // MFA second factor routes
 router.post('/mfa/verify', verifyMfaLogin);

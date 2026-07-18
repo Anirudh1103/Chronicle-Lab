@@ -68,6 +68,43 @@ router.post('/quotes', protect, admin, async (req, res) => {
   }
 });
 
+// Admin: Update quote
+router.put('/quotes/:id', protect, admin, async (req, res) => {
+  try {
+    const { text, translation, meaning, author, category } = req.body;
+    if (!text || !author) {
+      return res.status(400).json({ message: 'Text and author are required.' });
+    }
+
+    const normalized = normalizeQuoteText(text);
+
+    // Case-insensitive duplicate check (excluding the current quote)
+    const existing = await prisma.quote.findFirst({
+      where: {
+        text: {
+          equals: normalized,
+          mode: 'insensitive'
+        },
+        id: {
+          not: req.params.id
+        }
+      }
+    });
+
+    if (existing) {
+      return res.status(400).json({ message: 'This quote already exists.' });
+    }
+
+    const quote = await prisma.quote.update({
+      where: { id: req.params.id },
+      data: { text: normalized, translation, meaning, author, category }
+    });
+    res.json(quote);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update quote' });
+  }
+});
+
 // Admin: Delete quote
 router.delete('/quotes/:id', protect, admin, async (req, res) => {
   try {

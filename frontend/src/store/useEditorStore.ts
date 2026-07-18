@@ -32,6 +32,8 @@ const initialMetadata: PostMetadata = {
   subtitle: '',
   slug: '',
   excerpt: '',
+  summary: '',
+  summaryTitle: '',
   status: 'DRAFT',
   featured: false,
   featuredOrder: null,
@@ -188,6 +190,11 @@ function getInitialContent(type: BlockType) {
       return { text: 'Learn More', url: '', variant: 'primary', alignment: 'center' };
     case 'personalTouch':
       return {
+        text: ''
+      };
+    case 'summary':
+      return {
+        title: 'Quick Read',
         text: ''
       };
     default:

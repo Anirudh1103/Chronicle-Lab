@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Square, SkipForward, SkipBack, ChevronDown, Volume2, Settings, Globe } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TTSStatus } from '../../hooks/useArticleTTS';
 import { NarrationChunk } from '../../services/narrationParser';
 import { cn } from '../../utils/cn';
+import { WordLevelSentence } from './WordLevelSentence';
 
 interface ArticleAudioPlayerProps {
   status: TTSStatus;
   currentChunkIndex: number;
+  spokenWordRange?: { start: number; end: number } | null;
   rate: number;
   voices: SpeechSynthesisVoice[];
   selectedVoiceName: string;
@@ -24,6 +27,7 @@ interface ArticleAudioPlayerProps {
 export function ArticleAudioPlayer({
   status,
   currentChunkIndex,
+  spokenWordRange = null,
   rate,
   voices,
   selectedVoiceName,
@@ -156,13 +160,80 @@ export function ArticleAudioPlayer({
             </div>
           </div>
 
-          {/* Subtitle Current Segment */}
+          {/* Subtitle Queue Panel */}
           {isPlaying && chunks[currentChunkIndex] && (
-            <div className="p-4 bg-slate-100/50 dark:bg-white/5 rounded-2xl border border-slate-200/20 text-center animate-in fade-in duration-300">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/70 block mb-1">Current Segment</span>
-              <p className="text-xs text-slate-500 dark:text-slate-350 leading-relaxed font-medium">
-                "{chunks[currentChunkIndex].text}"
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-100/50 dark:bg-white/5 border border-slate-200/25 dark:border-white/5 rounded-3xl select-none text-left">
+              {/* CURRENT */}
+              <div className="space-y-2.5">
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-primary flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                  Now Narrating
+                </span>
+                <div className="overflow-hidden min-h-[55px]">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={chunks[currentChunkIndex].id}
+                      initial={{ 
+                        opacity: 0, 
+                        y: (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 0 : 15,
+                        filter: 'blur(3px)'
+                      }}
+                      animate={{ 
+                        opacity: 1, 
+                        y: 0,
+                        filter: 'blur(0px)'
+                      }}
+                      exit={{ 
+                        opacity: 0, 
+                        y: (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 0 : -15,
+                        filter: 'blur(3px)'
+                      }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                      className="text-xs md:text-sm text-slate-800 dark:text-slate-250 font-bold leading-relaxed border-l-2 border-primary/30 pl-4 py-0.5"
+                    >
+                      <WordLevelSentence
+                        id={`player-${chunks[currentChunkIndex].id}`}
+                        htmlText={chunks[currentChunkIndex].text}
+                        isActiveSentence={true}
+                        spokenWordRange={spokenWordRange}
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* UP NEXT */}
+              <div className="space-y-2.5 border-t md:border-t-0 md:border-l border-slate-250/50 dark:border-white/5 pt-4 md:pt-0 md:pl-6 opacity-60">
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-450 dark:text-slate-500">
+                  Up Next
+                </span>
+                <div className="overflow-hidden min-h-[55px]">
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={chunks[currentChunkIndex + 1] ? chunks[currentChunkIndex + 1].id : 'end'}
+                      initial={{ 
+                        opacity: 0, 
+                        y: (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 0 : 15,
+                        filter: 'blur(3px)'
+                      }}
+                      animate={{ 
+                        opacity: 1, 
+                        y: 0,
+                        filter: 'blur(0px)'
+                      }}
+                      exit={{ 
+                        opacity: 0, 
+                        y: (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 0 : -15,
+                        filter: 'blur(3px)'
+                      }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                      className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed pl-4 py-0.5"
+                    >
+                      {chunks[currentChunkIndex + 1] ? chunks[currentChunkIndex + 1].text : 'End of narration queue.'}
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+              </div>
             </div>
           )}
 

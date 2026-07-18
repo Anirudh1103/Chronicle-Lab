@@ -22,8 +22,14 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    if (getMeQuery.isFetched) {
-      setUser(getMeQuery.data || null);
+    if (getMeQuery.isFetched && getMeQuery.data) {
+      setUser(getMeQuery.data);
+      if (getMeQuery.data.token) {
+        localStorage.setItem('admin_token', getMeQuery.data.token);
+      }
+      setIsLoading(false);
+    } else if (getMeQuery.isFetched) {
+      setUser(null);
       setIsLoading(false);
     }
   }, [getMeQuery.isFetched, getMeQuery.data, setUser, setIsLoading]);
@@ -36,6 +42,9 @@ export function useAuth() {
     onSuccess: (data) => {
       if (data && !data.requireMfa) {
         setUser(data);
+        if (data.token) {
+          localStorage.setItem('admin_token', data.token);
+        }
         queryClient.setQueryData(['me'], data);
       }
     },
@@ -48,6 +57,9 @@ export function useAuth() {
     },
     onSuccess: (data) => {
       setUser(data);
+      if (data.token) {
+        localStorage.setItem('admin_token', data.token);
+      }
       queryClient.setQueryData(['me'], data);
     },
   });
@@ -59,6 +71,9 @@ export function useAuth() {
     },
     onSuccess: (data) => {
       setUser(data);
+      if (data.token) {
+        localStorage.setItem('admin_token', data.token);
+      }
       queryClient.setQueryData(['me'], data);
     },
   });
@@ -69,6 +84,7 @@ export function useAuth() {
     },
     onSuccess: () => {
       setUser(null);
+      localStorage.removeItem('admin_token');
       queryClient.setQueryData(['me'], null);
       queryClient.clear();
     },

@@ -11,6 +11,7 @@ import settingsRoutes from './routes/settingsRoutes';
 import newsletterRoutes from './routes/newsletterRoutes';
 import glossaryRoutes from './routes/glossaryRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
+import securityRoutes from './routes/securityRoutes';
 import { setSecurityHeaders } from './security/headers/headers.middleware';
 import { PrismaClient } from '@prisma/client';
 
@@ -42,6 +43,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/glossary', glossaryRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/security', securityRoutes);
 
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -7,9 +7,28 @@ interface UseArticleTTSProps {
   chunks: NarrationChunk[];
 }
 
+interface WordOffset {
+  start: number;
+  end: number;
+}
+
+function getWordOffsets(text: string): WordOffset[] {
+  const offsets: WordOffset[] = [];
+  const regex = /\S+/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    offsets.push({
+      start: match.index,
+      end: match.index + match[0].length
+    });
+  }
+  return offsets;
+}
+
 export function useArticleTTS({ chunks }: UseArticleTTSProps) {
   const [status, setStatus] = useState<TTSStatus>('idle');
   const [currentChunkIndex, setCurrentChunkIndex] = useState<number>(-1);
+  const [spokenWordRange, setSpokenWordRange] = useState<{ start: number; end: number } | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState<string>(() => {
     return localStorage.getItem('chroniclelab_tts_voice') || 'Auto';
@@ -20,6 +39,10 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
   });
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const timerRef = useRef<any>(null);
+  const hasReceivedBoundaryRef = useRef(false);
+  const chunkStartTimeRef = useRef(0);
+  const pausedTimeRef = useRef(0);
 
   // Load voices
   useEffect(() => {
@@ -50,19 +73,28 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
       if (match) return match;
     }
 
-    // 2. Prioritize Microsoft Mark as default if using Auto
+    // 2. Prioritize Google Hindi for Hindi content if voice setting is Auto
+    if (selectedVoiceName === 'Auto' && lang.toLowerCase().startsWith('hi')) {
+      const googleHindiVoice = voices.find(v => 
+        v.lang.toLowerCase().startsWith('hi') && 
+        (v.name.toLowerCase().includes('google') || v.name.includes('हिन्दी') || v.name.toLowerCase().includes('hindi'))
+      );
+      if (googleHindiVoice) return googleHindiVoice;
+    }
+
+    // 3. Prioritize Microsoft Mark as default if using Auto
     if (selectedVoiceName === 'Auto') {
       const markVoice = voices.find(v => v.name.toLowerCase().includes('microsoft mark'));
       if (markVoice) return markVoice;
     }
 
-    // 3. Prioritize Indian English (en-IN) voices for English content if Mark isn't available
+    // 4. Prioritize Indian English (en-IN) voices for English content if Mark isn't available
     if (selectedVoiceName === 'Auto' && lang.toLowerCase().startsWith('en')) {
       const indianVoice = voices.find(v => v.lang.toLowerCase() === 'en-in' || v.lang.toLowerCase().startsWith('en-in'));
       if (indianVoice) return indianVoice;
     }
 
-    // 3. Select default voice for target language
+    // 5. Select default voice for target language
     // Match exact lang first (e.g., 'hi-IN' or 'en-US')
     let matchedVoice = voices.find(v => v.lang.toLowerCase() === lang.toLowerCase());
     
@@ -91,6 +123,7 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
     if (index < 0 || index >= chunks.length) {
       setStatus('completed');
       setCurrentChunkIndex(-1);
+      setSpokenWordRange(null);
       return;
     }
 
@@ -99,7 +132,13 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
       return;
     }
 
-    // Cancel active speech
+    // Silence old utterance handlers to avoid async End/Error races
+    if (utteranceRef.current) {
+      utteranceRef.current.onstart = null;
+      utteranceRef.current.onend = null;
+      utteranceRef.current.onerror = null;
+      utteranceRef.current.onboundary = null;
+    }
     window.speechSynthesis.cancel();
 
     const chunk = chunks[index];
@@ -117,11 +156,26 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
     utterance.onstart = () => {
       setStatus('playing');
       setCurrentChunkIndex(index);
+      setSpokenWordRange(null);
     };
 
     utterance.onend = () => {
       // Move to next chunk automatically
       playChunk(index + 1);
+    };
+
+    utterance.onboundary = (e) => {
+      if (e.name === 'word') {
+        hasReceivedBoundaryRef.current = true;
+        const start = e.charIndex;
+        let length = e.charLength || 0;
+        if (!length) {
+          const subText = chunk.text.substring(start);
+          const match = subText.match(/^\w+/);
+          length = match ? match[0].length : 1;
+        }
+        setSpokenWordRange({ start, end: start + length });
+      }
     };
 
     utterance.onerror = (e) => {
@@ -157,10 +211,17 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
 
   const handleStop = () => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
+      if (utteranceRef.current) {
+        utteranceRef.current.onstart = null;
+        utteranceRef.current.onend = null;
+        utteranceRef.current.onerror = null;
+        utteranceRef.current.onboundary = null;
+      }
       window.speechSynthesis.cancel();
     }
     setStatus('idle');
     setCurrentChunkIndex(-1);
+    setSpokenWordRange(null);
   };
 
   const handleSkipForward = () => {
@@ -223,6 +284,69 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
     }
   };
 
+  // Timer-based fallback for word-level highlights
+  useEffect(() => {
+
+
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (status !== 'playing' || currentChunkIndex < 0 || currentChunkIndex >= chunks.length) {
+      if (status === 'paused') {
+        pausedTimeRef.current = Date.now();
+      }
+      return;
+    }
+
+    if (status === 'playing' && pausedTimeRef.current > 0) {
+      const pauseDuration = Date.now() - pausedTimeRef.current;
+      chunkStartTimeRef.current += pauseDuration;
+      pausedTimeRef.current = 0;
+    } else {
+      chunkStartTimeRef.current = Date.now();
+      hasReceivedBoundaryRef.current = false;
+    }
+
+    const chunk = chunks[currentChunkIndex];
+    const wordOffsets = getWordOffsets(chunk.text);
+    const wordsCount = wordOffsets.length;
+    if (wordsCount === 0) return;
+
+    const wpm = chunk.lang.startsWith('hi') ? 105 : 135;
+    const estimatedDuration = (wordsCount / (wpm * rate)) * 60 * 1000;
+
+    timerRef.current = setInterval(() => {
+      if (hasReceivedBoundaryRef.current) {
+        return;
+      }
+
+      const elapsed = Date.now() - chunkStartTimeRef.current;
+      if (elapsed >= estimatedDuration) {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        return;
+      }
+
+      const progress = elapsed / estimatedDuration;
+      const activeIdx = Math.floor(progress * wordsCount);
+      const activeOffset = wordOffsets[Math.min(activeIdx, wordsCount - 1)];
+      if (activeOffset) {
+        setSpokenWordRange(activeOffset);
+      }
+    }, 60);
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [status, currentChunkIndex, rate, chunks]);
+
   // Cleanup synthesis on hook unmount
   useEffect(() => {
     return () => {
@@ -235,6 +359,7 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
   return {
     status,
     currentChunkIndex,
+    spokenWordRange,
     currentBlockId: chunks[currentChunkIndex]?.blockId || null,
     voices,
     selectedVoiceName,

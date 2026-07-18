@@ -1,6 +1,6 @@
 export const SECURITY_CONFIG = {
-  // Only email address allowed to access Admin Portal
-  ADMIN_EMAIL: 'cmanirudh03@gmail.com',
+  // White-listed emails allowed to access Admin Portal
+  ADMIN_EMAILS: ['cmanirudh03@gmail.com'],
 
   // Session activity timeouts (10 minutes in milliseconds)
   SESSION_TIMEOUT_MS: 10 * 60 * 1000,

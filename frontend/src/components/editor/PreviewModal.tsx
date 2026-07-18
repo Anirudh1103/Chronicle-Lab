@@ -81,6 +81,17 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({ isOpen, onClose, met
               )}
             </header>
 
+            {metadata.summary && (
+              <div className="mb-8 p-6 rounded-2xl bg-slate-50 border border-slate-100 dark:bg-slate-900/50 dark:border-slate-800">
+                <div className="text-sm font-sans font-extrabold uppercase tracking-widest text-blue-600 mb-2">
+                  {metadata.summaryTitle || 'Quick Read'}
+                </div>
+                <p className="text-slate-700 dark:text-slate-350 whitespace-pre-line text-sm leading-relaxed">
+                  {metadata.summary}
+                </p>
+              </div>
+            )}
+
             <TableOfContents blocks={blocks} />
 
             <div className="space-y-8">
@@ -244,6 +255,19 @@ function renderBlockPreview(block: EditorBlock) {
             </li>
           ))}
         </ListTag>
+      );
+
+    case 'summary':
+      return (
+        <div className="my-8 p-6 rounded-2xl bg-slate-55 border border-slate-150 dark:bg-slate-900/50 dark:border-slate-800">
+          <div className="text-sm font-sans font-extrabold uppercase tracking-widest text-blue-600 mb-2">
+            {content.title || 'Quick Read'}
+          </div>
+          <div
+            className="prose prose-slate lg:prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 text-sm leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: content.text }}
+          />
+        </div>
       );
 
     default:

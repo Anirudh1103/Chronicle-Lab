@@ -14,7 +14,8 @@ export type BlockType =
   | 'table'
   | 'video'
   | 'button'
-  | 'personal-touch';
+  | 'personal-touch'
+  | 'summary';
 
 export interface Block {
   id: string;
@@ -33,6 +34,8 @@ export interface Post {
   title: string;
   subtitle?: string;
   slug: string;
+  summary?: string;
+  summaryTitle?: string;
   coverImage?: string;
   content: Block[];
   published: boolean;

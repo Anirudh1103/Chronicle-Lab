@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -13,6 +14,7 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Trash2,
+  Edit3,
   Eye,
   EyeOff,
   BarChart3,
@@ -24,7 +26,9 @@ import {
   TrendingUp,
   ThumbsUp,
   ThumbsDown,
-  Share2
+  Share2,
+  Menu,
+  KeyRound
 } from 'lucide-react';
 import { EditorPage } from './EditorPage';
 import { MediaLibrary } from './MediaLibrary';
@@ -36,11 +40,13 @@ import api from '../api/client';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { FeedbackManager } from './FeedbackManager';
 import { CommentsManager } from './CommentsManager';
+import SecurityCenter from './security/SecurityCenter';
 
 export function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -58,31 +64,116 @@ export function AdminDashboard() {
     { icon: <Quote size={20} />, label: 'Quotes', path: '/admin/quotes' },
     { icon: <BookOpen size={20} />, label: 'Glossary', path: '/admin/glossary' },
     { icon: <BarChart3 size={20} />, label: 'Analytics', path: '/admin/analytics' },
-    { icon: <Settings size={20} />, label: 'Settings', path: '/admin/settings' },
+    { icon: <Settings size={20} />, label: 'Security Center', path: '/admin/settings' },
   ];
 
-  // No longer needed as we use BlogEditorPage via App.tsx routing
-  // const isEditor = location.pathname.includes('/admin/new') || location.pathname.includes('/admin/edit');
-
-  /*
-  if (isEditor) {
-    return (
-      <main className="min-h-screen bg-background pt-24">
-        <Routes>
-          <Route path="/new" element={<EditorPage />} />
-          <Route path="/edit/:id" element={<EditorPage />} />
-        </Routes>
-      </main>
-    );
-  }
-  */
-
   return (
-    <div className="flex min-h-screen -mx-6 -mt-24">
-      {/* Sidebar */}
-      <aside className="w-72 border-r bg-card pt-28 px-6 flex flex-col justify-between pb-10">
-        <div className="space-y-8">
-          <div className="space-y-4">
+    <div className="flex flex-col lg:flex-row min-h-screen -mx-6 -mt-24 w-full">
+      {/* Mobile Navigation Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-card border-b z-[999] px-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsMobileOpen(!isMobileOpen)}
+            className="p-2 -ml-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-muted transition-all"
+          >
+            <Menu size={24} />
+          </button>
+          <span className="font-black text-sm tracking-tight uppercase">Admin Panel</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-black text-xs">
+            {user?.name?.[0].toUpperCase()}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Drawer Overlay */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            key="mobile-sidebar-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.5 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileOpen(false)}
+            className="lg:hidden fixed inset-0 bg-black z-[1000] cursor-pointer"
+          />
+        )}
+        
+        {isMobileOpen && (
+          <motion.aside
+            key="mobile-sidebar-aside"
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="lg:hidden fixed top-0 bottom-0 left-0 w-72 bg-card border-r z-[1001] px-6 flex flex-col justify-between pb-10 pt-6"
+          >
+            <div className="space-y-8">
+              <div className="flex items-center justify-between border-b pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-black text-xs">
+                    {user?.name?.[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-xs font-black tracking-tight">{user?.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{user?.role}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsMobileOpen(false)}
+                  className="p-1.5 hover:bg-muted rounded-lg transition-all text-slate-400"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <Link
+                to="/admin/editor"
+                onClick={() => setIsMobileOpen(false)}
+                className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-black hover:opacity-90 transition-all text-xs shadow-lg shadow-primary/20"
+              >
+                <Plus size={16} /> New Post
+              </Link>
+
+              <nav className="space-y-1 overflow-y-auto max-h-[60vh]">
+                {sidebarLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setIsMobileOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm ${
+                      location.pathname === link.path
+                        ? 'bg-primary/5 text-primary shadow-sm'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    {link.icon}
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            <div className="space-y-2 border-t pt-4">
+              <Link to="/" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
+                <ExternalLink size={18} /> View Website
+              </Link>
+              <button
+                onClick={() => { setIsMobileOpen(false); handleLogout(); }}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold text-sm text-destructive hover:bg-destructive/5 transition-all"
+              >
+                <LogOut size={18} /> Sign Out
+              </button>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-72 border-r bg-card pt-28 px-6 flex-col justify-between pb-10 flex-shrink-0 h-screen sticky top-0">
+        <div className="flex flex-col flex-1 min-h-0 space-y-8">
+          <div className="space-y-4 flex-shrink-0">
             <div className="px-2 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-black">
                 {user?.name?.[0].toUpperCase()}
@@ -101,7 +192,7 @@ export function AdminDashboard() {
             </Link>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="space-y-1 flex-1 overflow-y-auto min-h-0 pr-1 no-scrollbar">
             {sidebarLinks.map((link) => (
               <Link
                 key={link.path}
@@ -119,7 +210,7 @@ export function AdminDashboard() {
           </nav>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 flex-shrink-0 pt-4 border-t border-white/5">
           <Link to="/" className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
             <ExternalLink size={20} /> View Website
           </Link>
@@ -133,7 +224,7 @@ export function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 pt-28 px-12 overflow-y-auto bg-muted/20">
+      <main className="flex-1 pt-24 lg:pt-28 px-4 md:px-12 overflow-y-auto bg-muted/20 w-full min-h-screen">
         <Routes>
           <Route path="/" element={<Overview />} />
           <Route path="/posts" element={<PostsList />} />
@@ -145,7 +236,7 @@ export function AdminDashboard() {
           <Route path="/quotes" element={<QuotesPage />} />
           <Route path="/glossary" element={<GlossaryManager />} />
           <Route path="/analytics" element={<AnalyticsDashboard />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings" element={<SecurityCenter />} />
         </Routes>
       </main>
     </div>
@@ -213,11 +304,11 @@ function CategoriesManager() {
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-4xl font-black">Categories</h1>
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2"
+          className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 w-full sm:w-auto justify-center"
         >
           {isAdding ? <X size={16} /> : <Plus size={16} />} {isAdding ? 'Cancel' : 'Add New'}
         </button>
@@ -283,6 +374,7 @@ function QuotesPage() {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
   const [newQuote, setNewQuote] = useState({ text: '', translation: '', meaning: '', author: '', category: 'History' });
   const [error, setError] = useState<string | null>(null);
 
@@ -302,21 +394,49 @@ function QuotesPage() {
     fetchQuotes();
   }, []);
 
-  const handleAdd = async () => {
+  const handleSave = async () => {
     if (!newQuote.text || !newQuote.author) {
       setError('Text and author are required.');
       return;
     }
     setError(null);
     try {
-      const q = await blogApi.addQuote(newQuote);
-      setQuotes([q, ...quotes]);
+      if (selectedQuote) {
+        // Edit existing quote
+        const updated = await blogApi.updateQuote(selectedQuote.id, newQuote);
+        setQuotes(quotes.map(q => q.id === selectedQuote.id ? updated : q));
+        setSelectedQuote(null);
+      } else {
+        // Add new quote
+        const q = await blogApi.addQuote(newQuote);
+        setQuotes([q, ...quotes]);
+      }
       setNewQuote({ text: '', translation: '', meaning: '', author: '', category: 'History' });
       setIsAdding(false);
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Failed to add quote.';
+      const msg = err.response?.data?.message || 'Failed to save quote.';
       setError(msg);
     }
+  };
+
+  const handleEditClick = (q: any) => {
+    setSelectedQuote(q);
+    setNewQuote({
+      text: q.text,
+      translation: q.translation || '',
+      meaning: q.meaning || '',
+      author: q.author,
+      category: q.category
+    });
+    setError(null);
+    setIsAdding(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsAdding(false);
+    setSelectedQuote(null);
+    setNewQuote({ text: '', translation: '', meaning: '', author: '', category: 'History' });
+    setError(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -331,14 +451,14 @@ function QuotesPage() {
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">
           <h1 className="text-4xl font-black">Quotes Library</h1>
           <p className="text-muted-foreground font-medium">Manage historical and inspirational thoughts.</p>
         </div>
         <button
-          onClick={() => { setError(null); setIsAdding(!isAdding); }}
-          className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+          onClick={() => { if (isAdding) handleCloseForm(); else setIsAdding(true); }}
+          className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
         >
           {isAdding ? <X size={18} /> : <Plus size={18} />} {isAdding ? 'Close Portal' : 'New Broadcast'}
         </button>
@@ -419,10 +539,10 @@ function QuotesPage() {
             </div>
 
             <button
-              onClick={handleAdd}
+              onClick={handleSave}
               className="w-full bg-primary text-primary-foreground py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.3em] hover:opacity-90 shadow-xl shadow-primary/10 transition-all"
             >
-              Broadcast to Chronicle Lab
+              {selectedQuote ? 'Update Broadcast' : 'Broadcast to Chronicle Lab'}
             </button>
           </motion.div>
         )}
@@ -447,12 +567,20 @@ function QuotesPage() {
                 <span className="px-3 py-1 bg-primary/10 text-primary text-[9px] font-black uppercase tracking-widest rounded-lg">
                   {q.category}
                 </span>
-                <button
-                  onClick={() => handleDelete(q.id)}
-                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                >
-                  <Trash2 size={18} />
-                </button>
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => handleEditClick(q)}
+                    className="p-2 text-slate-350 dark:text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                  >
+                    <Edit3 size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(q.id)}
+                    className="p-2 text-slate-355 dark:text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
 
               <p className="text-xl font-bold tracking-tight leading-relaxed italic text-slate-800 dark:text-slate-100">
@@ -482,359 +610,6 @@ function QuotesPage() {
             </motion.div>
           ))
         )}
-      </div>
-    </div>
-  );
-}
-
-function SettingsPage() {
-  const { user } = useAuth();
-  const [config, setConfig] = useState<Record<string, string>>({
-    footer_text: '',
-    contact_email: '',
-  });
-  const [isSaving, setIsSaving] = useState(false);
-
-  // MFA & Security States
-  const [mfaEnabled, setMfaEnabled] = useState(false);
-  const [mfaSetup, setMfaSetup] = useState<{ secret: string; otpAuthUri: string } | null>(null);
-  const [mfaCode, setMfaCode] = useState('');
-  const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [mfaError, setMfaError] = useState<string | null>(null);
-  const [mfaSuccess, setMfaSuccess] = useState<string | null>(null);
-  const [disableCode, setDisableCode] = useState('');
-  const [isDisabling, setIsDisabling] = useState(false);
-  const [logs, setLogs] = useState<any[]>([]);
-
-  const loadConfig = async () => {
-    try {
-      const data = await blogApi.getConfig();
-      setConfig(prev => ({ ...prev, ...data }));
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const loadSecurityState = async () => {
-    try {
-      const { data: me } = await api.get('auth/me');
-      setMfaEnabled(me.mfaEnabled);
-
-      const { data: auditLogs } = await api.get('auth/logs');
-      setLogs(auditLogs || []);
-    } catch (error) {
-      console.error('Failed to load security profile:', error);
-    }
-  };
-
-  useEffect(() => {
-    loadConfig();
-    loadSecurityState();
-  }, []);
-
-  const handleSaveConfig = async () => {
-    setIsSaving(true);
-    try {
-      await blogApi.updateConfig(config);
-      alert('System configuration updated.');
-    } catch (error) {
-      alert('Security Breach: Failed to update config.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleMfaSetup = async () => {
-    setMfaError(null);
-    setMfaSuccess(null);
-    try {
-      const { data } = await api.post('auth/mfa/setup');
-      setMfaSetup(data);
-    } catch (err) {
-      setMfaError('Failed to initiate MFA setup.');
-    }
-  };
-
-  const handleMfaEnable = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMfaError(null);
-    if (!mfaCode || mfaCode.length !== 6) {
-      setMfaError('Code must be exactly 6 digits.');
-      return;
-    }
-    try {
-      const { data } = await api.post('auth/mfa/enable', { code: mfaCode });
-      setMfaEnabled(true);
-      setBackupCodes(data.backupCodes || []);
-      setMfaSetup(null);
-      setMfaCode('');
-      setMfaSuccess('Multi-Factor Authentication enabled successfully!');
-      loadSecurityState();
-    } catch (err: any) {
-      setMfaError(err.response?.data?.message || 'Verification code invalid.');
-    }
-  };
-
-  const handleMfaDisable = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMfaError(null);
-    if (!disableCode || disableCode.length !== 6) {
-      setMfaError('Code must be exactly 6 digits.');
-      return;
-    }
-    setIsDisabling(true);
-    try {
-      await api.post('auth/mfa/disable', { code: disableCode });
-      setMfaEnabled(false);
-      setDisableCode('');
-      setMfaSuccess('Multi-Factor Authentication deactivated.');
-      loadSecurityState();
-    } catch (err: any) {
-      setMfaError(err.response?.data?.message || 'Verification code invalid.');
-    } finally {
-      setIsDisabling(false);
-    }
-  };
-
-  return (
-    <div className="space-y-12 pb-20 max-w-4xl">
-      <div className="space-y-1">
-        <h1 className="text-4xl font-black">Laboratory Settings</h1>
-        <p className="text-muted-foreground font-medium">Configure authentication details, security headers, and dynamic variables.</p>
-      </div>
-
-      <div className="space-y-12">
-        {/* System Settings */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-3">
-             <div className="p-2 bg-primary/10 text-primary rounded-lg">
-                <ExternalLink size={20} />
-             </div>
-             <h2 className="text-xl font-black tracking-tight">Identity & Branding</h2>
-          </div>
-
-          <div className="glass p-10 rounded-[3rem] border-white/5 space-y-8 shadow-2xl">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Footer Tagline</label>
-              <textarea
-                value={config.footer_text}
-                onChange={e => setConfig({ ...config, footer_text: e.target.value })}
-                className="w-full bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-white/10 rounded-[2rem] p-6 text-sm outline-none focus:ring-2 ring-primary/20 transition-all font-medium leading-relaxed"
-                rows={4}
-                placeholder="Where History Meets Technology..."
-              />
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Contact Signal (Email)</label>
-              <input
-                type="email"
-                value={config.contact_email}
-                onChange={e => setConfig({ ...config, contact_email: e.target.value })}
-                className="w-full bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-sm outline-none focus:ring-2 ring-primary/20 transition-all font-medium"
-                placeholder="anirudh@chroniclelab.com"
-              />
-            </div>
-
-            <button
-              onClick={handleSaveConfig}
-              disabled={isSaving}
-              className="w-full bg-primary text-primary-foreground py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.3em] hover:opacity-90 shadow-xl shadow-primary/20 transition-all"
-            >
-              {isSaving ? 'Synchronizing System...' : 'Update Configuration'}
-            </button>
-          </div>
-        </section>
-
-        {/* Security Hardening */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-3">
-             <div className="p-2 bg-primary/10 text-primary rounded-lg">
-                <ShieldCheck size={20} />
-             </div>
-             <h2 className="text-xl font-black tracking-tight">Admin Gateway Security</h2>
-          </div>
-
-          <div className="glass p-10 rounded-[3rem] border-white/5 space-y-8 shadow-2xl">
-            {mfaError && (
-              <div className="bg-red-500/10 text-red-500 p-4 rounded-xl flex items-center gap-3 text-xs font-bold border border-red-500/20">
-                <AlertCircle size={16} />
-                {mfaError}
-              </div>
-            )}
-            {mfaSuccess && (
-              <div className="bg-emerald-500/10 text-emerald-500 p-4 rounded-xl flex items-center gap-3 text-xs font-bold border border-emerald-500/20">
-                <ShieldCheck size={16} />
-                {mfaSuccess}
-              </div>
-            )}
-
-            {!mfaEnabled ? (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-black tracking-tight">Multi-Factor Authentication (MFA)</h3>
-                  <p className="text-sm text-muted-foreground font-medium mt-1">
-                    Secure administrative actions using an Aegis or Google Authenticator time-based one-time password (TOTP) validator.
-                  </p>
-                </div>
-
-                {!mfaSetup ? (
-                  <button
-                    onClick={handleMfaSetup}
-                    className="bg-primary text-primary-foreground px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-md"
-                  >
-                    Set Up Multi-Factor
-                  </button>
-                ) : (
-                  <div className="bg-slate-50 dark:bg-slate-950/40 p-6 rounded-2xl border border-white/5 space-y-6">
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-black">1. Register Key in Authenticator</h4>
-                      <p className="text-xs text-slate-400 font-medium leading-relaxed">
-                        Copy the key details or import the OTPAuth code below into your TOTP application:
-                      </p>
-                      <div className="bg-slate-900 p-4 rounded-xl font-mono text-center select-all tracking-wider text-xs border border-white/5 text-primary break-all">
-                        {mfaSetup.secret}
-                      </div>
-                      <div className="text-[10px] text-slate-500 break-all select-all font-mono">
-                        URI: {mfaSetup.otpAuthUri}
-                      </div>
-                    </div>
-
-                    <form onSubmit={handleMfaEnable} className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">2. Verify TOTP Passcode</label>
-                        <input
-                          type="text"
-                          maxLength={6}
-                          placeholder="000000"
-                          value={mfaCode}
-                          onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
-                          className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3 px-5 text-center font-mono tracking-widest text-lg outline-none focus:border-primary/50 text-white"
-                        />
-                      </div>
-                      <div className="flex gap-4">
-                        <button
-                          type="button"
-                          onClick={() => setMfaSetup(null)}
-                          className="w-1/3 border border-white/10 text-slate-400 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/5 transition-all"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="flex-1 bg-primary text-primary-foreground py-3 rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:opacity-90 shadow-md transition-all"
-                        >
-                          Confirm & Activate
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-emerald-500">
-                  <ShieldCheck size={20} />
-                  <span className="text-sm font-bold">Multi-Factor Authentication is active.</span>
-                </div>
-
-                {backupCodes.length > 0 && (
-                  <div className="bg-slate-50 dark:bg-slate-950/40 p-6 rounded-2xl border border-white/5 space-y-3">
-                    <h4 className="text-sm font-black text-amber-400">Emergency Recovery Backup Codes</h4>
-                    <p className="text-xs text-slate-400 font-medium leading-relaxed">
-                      Store these fallback tokens in a secure vault. Each code can only be used once to bypass the second-factor check during credential recovery:
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 font-mono text-center text-slate-300 font-bold select-all text-xs bg-slate-900 p-4 rounded-xl border border-white/5">
-                      {backupCodes.map((code, idx) => (
-                        <div key={idx}>{code}</div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <form onSubmit={handleMfaDisable} className="space-y-4 pt-4 border-t border-white/5">
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-black text-red-500">Deactivate Authentication Locks</h4>
-                    <p className="text-xs text-slate-400 font-medium leading-relaxed">
-                      Confirm deactivation by entering the active TOTP passcode:
-                    </p>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      placeholder="000000"
-                      value={disableCode}
-                      onChange={e => setDisableCode(e.target.value.replace(/\D/g, ''))}
-                      className="w-full bg-slate-900 border border-white/10 rounded-2xl py-3 px-5 text-center font-mono tracking-widest text-lg outline-none focus:border-primary/50 text-white"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isDisabling}
-                    className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md"
-                  >
-                    Deactivate MFA
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Audit Log Trail */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-3">
-             <div className="p-2 bg-primary/10 text-primary rounded-lg">
-                <BarChart3 size={20} />
-             </div>
-             <h2 className="text-xl font-black tracking-tight">Security Audit Logs</h2>
-          </div>
-
-          <div className="glass rounded-[3rem] border-white/5 overflow-hidden shadow-2xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 border-b border-white/5">
-                    <th className="p-4 font-black uppercase tracking-wider">Timestamp</th>
-                    <th className="p-4 font-black uppercase tracking-wider">Event type</th>
-                    <th className="p-4 font-black uppercase tracking-wider">IP Address</th>
-                    <th className="p-4 font-black uppercase tracking-wider">OS</th>
-                    <th className="p-4 font-black uppercase tracking-wider">Browser</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-muted-foreground italic font-medium">
-                        No audit events recorded.
-                      </td>
-                    </tr>
-                  ) : (
-                    logs.slice(0, 10).map((log) => (
-                      <tr key={log.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                        <td className="p-4 text-slate-400 font-medium">
-                          {new Date(log.timestamp).toLocaleString()}
-                        </td>
-                        <td className="p-4 font-black">
-                          <span className={cn(
-                            "px-2 py-0.5 rounded text-[10px]",
-                            log.event.includes('SUCCESS') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
-                          )}>
-                            {log.event}
-                          </span>
-                        </td>
-                        <td className="p-4 text-slate-400 font-mono">
-                          {log.ipAddress === '::1' || log.ipAddress === '127.0.0.1' ? '127.0.0.1 (Localhost)' : (log.ipAddress || 'unknown')}
-                        </td>
-                        <td className="p-4 text-slate-400 font-medium">{log.os || 'unknown'}</td>
-                        <td className="p-4 text-slate-400 font-medium">{log.browser || 'unknown'}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );

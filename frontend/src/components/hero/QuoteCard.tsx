@@ -24,7 +24,9 @@ export const QuoteCard: React.FC = () => {
       try {
         const data = await blogApi.getQuotes();
         if (data && data.length > 0) {
-          setQuotes(data);
+          // Shuffle quotes randomly
+          const shuffled = [...data].sort(() => Math.random() - 0.5);
+          setQuotes(shuffled);
         } else {
           // Fallback if DB is empty
           setQuotes([{

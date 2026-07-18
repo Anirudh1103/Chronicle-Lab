@@ -16,6 +16,8 @@ export interface PostInput {
   subtitle?: string;
   slug: string;
   excerpt?: string;
+  summary?: string;
+  summaryTitle?: string;
   status?: PostStatus;
   featured?: boolean;
   featuredOrder?: number | null;
@@ -46,7 +48,7 @@ export interface PostInput {
 function calculateStats(blocks: BlockInput[]) {
   let wordCount = 0;
   blocks.forEach(block => {
-    if (block.type === 'paragraph' || block.type === 'heading') {
+    if (block.type === 'paragraph' || block.type === 'heading' || block.type === 'summary') {
       const text = block.content.text || '';
       wordCount += text.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length;
     }
@@ -244,6 +246,7 @@ export class PostService {
           { title: { contains: query } },
           { subtitle: { contains: query } },
           { excerpt: { contains: query } },
+          { summary: { contains: query } },
           { blocks: { some: { content: { contains: query } } } }
         ],
         status: 'PUBLISHED'

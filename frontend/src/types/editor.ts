@@ -20,7 +20,8 @@ export type BlockType =
   | 'embed'
   | 'reference'
   | 'list'
-  | 'keyInsight';
+  | 'keyInsight'
+  | 'summary';
 
 export interface EditorBlock {
   id: string;
@@ -37,6 +38,8 @@ export interface PostMetadata {
   subtitle?: string;
   slug: string;
   excerpt?: string;
+  summary?: string;
+  summaryTitle?: string;
   status: PostStatus;
   featured: boolean;
   featuredOrder?: number | null;

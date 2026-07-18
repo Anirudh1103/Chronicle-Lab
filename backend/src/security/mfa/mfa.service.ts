@@ -54,16 +54,20 @@ export function generateHOTP(secretBase32: string, counter: number): string {
 /**
  * Generates TOTP code based on current timestamp divided by 30 seconds.
  */
-export function generateTOTP(secretBase32: string): string {
-  const counter = Math.floor(Date.now() / 1000 / 30);
+export function generateTOTP(secretBase32WithSkew: string): string {
+  const [secretBase32, skewStr] = secretBase32WithSkew.split(':');
+  const skew = parseInt(skewStr, 10) || 0;
+  const counter = Math.floor(Date.now() / 1000 / 30) + skew;
   return generateHOTP(secretBase32, counter);
 }
 
 /**
  * Verifies standard 6-digit TOTP code allowing for clock drift window.
  */
-export function verifyTOTP(secretBase32: string, token: string, windowSteps = 1): boolean {
-  const counter = Math.floor(Date.now() / 1000 / 30);
+export function verifyTOTP(secretBase32WithSkew: string, token: string, windowSteps = 4): boolean {
+  const [secretBase32, skewStr] = secretBase32WithSkew.split(':');
+  const skew = parseInt(skewStr, 10) || 0;
+  const counter = Math.floor(Date.now() / 1000 / 30) + skew;
   
   for (let i = -windowSteps; i <= windowSteps; i++) {
     if (generateHOTP(secretBase32, counter + i) === token) {

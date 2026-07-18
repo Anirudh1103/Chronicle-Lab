@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Plus, Trash2, Edit3, X, AlertCircle, Save } from 'lucide-react';
-import api from '../api/client';
+import { blogApi } from '../api/blog.api';
 import { cn } from '../utils/cn';
 import { createPortal } from 'react-dom';
 
@@ -29,7 +29,7 @@ export function GlossaryManager() {
   const { data: terms = [], isLoading } = useQuery<GlossaryTerm[]>({
     queryKey: ['glossary-admin'],
     queryFn: async () => {
-      const { data } = await api.get('glossary');
+      const data = await blogApi.getGlossary();
       return data;
     }
   });
@@ -51,7 +51,7 @@ export function GlossaryManager() {
   // Create/Update Mutation
   const saveMutation = useMutation({
     mutationFn: async (payload: { id?: string; term: string; definition: string; category: string }) => {
-      const { data } = await api.post('glossary', payload);
+      const data = await blogApi.saveGlossary(payload);
       return data;
     },
     onSuccess: () => {
@@ -60,7 +60,7 @@ export function GlossaryManager() {
       closeForm();
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.message || 'Failed to save glossary term. Check credentials or database limits.';
+      const msg = error.response?.data?.message || error.message || 'Failed to save glossary term.';
       setError(msg);
     }
   });
@@ -68,7 +68,7 @@ export function GlossaryManager() {
   // Delete Mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`glossary/${id}`);
+      await blogApi.deleteGlossary(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['glossary-admin'] });
@@ -232,15 +232,22 @@ export function GlossaryManager() {
       </div>
 
       {/* Editor Modal */}
-      <AnimatePresence>
-        {isEditing && createPortal(
-          <div className="fixed inset-0 z-[20000] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+      {createPortal(
+        <AnimatePresence>
+          {isEditing && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass p-8 rounded-[2.5rem] w-full max-w-lg space-y-6 shadow-2xl border-white/10 relative overflow-hidden text-slate-900 dark:text-white"
+              key="glossary-modal-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[20000] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
             >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="glass p-8 rounded-[2.5rem] w-full max-w-lg space-y-6 shadow-2xl border-white/10 relative overflow-hidden text-slate-900 dark:text-white"
+              >
               <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
                   {selectedTerm ? 'Edit Term' : 'Add Term'}
@@ -275,7 +282,7 @@ export function GlossaryManager() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Definition Content</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-405">Definition Content</label>
                   <textarea
                     value={definition}
                     onChange={(e) => setDefinition(e.target.value)}
@@ -286,7 +293,7 @@ export function GlossaryManager() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Category Tag</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-405">Category Tag</label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
@@ -313,10 +320,11 @@ export function GlossaryManager() {
                 </button>
               </form>
             </motion.div>
-          </div>,
-          document.body
+          </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    )}
     </div>
   );
 }

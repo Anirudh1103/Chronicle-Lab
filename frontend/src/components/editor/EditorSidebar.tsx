@@ -101,6 +101,28 @@ export const EditorSidebar: React.FC = () => {
                 />
               </label>
 
+              <label className="block">
+                <span className="text-xs font-bold text-slate-500 uppercase">Summary Section Title</span>
+                <input
+                  type="text"
+                  value={metadata.summaryTitle || ''}
+                  onChange={(e) => setMetadata({ summaryTitle: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-800 dark:border-slate-700"
+                  placeholder="Quick Read"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-bold text-slate-500 uppercase">Summary (TL;DR)</span>
+                <textarea
+                  value={metadata.summary || ''}
+                  onChange={(e) => setMetadata({ summary: e.target.value })}
+                  rows={4}
+                  className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-800 dark:border-slate-700"
+                  placeholder="Write a quick summary or TL;DR of the post..."
+                />
+              </label>
+
               <label className="block pt-2">
                 <span className="text-xs font-bold text-slate-500 uppercase">Completion Quote</span>
                 <textarea

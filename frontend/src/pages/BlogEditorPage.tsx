@@ -54,6 +54,8 @@ export const BlogEditorPage: React.FC = () => {
             subtitle: post.subtitle,
             slug: post.slug,
             excerpt: post.excerpt,
+            summary: post.summary || '',
+            summaryTitle: post.summaryTitle || '',
             status: post.status,
             featured: post.featured,
             featuredOrder: post.featuredOrder,
@@ -208,7 +210,7 @@ export const BlogEditorPage: React.FC = () => {
   }, [isDirty, isLoading, blocks, metadata, seo]);
 
   const wordCount = blocks.reduce((acc, block) => {
-    if (block.type === 'paragraph' || block.type === 'heading') {
+    if (block.type === 'paragraph' || block.type === 'heading' || block.type === 'summary') {
       return acc + (block.content.text?.replace(/<[^>]*>/g, '').split(/\s+/).length || 0);
     }
     return acc;

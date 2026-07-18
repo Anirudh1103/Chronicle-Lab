@@ -9,17 +9,20 @@ datasource db {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  password       String
-  name           String
-  role           String   @default("VIEWER")
-  mfaSecret      String?  @map("mfa_secret")
-  mfaEnabled     Boolean  @default(false) @map("mfa_enabled")
-  mfaBackupCodes String?  @map("mfa_backup_codes")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  posts          Post[]
+  id                  String   @id @default(cuid())
+  email               String   @unique
+  password            String
+  name                String
+  role                String   @default("VIEWER")
+  mfaSecret           String?  @map("mfa_secret")
+  mfaEnabled          Boolean  @default(false) @map("mfa_enabled")
+  mfaBackupCodes      String?  @map("mfa_backup_codes")
+  passwordLastChanged DateTime @default(now()) @map("password_last_changed")
+  sessions            Session[]
+  trustedDevices      TrustedDevice[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  posts               Post[]
 }
 
 model Post {
@@ -28,6 +31,8 @@ model Post {
   subtitle          String?
   slug              String     @unique
   excerpt           String?
+  summary           String?
+  summaryTitle      String?
   status            String     @default("DRAFT")
   featured          Boolean    @default(false)
   featuredOrder     Int?
@@ -217,5 +222,33 @@ model Comment {
   createdAt   DateTime @default(now())
   isHidden    Boolean  @default(false)
   adminReply  String?
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  browser      String?
+  os           String?
+  deviceName   String?
+  ipAddress    String?
+  country      String?
+  city         String?
+  lastActivity DateTime @default(now())
+  createdAt    DateTime @default(now())
+  isValid      Boolean  @default(true)
+}
+
+model TrustedDevice {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId   String   @unique
+  deviceName String
+  browser    String
+  os         String
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
 }
 

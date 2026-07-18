@@ -80,6 +80,7 @@ export const EditorCanvas: React.FC = () => {
     { type: 'heading', label: 'Heading' },
     { type: 'subheading', label: 'Sub Heading' },
     { type: 'paragraph', label: 'Text' },
+    { type: 'summary', label: 'Summary' },
     { type: 'image', label: 'Image' },
     { type: 'code', label: 'Code' },
     { type: 'quote', label: 'Quote' },

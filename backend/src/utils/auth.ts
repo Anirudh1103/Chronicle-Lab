@@ -1,8 +1,8 @@
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 
-export const generateToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET!, {
+export const generateToken = (id: string, sessionId: string) => {
+  return jwt.sign({ id, sessionId }, process.env.JWT_SECRET!, {
     expiresIn: '30d',
   });
 };

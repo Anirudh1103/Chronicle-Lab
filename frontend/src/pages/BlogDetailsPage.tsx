@@ -174,12 +174,13 @@ export const BlogDetailsPage: React.FC = () => {
   // TTS Narration Parsing
   const narrationChunks = useMemo(() => {
     if (!post) return [];
-    return parseNarration(post.title, post.subtitle, post.blocks || []);
+    return parseNarration(post.title, post.subtitle, post.blocks || [], post.summary, post.summaryTitle);
   }, [post]);
 
   const {
     status: ttsStatus,
     currentChunkIndex,
+    spokenWordRange,
     currentBlockId,
     voices,
     selectedVoiceName,
@@ -230,16 +231,17 @@ export const BlogDetailsPage: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Smooth scroll current block into view
+  // Smooth scroll current sentence into view
   useEffect(() => {
-    if (currentBlockId && autoFollow) {
-      const element = document.getElementById(currentBlockId);
+    if (narrationChunks[currentChunkIndex] && autoFollow) {
+      const activeChunkId = narrationChunks[currentChunkIndex].id;
+      const element = document.getElementById(activeChunkId);
       if (element) {
         lastAutoScrollTime.current = Date.now();
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
-  }, [currentBlockId, autoFollow]);
+  }, [currentChunkIndex, autoFollow, narrationChunks]);
 
   const handleGlossaryInteraction = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -366,10 +368,7 @@ export const BlogDetailsPage: React.FC = () => {
 
       {/* Hero Header */}
       {!isFocusMode && (
-        <header className={cn(
-          "relative pt-12 md:pt-20 pb-12 md:pb-16 px-4 md:px-6 mx-auto space-y-6 md:space-y-8 transition-all duration-700",
-          hasPersonalInsights ? "max-w-[1800px] xl:pl-32" : "max-w-[1450px]"
-        )}>
+        <header className="relative pt-12 md:pt-20 pb-12 md:pb-16 px-4 md:px-6 mx-auto space-y-6 md:space-y-8 transition-all duration-700 max-w-[1700px] lg:pr-[380px] xl:pr-[420px]">
           <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-primary transition-colors mb-2">
             <ChevronLeft size={16} /> <span className="hidden sm:inline">Back to Chronicles</span><span className="sm:hidden">Back</span>
           </Link>
@@ -435,7 +434,7 @@ export const BlogDetailsPage: React.FC = () => {
       <main className={cn(
         "mx-auto px-6 md:px-12 transition-all duration-700",
         !isFocusMode
-          ? "w-full max-w-[1800px] grid grid-cols-1 gap-16 lg:gap-24 lg:grid-cols-[1fr_400px]"
+          ? "w-full max-w-[1700px] grid grid-cols-1 gap-16 lg:gap-20 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px]"
           : "max-w-5xl py-12 md:py-20"
       )}>
         <div className="w-full">
@@ -445,6 +444,7 @@ export const BlogDetailsPage: React.FC = () => {
               <ArticleAudioPlayer
                 status={ttsStatus}
                 currentChunkIndex={currentChunkIndex}
+                spokenWordRange={spokenWordRange}
                 rate={ttsRate}
                 voices={voices}
                 selectedVoiceName={selectedVoiceName}
@@ -458,6 +458,29 @@ export const BlogDetailsPage: React.FC = () => {
                 setRate={setRateTTS}
                 setVoice={setVoiceTTS}
               />
+            </div>
+          )}
+
+          {post.summary && (
+            <div className="mb-12 p-8 md:p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/5 via-slate-50/50 to-primary/5 dark:from-primary/10 dark:via-slate-900/30 dark:to-primary/10 border border-primary/10 dark:border-white/5 relative overflow-hidden shadow-sm">
+               <div className="absolute -top-6 -right-6 text-primary/5 pointer-events-none">
+                 <Sparkles size={120} />
+               </div>
+               
+               <div className="flex items-center gap-3 mb-6">
+                 <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+                   <BookOpen size={20} />
+                 </div>
+                 <div>
+                   <div className="text-lg font-sans font-black uppercase tracking-widest text-slate-900 dark:text-white">
+                     {post.summaryTitle || 'Quick Read'}
+                   </div>
+                 </div>
+               </div>
+
+               <div className="text-base md:text-lg text-slate-700 dark:text-slate-300 font-medium leading-relaxed whitespace-pre-line space-y-3">
+                  {post.summary}
+               </div>
             </div>
           )}
 
@@ -491,11 +514,63 @@ export const BlogDetailsPage: React.FC = () => {
             })}
 
           </div>
-        </div>
  
+          {/* Relocated Author and Personal Insights at the end of article content - Visible only on mobile/tablet since it is in the sidebar on desktop */}
+          {!isFocusMode && (
+            <div className="mt-16 pt-12 border-t border-slate-100 dark:border-white/5 grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-5xl mx-auto select-none lg:hidden">
+              {/* Author Card */}
+              <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-6 shadow-sm">
+                <div className="flex items-center gap-3 text-primary">
+                  <User size={18} />
+                  <h4 className="text-xs font-black uppercase tracking-[0.25em]">Author</h4>
+                </div>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-primary/20">
+                      {post.author.name[0]}
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-widest">{post.author.name}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Chronicle Lab Researcher</p>
+                    </div>
+                  </div>
+                  <p className="text-base text-slate-500 font-medium leading-relaxed border-t border-slate-100 dark:border-white/5 pt-6">
+                    {post.excerpt || "A deep dive exploration into the intersection of technology and history."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Personal Insights */}
+              {hasPersonalInsights ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 px-6">
+                    <Sparkles size={14} className="text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Personal Insights</span>
+                  </div>
+                  <div className="space-y-4">
+                    {personalInsights.map((insight: any) => (
+                      <div key={insight.id} className="pl-6 py-4 border-l-4 border-primary bg-primary/5 dark:bg-primary/10 rounded-r-3xl rounded-l-none shadow-sm">
+                        <p className="text-sm md:text-base text-slate-850 dark:text-slate-100 font-bold leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 flex flex-col justify-center items-center text-center">
+                  <span className="text-slate-400 dark:text-slate-500 font-bold text-xs uppercase tracking-widest mb-2">Chronicle Lab Archives</span>
+                  <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
+                    This post is archived under {post.category?.name || 'History & Tech'}. Explore more archives in the main library collection.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+
         {/* Sidebar for desktop */}
         {!isFocusMode && (
-          <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0">
+          <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0 text-left">
             <div className="sticky top-32 space-y-8">
               <AnimatePresence mode="wait">
                 {percent < 10 ? (
@@ -505,13 +580,13 @@ export const BlogDetailsPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -15 }}
                     transition={{ duration: 0.25 }}
-                    className="space-y-8 text-left"
+                    className="space-y-8"
                   >
                     {/* Author Card */}
-                    <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-6 shadow-sm backdrop-blur-xl">
+                    <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-6 shadow-sm">
                       <div className="flex items-center gap-3 text-primary">
-                        <User size={20} />
-                        <h4 className="text-xs font-black uppercase tracking-[0.2em]">Author</h4>
+                        <User size={18} />
+                        <h4 className="text-xs font-black uppercase tracking-[0.25em]">Author</h4>
                       </div>
                       <div className="space-y-6">
                         <div className="flex items-center gap-4">
@@ -520,7 +595,7 @@ export const BlogDetailsPage: React.FC = () => {
                           </div>
                           <div>
                             <p className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-widest">{post.author.name}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Chronicle Lab</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Chronicle Lab Researcher</p>
                           </div>
                         </div>
                         <p className="text-base text-slate-500 font-medium leading-relaxed border-t border-slate-100 dark:border-white/5 pt-6">
@@ -537,17 +612,12 @@ export const BlogDetailsPage: React.FC = () => {
                           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Personal Insights</span>
                         </div>
                         {personalInsights.map((insight: any) => (
-                          <div key={insight.id} className="pl-6 py-4 border-l-4 border-primary bg-primary/5 dark:bg-primary/10 rounded-r-3xl rounded-l-none backdrop-blur-xl shadow-sm">
+                          <div key={insight.id} className="pl-6 py-4 border-l-4 border-primary bg-primary/5 dark:bg-primary/10 rounded-r-3xl rounded-l-none shadow-sm">
                             <p className="text-sm md:text-base text-slate-850 dark:text-slate-100 font-bold leading-relaxed italic" dangerouslySetInnerHTML={{ __html: insight.content.text }} />
                           </div>
                         ))}
                       </div>
                     )}
-
-                    {/* Rate Article Card */}
-                    <div className="p-8 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-6 shadow-sm">
-                      <Reactions postId={post.id} />
-                    </div>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -556,12 +626,43 @@ export const BlogDetailsPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -15 }}
                     transition={{ duration: 0.25 }}
+                    className="space-y-8"
                   >
                     <ReadingCompanion
                       blocks={post.blocks}
                       activeId={activeId}
                       percent={percent}
                     />
+
+                    {/* Near the end: Related Articles inside sidebar */}
+                    {percent >= 85 && relatedPosts.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-900/30 border border-slate-150 dark:border-white/5 space-y-4"
+                      >
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Continue Exploring</span>
+                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">Related Chronicles</h4>
+                        </div>
+                        <div className="space-y-3">
+                          {relatedPosts.slice(0, 2).map((rPost: any) => (
+                            <Link
+                              key={rPost.id}
+                              to={`/blog/${rPost.slug}`}
+                              className="block p-3.5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-150 dark:border-white/5 hover:border-primary transition-all text-left"
+                            >
+                              <span className="text-[9px] font-black uppercase tracking-widest text-primary block mb-1">
+                                {rPost.category?.name || 'Archive'}
+                              </span>
+                              <h5 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
+                                {rPost.title}
+                              </h5>
+                            </Link>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -699,6 +800,8 @@ export const BlogDetailsPage: React.FC = () => {
   );
 };
 
+
+
 function renderBlock(block: any, onImageClick?: (img: any) => void) {
   const { type, content } = block;
   switch (type) {
@@ -720,49 +823,91 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
       );
 
     case 'paragraph':
-      return <div className="text-lg sm:text-xl md:text-2xl leading-[1.6] mb-10 text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />;
+      return <div className="text-lg sm:text-xl md:text-2xl leading-[1.6] mb-10 text-slate-700 dark:text-slate-300 text-left" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />;
 
     case 'image':
-      return (
-        <figure className="my-20 md:my-32 relative group">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="relative"
-          >
-            {/* Soft Glow Background */}
-            <div className="absolute -inset-4 bg-primary/5 blur-3xl rounded-[4rem] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+      const isWideImage = content.alt?.toLowerCase().includes('map') || 
+                          content.alt?.toLowerCase().includes('diagram') || 
+                          content.alt?.toLowerCase().includes('infographic') || 
+                          content.alt?.toLowerCase().includes('timeline') || 
+                          content.alt?.toLowerCase().includes('wide') ||
+                          content.caption?.toLowerCase().includes('map') ||
+                          content.caption?.toLowerCase().includes('diagram');
 
-            <div
-              className="relative rounded-[2.5rem] md:rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border border-white/5 cursor-zoom-in"
+      // Caption parser helper
+      const parseCaption = (caption: string) => {
+        if (!caption) return null;
+        const parts = caption.split('|').map(p => p.trim());
+        if (parts.length >= 3) {
+          return {
+            figure: parts[0],
+            title: parts[1],
+            description: parts[2]
+          };
+        }
+        if (parts.length === 2) {
+          return {
+            figure: 'Exhibit Label',
+            title: parts[0],
+            description: parts[1]
+          };
+        }
+        return {
+          figure: 'Historical Artifact',
+          title: caption,
+          description: ''
+        };
+      };
+
+      const parsedCaption = parseCaption(content.caption);
+
+      return (
+        <figure className={cn(
+          "my-16 md:my-24 relative group mx-auto w-full select-none",
+          isWideImage ? "max-w-none xl:max-w-5xl" : "max-w-3xl"
+        )}>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-6"
+          >
+            {/* Museum Exhibit Card Container */}
+            <div 
+              className="p-4 md:p-6 bg-slate-50/50 dark:bg-slate-900/10 border border-slate-150 dark:border-white/5 rounded-[2.5rem] md:rounded-[3rem] shadow-sm cursor-zoom-in relative overflow-hidden group/image"
               onClick={() => onImageClick?.({src: content.url, alt: content.alt, caption: content.caption})}
             >
-              <motion.img
-                src={content.url}
-                alt={content.alt}
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full h-auto"
-              />
+              <div className="relative rounded-2xl md:rounded-[2rem] overflow-hidden bg-slate-100 dark:bg-slate-950">
+                <motion.img
+                  src={content.url}
+                  alt={content.alt}
+                  className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover/image:scale-[1.03]"
+                  loading="lazy"
+                />
 
-              {/* Interactive Overlay */}
-              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
-                <div className="p-5 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 text-white scale-90 group-hover:scale-100 transition-transform duration-500">
-                  <Maximize2 size={32} strokeWidth={1.5} />
+                {/* Dark Overlay & View Fullscreen Button */}
+                <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <span className="flex items-center gap-2 px-5 py-2.5 bg-slate-900/90 dark:bg-white/90 text-white dark:text-slate-950 rounded-full font-black text-[10px] uppercase tracking-wider shadow-lg opacity-0 group-hover/image:opacity-100 scale-90 group-hover/image:scale-100 transition-all duration-300 active:scale-95">
+                    <Maximize2 size={11} className="stroke-[3]" />
+                    <span>View Fullscreen</span>
+                  </span>
                 </div>
               </div>
             </div>
 
-            {content.caption && (
-              <div className="mt-8 flex flex-col items-center">
-                <div className="h-px w-12 bg-primary/30 mb-6" />
-                <figcaption className="text-center max-w-2xl px-6">
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary block mb-2 opacity-50">Visual Asset</span>
-                  <p className="text-base md:text-lg text-slate-400 font-editorial italic leading-relaxed">
-                    {content.caption}
-                  </p>
+            {/* Captions Layout */}
+            {parsedCaption && (
+              <div className="mt-6 flex flex-col items-center text-center px-4">
+                <div className="h-px w-10 bg-primary/20 mb-4" />
+                <figcaption className="max-w-2xl space-y-1.5">
+                  <span className="text-[9px] font-black uppercase tracking-[0.35em] text-primary block">{parsedCaption.figure}</span>
+                  <h5 className="text-slate-900 dark:text-white font-black text-xs md:text-sm uppercase tracking-wider">{parsedCaption.title}</h5>
+                  {parsedCaption.description && (
+                    <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-lg mx-auto">
+                      {parsedCaption.description}
+                    </p>
+                  )}
                 </figcaption>
               </div>
             )}
@@ -823,7 +968,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
         </div>
       );
 
-    case 'list':
+    case 'list': {
       const ListTag = content.type === 'bullet' ? 'ul' : 'ol';
       return (
         <ListTag className={cn(
@@ -831,20 +976,21 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
           content.type === 'bullet' ? "list-disc pl-10" : "list-decimal pl-10"
         )}>
           {content.items.map((item: string, i: number) => (
-            <li key={i} className="text-lg md:text-2xl text-slate-700 dark:text-slate-300 leading-relaxed pl-2" dangerouslySetInnerHTML={{ __html: highlightGlossary(item) }} />
+            <li key={i} className="text-lg md:text-2xl text-slate-700 dark:text-slate-300 leading-relaxed pl-2 text-left" dangerouslySetInnerHTML={{ __html: highlightGlossary(item) }} />
           ))}
         </ListTag>
       );
+    }
 
     case 'table':
       return (
-        <div className="my-12 overflow-x-auto glass rounded-[1.5rem] md:rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-2xl no-scrollbar">
-          <table className="w-full border-collapse min-w-[600px] md:min-w-full">
+        <div className="my-8 md:my-12 overflow-x-auto glass rounded-[1.25rem] md:rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-2xl no-scrollbar w-full">
+          <table className="w-full border-collapse table-auto md:table-fixed text-xs sm:text-base">
             {content.headers && (
               <thead>
                 <tr className="bg-slate-100/50 dark:bg-white/5">
                   {content.headers.map((header: string, i: number) => (
-                    <th key={i} className="p-4 md:p-10 border-b border-r border-slate-200 dark:border-white/10 text-left font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] md:tracking-[0.3em] text-primary" dangerouslySetInnerHTML={{ __html: header }} />
+                    <th key={i} className="p-2 sm:p-4 md:p-10 border-b border-r border-slate-200 dark:border-white/10 text-left font-black text-[8px] md:text-[10px] uppercase tracking-[0.1em] md:tracking-[0.3em] text-primary" dangerouslySetInnerHTML={{ __html: header }} />
                   ))}
                 </tr>
               </thead>
@@ -853,7 +999,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
               {content.rows.map((row: any[], ri: number) => (
                 <tr key={ri} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                   {row.map((cell: any, ci: number) => (
-                    <td key={ci} className="p-4 md:p-10 border-b border-r border-slate-200 dark:border-white/10 text-base md:text-xl text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                    <td key={ci} className="p-2 sm:p-4 md:p-10 border-b border-r border-slate-200 dark:border-white/10 text-[10px] sm:text-base md:text-xl text-slate-700 dark:text-slate-300 leading-normal sm:leading-relaxed font-medium break-words">
                         <TableCell content={cell} onImageClick={onImageClick} />
                     </td>
                   ))}
@@ -1004,6 +1150,28 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
                 ))}
               </div>
            </div>
+        </div>
+      );
+
+    case 'summary':
+      return (
+        <div className="mb-12 p-8 md:p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/5 via-slate-50/50 to-primary/5 dark:from-primary/10 dark:via-slate-900/30 dark:to-primary/10 border border-primary/10 dark:border-white/5 relative overflow-hidden shadow-sm">
+           <div className="absolute -top-6 -right-6 text-primary/5 pointer-events-none">
+             <Sparkles className="w-40 h-40" />
+           </div>
+           
+           <div className="flex items-center gap-3 mb-6 select-none">
+             <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+               <BookOpen size={20} />
+             </div>
+             <div>
+               <div className="text-lg font-sans font-black uppercase tracking-widest text-slate-900 dark:text-white">
+                 {content.title || 'Quick Read'}
+               </div>
+             </div>
+           </div>
+
+           <div className="text-base md:text-lg text-slate-700 dark:text-slate-300 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />
         </div>
       );
 

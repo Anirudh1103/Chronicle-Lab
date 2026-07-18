@@ -19,7 +19,9 @@ export function QuotesCarousel() {
     const fetch = async () => {
       try {
         const data = await blogApi.getQuotes();
-        setAllQuotes(data);
+        // Shuffle quotes randomly
+        const shuffled = [...data].sort(() => Math.random() - 0.5);
+        setAllQuotes(shuffled);
       } catch (err) {
         console.error(err);
       }

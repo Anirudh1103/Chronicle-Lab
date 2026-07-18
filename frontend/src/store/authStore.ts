@@ -5,6 +5,8 @@ interface User {
   name: string;
   email: string;
   role: string;
+  mfaEnabled?: boolean;
+  passwordLastChanged?: string;
 }
 
 interface AuthState {

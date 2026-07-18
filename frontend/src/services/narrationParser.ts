@@ -30,7 +30,13 @@ export function splitIntoSentences(text: string): string[] {
 /**
  * Parses post blocks into structured narration chunks.
  */
-export function parseNarration(title: string, subtitle: string | null, blocks: any[]): NarrationChunk[] {
+export function parseNarration(
+  title: string,
+  subtitle: string | null,
+  blocks: any[],
+  metadataSummary?: string | null,
+  metadataSummaryTitle?: string | null
+): NarrationChunk[] {
   const chunks: NarrationChunk[] = [];
 
   // 1. Add Title & Subtitle
@@ -53,6 +59,30 @@ export function parseNarration(title: string, subtitle: string | null, blocks: a
       text: `${cleanSubtitle}.`,
       lang: 'en-US',
       type: 'subtitle'
+    });
+  }
+
+  // 1.5 Add Metadata Summary
+  const cleanSummary = cleanHtml(metadataSummary);
+  const cleanSummaryTitle = cleanHtml(metadataSummaryTitle || 'Quick Read');
+  if (cleanSummary) {
+    chunks.push({
+      id: 'metadata-summary-title',
+      blockId: 'metadata-summary-title',
+      text: `${cleanSummaryTitle}:`,
+      lang: 'en-US',
+      type: 'summary-title'
+    });
+    
+    const sentences = splitIntoSentences(cleanSummary);
+    sentences.forEach((sentence, idx) => {
+      chunks.push({
+        id: `metadata-summary-${idx}`,
+        blockId: 'metadata-summary-title',
+        text: sentence,
+        lang: isDevanagari(sentence) ? 'hi-IN' : 'en-US',
+        type: 'metadata-summary'
+      });
     });
   }
 
@@ -213,6 +243,33 @@ export function parseNarration(title: string, subtitle: string | null, blocks: a
           lang: 'en-US',
           type: 'table-summary'
         });
+        break;
+      }
+
+      case 'summary': {
+        const text = cleanHtml(content.text);
+        const title = cleanHtml(content.title || 'Quick Read');
+        if (title) {
+          chunks.push({
+            id: `${blockId}-title`,
+            blockId,
+            text: `${title}:`,
+            lang: 'en-US',
+            type: 'summary-block-title'
+          });
+        }
+        if (text) {
+          const sentences = splitIntoSentences(text);
+          sentences.forEach((sentence, idx) => {
+            chunks.push({
+              id: `${blockId}-${idx}`,
+              blockId,
+              text: sentence,
+              lang: isDevanagari(sentence) ? 'hi-IN' : 'en-US',
+              type: 'summary-block'
+            });
+          });
+        }
         break;
       }
 

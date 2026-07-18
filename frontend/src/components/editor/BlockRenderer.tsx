@@ -17,6 +17,7 @@ import { ButtonBlock } from './blocks/ButtonBlock';
 import { PersonalTouchBlock } from './blocks/PersonalTouchBlock';
 import { GalleryBlock } from './blocks/GalleryBlock';
 import { KeyInsightBlock } from './blocks/KeyInsightBlock';
+import { SummaryBlock } from './blocks/SummaryBlock';
 
 interface BlockRendererProps {
   block: EditorBlock;
@@ -62,6 +63,8 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
       return <GalleryBlock id={block.id} content={block.content} />;
     case 'keyinsight':
       return <KeyInsightBlock id={block.id} content={block.content} />;
+    case 'summary':
+      return <SummaryBlock id={block.id} content={block.content} />;
     default:
       return (
         <div className="p-4 bg-slate-100 rounded text-slate-500 text-sm">

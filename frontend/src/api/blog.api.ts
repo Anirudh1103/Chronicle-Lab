@@ -8,6 +8,14 @@ const api = axios.create({
   withCredentials: true,
 });
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('admin_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const blogApi = {
   createPost: async (data: any) => {
     const response = await api.post('/posts', data);
@@ -140,6 +148,11 @@ export const blogApi = {
     return response.data;
   },
 
+  updateQuote: async (id: string, data: any) => {
+    const response = await api.put(`/settings/quotes/${id}`, data);
+    return response.data;
+  },
+
   deleteQuote: async (id: string) => {
     const response = await api.delete(`/settings/quotes/${id}`);
     return response.data;
@@ -162,6 +175,21 @@ export const blogApi = {
 
   unsubscribeNewsletter: async (token: string) => {
     const response = await api.post('/newsletter/unsubscribe', { token });
+    return response.data;
+  },
+
+  getGlossary: async () => {
+    const response = await api.get('/glossary');
+    return response.data;
+  },
+
+  saveGlossary: async (payload: any) => {
+    const response = await api.post('/glossary', payload);
+    return response.data;
+  },
+
+  deleteGlossary: async (id: string) => {
+    const response = await api.delete(`/glossary/${id}`);
     return response.data;
   },
 };
