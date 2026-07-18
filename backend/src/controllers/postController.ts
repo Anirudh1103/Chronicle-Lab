@@ -40,6 +40,7 @@ export const getPosts = async (req: Request, res: Response) => {
     const posts = await PostService.getAllPosts(status === 'PUBLISHED');
     res.json(posts);
   } catch (error) {
+    console.error('Get Posts Error:', error);
     res.status(500).json({ error: 'Failed to fetch posts' });
   }
 };
