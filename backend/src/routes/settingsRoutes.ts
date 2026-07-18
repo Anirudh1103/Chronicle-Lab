@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/db';
 import { protect, admin } from '../security/middleware/auth.middleware';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 // Public: Get all quotes
 router.get('/quotes', async (req, res) => {

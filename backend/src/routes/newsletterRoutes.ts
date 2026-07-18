@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/db';
 import crypto from 'crypto';
 import { EmailService } from '../services/email.service';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 // Email validation helper
 const validateEmail = (email: string): boolean => {

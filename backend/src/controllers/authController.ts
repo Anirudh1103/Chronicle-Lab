@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -91,7 +91,7 @@ async function createStatefulSession(userId: string, req: Request): Promise<stri
 }
 
 
-const prisma = new PrismaClient();
+
 
 const registerSchema = z.object({
   email: z.string().email(),

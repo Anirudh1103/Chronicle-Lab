@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../config/db';
 import { SECURITY_CONFIG } from '../constants/security.constants';
 import { logSecurityEvent } from '../logging/security.logger';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Protect route middleware: Decrypts JWT cookies and attaches user context.

@@ -13,7 +13,7 @@ import glossaryRoutes from './routes/glossaryRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import securityRoutes from './routes/securityRoutes';
 import { setSecurityHeaders } from './security/headers/headers.middleware';
-import { PrismaClient } from '@prisma/client';
+import prisma from './config/db';
 
 import { DEFAULT_GLOSSARY } from './constants/glossary';
 
@@ -71,7 +71,7 @@ app.get('/', (req, res) => {
   res.send('Blog API is running');
 });
 
-const prisma = new PrismaClient();
+
 async function ensureCategories() {
   const categories = [
     { name: 'History', slug: 'history' },

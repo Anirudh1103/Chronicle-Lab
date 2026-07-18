@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/db';
 import { SECURITY_CONFIG } from '../security/constants/security.constants';
 import { logSecurityEvent } from '../security/logging/security.logger';
 
-const prisma = new PrismaClient();
+
 
 // Helper: Fetch location from IP
 async function fetchGeolocation(ip: string): Promise<{ country: string; city: string }> {

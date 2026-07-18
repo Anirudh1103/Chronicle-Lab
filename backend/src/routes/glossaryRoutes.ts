@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/db';
 import { protect, admin } from '../security/middleware/auth.middleware';
 import { glossaryTermSchema } from '../security/validation/validation.helper';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 /**
  * Public endpoint: Retrieve all dynamic glossary terms sorted alphabetically.

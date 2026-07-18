@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/db';
 import { protect, admin } from '../security/middleware/auth.middleware';
 import { loginRateLimiter } from '../security/ratelimit/rateLimiter';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 /**
  * Helper to parse Browser and OS from User-Agent.
