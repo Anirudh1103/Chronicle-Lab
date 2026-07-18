@@ -171,4 +171,15 @@ app.listen(port, () => {
       console.error('Error ensuring default glossary terms:', err);
     });
   });
+
+  // Keep-alive database query to prevent Supabase from pausing (runs once every 24 hours)
+  const SUPABASE_KEEP_ALIVE_INTERVAL = 24 * 60 * 60 * 1000;
+  setInterval(async () => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('[KEEP-ALIVE] Supabase database keep-alive query successful.');
+    } catch (err) {
+      console.error('[KEEP-ALIVE] Supabase database keep-alive query failed:', err);
+    }
+  }, SUPABASE_KEEP_ALIVE_INTERVAL);
 });
