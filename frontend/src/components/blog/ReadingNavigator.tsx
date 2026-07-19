@@ -111,8 +111,11 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
     if (e) e.stopPropagation();
     const el = document.getElementById(id);
     if (el) {
+      const rect = el.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const targetTop = rect.top + scrollTop - 120;
       window.scrollTo({
-        top: el.offsetTop - 120,
+        top: targetTop,
         behavior: 'smooth'
       });
     }
@@ -249,9 +252,14 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
              {isExpanded ? (
                <>
                  <div className="flex items-center gap-2">
-                   <div className="w-7 h-7 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                   <button
+                    onClick={handleCollapse}
+                    className="w-7 h-7 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary shadow-inner transition-colors duration-200 outline-none focus:outline-none cursor-pointer"
+                    title="Collapse outline"
+                    aria-label="Collapse Table of Contents"
+                   >
                       <List size={14} />
-                   </div>
+                   </button>
                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-900 dark:text-white">Outline</span>
                  </div>
                  <button 
@@ -469,7 +477,7 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
                                 onClick={() => { scrollTo(sub.id); setIsMobileMenuOpen(false); }}
                                 className={cn(
                                   "text-[9px] font-bold uppercase tracking-widest text-left flex items-center gap-2 w-full transition-all outline-none focus:outline-none focus-visible:outline-none",
-                                  activeId === sub.id ? "text-amber-500" : "text-slate-400 dark:text-slate-550"
+                                  activeId === sub.id ? "text-amber-500" : "text-slate-400 dark:text-slate-500"
                                 )}
                               >
                                 <span>•</span>
