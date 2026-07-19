@@ -199,7 +199,13 @@ export class PostService {
 
   static async getPostBySlug(slug: string) {
     return await prisma.post.findFirst({
-      where: { slug, status: 'PUBLISHED' },
+      where: {
+        slug,
+        OR: [
+          { status: 'PUBLISHED' },
+          { status: 'published' }
+        ]
+      },
       include: {
         blocks: { orderBy: { orderIndex: 'asc' } },
         tags: true,

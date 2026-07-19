@@ -278,16 +278,27 @@ export const BlogDetailsPage: React.FC = () => {
     const fetchData = async () => {
       try {
         const data = await blogApi.getPostBySlug(slug!);
-        setPost({
-          ...data,
-          blocks: data.blocks.map((b: any) => ({
-            ...b,
-            content: typeof b.content === 'string' ? JSON.parse(b.content) : b.content
-          }))
-        });
-        document.title = `${data.title} | Chronicle Lab`;
-        // Record page view dynamically in background
-        api.post('analytics/view', { slug: slug! }).catch(err => console.error('Failed to log page view:', err));
+        if (data) {
+          const rawBlocks = Array.isArray(data.blocks) ? data.blocks : [];
+          const processedBlocks = rawBlocks.map((b: any) => {
+            let content = b.content;
+            if (typeof content === 'string') {
+              try {
+                content = JSON.parse(content);
+              } catch {
+                // Keep original content if not JSON
+              }
+            }
+            return { ...b, content };
+          });
+
+          setPost({
+            ...data,
+            blocks: processedBlocks,
+          });
+          document.title = `${data.title || 'Chronicle'} | Chronicle Lab`;
+          api.post('analytics/view', { slug: slug! }).catch(err => console.error('Failed to log page view:', err));
+        }
       } catch (error) {
         console.error("Error fetching post:", error);
       } finally {
