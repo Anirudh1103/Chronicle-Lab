@@ -28,6 +28,7 @@ import { PostCard } from '../components/PostCard';
 import { useAuthStore } from '../store/authStore';
 import { X } from 'lucide-react';
 import { getUploadUrl } from '../utils/url';
+import { CyberLoadingScreen } from '../components/blog/CyberLoadingScreen';
 
 const CodeBlockDetails: React.FC<{ content: any }> = ({ content }) => {
   const [copied, setCopied] = useState(false);
@@ -318,7 +319,7 @@ export const BlogDetailsPage: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-2xl animate-pulse">Loading Chronicle...</div>;
+  if (loading) return <CyberLoadingScreen title={post?.title} />;
   if (!post) return <div className="min-h-screen flex items-center justify-center font-bold text-2xl">Chronicle not found.</div>;
 
   const personalInsights = post.blocks.filter((b: any) => b.type === 'personalTouch');
@@ -887,6 +888,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
                   alt={content.alt}
                   className="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover/image:scale-[1.03]"
                   loading="lazy"
+                  decoding="async"
                 />
 
                 {/* Dark Overlay & View Fullscreen Button */}
