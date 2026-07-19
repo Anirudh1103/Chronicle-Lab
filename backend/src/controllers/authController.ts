@@ -137,6 +137,8 @@ export const register = async (req: Request, res: Response) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      mfaEnabled: user.mfaEnabled,
+      passwordLastChanged: user.passwordLastChanged,
       token,
     });
   } catch (error) {
@@ -226,6 +228,8 @@ export const login = async (req: Request, res: Response) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      mfaEnabled: user.mfaEnabled,
+      passwordLastChanged: user.passwordLastChanged,
       token,
     });
   } catch (error) {
@@ -286,6 +290,8 @@ export const verifyMfaLogin = async (req: Request, res: Response) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      mfaEnabled: user.mfaEnabled,
+      passwordLastChanged: user.passwordLastChanged,
       token,
     });
   } catch (error) {

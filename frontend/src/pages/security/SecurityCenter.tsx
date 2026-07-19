@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../api/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { cn } from '../../utils/cn';
 import {
   Shield,
   KeyRound,
@@ -42,6 +44,7 @@ function copyToClipboard(text: string): Promise<boolean> {
 
 export default function SecurityCenter() {
   const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
   
   // Dynamic score & checklist state
   const [scoreData, setScoreData] = useState<{
@@ -383,6 +386,10 @@ export default function SecurityCenter() {
       setBackupCodes(data.backupCodes || []);
       setMfaSuccess('Multi-factor Authentication activated successfully.');
       addNotification('MFA configured and activated', 'success');
+      
+      // Refresh user profile state
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      
       loadScore();
     } catch (err: any) {
       setMfaError(err.response?.data?.message || 'Invalid confirmation code.');
@@ -400,6 +407,10 @@ export default function SecurityCenter() {
       setDisableCode('');
       setBackupCodes([]);
       setMfaSetup(null);
+
+      // Refresh user profile state
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      
       loadScore();
       setTimeout(() => {
         setIsConfiguringMfa(false);
@@ -667,8 +678,8 @@ export default function SecurityCenter() {
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-medium">
                 <span className="text-muted-foreground">Password strength</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${passwordStrengthLabel.color}`}>
-                  {passwordStrengthLabel.text}
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${scoreData?.checks?.strongPassword ? 'text-emerald-500 bg-emerald-500/10' : 'text-red-500 bg-red-500/10'}`}>
+                  {scoreData?.checks?.strongPassword ? 'Strong' : 'Weak'}
                 </span>
               </div>
               <div className="flex justify-between text-xs font-medium">
@@ -1295,14 +1306,20 @@ export default function SecurityCenter() {
                           value={mfaCode}
                           onChange={(e) => setMfaCode(e.target.value)}
                           placeholder="Enter 6-digit code..."
-                          className="flex-1 bg-muted/20 border rounded-2xl px-4 py-3 outline-none text-xs font-bold leading-normal focus:ring-1 focus:ring-primary/20 text-slate-800 dark:text-white"
+                          disabled={!!mfaSuccess}
+                          className="flex-1 bg-muted/20 border rounded-2xl px-4 py-3 outline-none text-xs font-bold leading-normal focus:ring-1 focus:ring-primary/20 text-slate-800 dark:text-white disabled:opacity-60"
                         />
                         <button
                           onClick={handleEnableMfa}
-                          disabled={mfaCode.length < 6}
-                          className="px-6 py-3 rounded-2xl bg-primary text-white hover:opacity-90 font-black text-xs uppercase tracking-wider disabled:opacity-50"
+                          disabled={mfaCode.length < 6 || !!mfaSuccess}
+                          className={cn(
+                            "px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider disabled:opacity-50 transition-colors duration-300",
+                            mfaSuccess 
+                              ? "bg-emerald-500 text-white" 
+                              : "bg-primary text-white hover:opacity-90"
+                          )}
                         >
-                          Verify & Activate
+                          {mfaSuccess ? 'Activated' : 'Verify & Activate'}
                         </button>
                       </div>
                     </div>
