@@ -28,7 +28,7 @@ import { PostCard } from '../components/PostCard';
 import { useAuthStore } from '../store/authStore';
 import { X } from 'lucide-react';
 import { getUploadUrl } from '../utils/url';
-import { LoadingScreen } from '../components/blog/LoadingScreen/LoadingScreen';
+import { SimpleLoadingScreen } from '../components/blog/SimpleLoadingScreen';
 
 const CodeBlockDetails: React.FC<{ content: any }> = ({ content }) => {
   const [copied, setCopied] = useState(false);
@@ -320,29 +320,15 @@ export const BlogDetailsPage: React.FC = () => {
     }
   };
 
-  const personalInsights = post ? post.blocks.filter((b: any) => b.type === 'personalTouch') : [];
-  const mainContentBlocks = post ? post.blocks.filter((b: any) => b.type !== 'personalTouch') : [];
+  if (loading) return <SimpleLoadingScreen />;
+  if (!post) return <div className="min-h-screen flex items-center justify-center font-bold text-2xl">Chronicle not found.</div>;
+
+  const personalInsights = post.blocks.filter((b: any) => b.type === 'personalTouch');
+  const mainContentBlocks = post.blocks.filter((b: any) => b.type !== 'personalTouch');
   const hasPersonalInsights = personalInsights.length > 0;
 
   return (
-    <>
-      <LoadingScreen isLoading={loading} onComplete={() => setIsLoaderFinished(true)} />
-
-      {!loading && !post && (
-        <div className="min-h-screen flex items-center justify-center font-bold text-2xl">Chronicle not found.</div>
-      )}
-
-      {post && (
-        <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.99 }}
-          animate={{
-            opacity: isLoaderFinished ? 1 : 0,
-            y: isLoaderFinished ? 0 : 30,
-            scale: isLoaderFinished ? 1 : 0.99,
-          }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className={cn("min-h-screen bg-background pb-32 transition-all duration-700", isFocusMode && "pt-0")}
-        >
+    <div className={cn("min-h-screen bg-background pb-32 transition-all duration-700", isFocusMode && "pt-0")}>
       {!isFocusMode && <ReadingNavigator blocks={post.blocks} />}
 
       {/* Top Progress Bar */}
@@ -411,6 +397,17 @@ export const BlogDetailsPage: React.FC = () => {
             <p className="text-lg md:text-2xl text-muted-foreground font-medium leading-relaxed max-w-3xl">
               {post.subtitle}
             </p>
+
+            {post.coverImage && (
+              <div className="my-6 rounded-[2.5rem] overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/5 shadow-2xl">
+                <img
+                  src={getUploadUrl(post.coverImage)}
+                  alt={post.title}
+                  className="w-full h-auto max-h-[550px] object-cover"
+                  decoding="async"
+                />
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-4 md:gap-8 pt-4 border-t border-slate-100 dark:border-slate-800 pt-6 md:pt-8">
               <div className="flex flex-wrap items-center gap-4 md:gap-6 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -815,9 +812,7 @@ export const BlogDetailsPage: React.FC = () => {
         </div>,
         document.body
       )}
-        </motion.div>
-      )}
-    </>
+    </div>
   );
 };
 
