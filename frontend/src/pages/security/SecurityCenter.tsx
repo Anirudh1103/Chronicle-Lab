@@ -603,10 +603,23 @@ export default function SecurityCenter() {
           <p className="text-sm text-muted-foreground mt-1 font-medium">
             Monitor authentication security, manage cryptographic active sessions, and verify system integrity.
           </p>
+          <div className="flex flex-wrap items-center gap-3 mt-4">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
+              <UserCheck size={12} className="text-primary" />
+              <span>{user?.name || 'Administrator'}</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
+              <Globe size={12} className="text-primary" />
+              <span>{user?.email || 'admin@chroniclelab.com'}</span>
+            </div>
+            <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider">
+              {user?.role || 'ADMIN'}
+            </div>
+          </div>
         </div>
         <button
           onClick={handleDownloadAnalytics}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border hover:bg-muted text-xs font-black uppercase tracking-wider transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border hover:bg-muted text-xs font-black uppercase tracking-wider transition-all self-start md:self-center"
         >
           <Download size={14} /> Download Analytics
         </button>

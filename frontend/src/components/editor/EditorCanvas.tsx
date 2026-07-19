@@ -23,6 +23,7 @@ import { Plus, Upload } from 'lucide-react';
 import { BlockType } from '../../types/editor';
 import api from '../../api/client';
 import { cn } from '../../utils/cn';
+import { getUploadUrl } from '../../utils/url';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export const EditorCanvas: React.FC = () => {
@@ -59,7 +60,7 @@ export const EditorCanvas: React.FC = () => {
           const formData = new FormData();
           formData.append('file', file);
           const { data } = await api.post('/media/upload', formData);
-          const url = `http://localhost:5000/uploads/${data.path}`;
+          const url = getUploadUrl(data.path);
 
           addBlock('image', undefined, {
             url,

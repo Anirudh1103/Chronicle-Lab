@@ -31,11 +31,19 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
   const [spokenWordRange, setSpokenWordRange] = useState<{ start: number; end: number } | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState<string>(() => {
-    return localStorage.getItem('chroniclelab_tts_voice') || 'Auto';
+    try {
+      return localStorage.getItem('chroniclelab_tts_voice') || 'Auto';
+    } catch (e) {
+      return 'Auto';
+    }
   });
   const [rate, setRate] = useState<number>(() => {
-    const saved = localStorage.getItem('chroniclelab_tts_speed');
-    return saved ? parseFloat(saved) : 1.0;
+    try {
+      const saved = localStorage.getItem('chroniclelab_tts_speed');
+      return saved ? parseFloat(saved) : 1.0;
+    } catch (e) {
+      return 1.0;
+    }
   });
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -52,7 +60,13 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
         setVoices(loadedVoices);
         
         // Auto-select Google Hindi Female as default if no preference is stored, if it is Auto, or if stored voice does not exist on this device (e.g. Google voice on iOS)
-        const savedVoice = localStorage.getItem('chroniclelab_tts_voice');
+        let savedVoice = 'Auto';
+        try {
+          savedVoice = localStorage.getItem('chroniclelab_tts_voice') || 'Auto';
+        } catch (e) {
+          // ignore
+        }
+
         if (!savedVoice || savedVoice === 'Auto' || !loadedVoices.some(v => v.name === savedVoice)) {
           // 1. Try to find a female Hindi voice first (cfn is Google's Hindi Female voice code on Android)
           let googleHindi = loadedVoices.find(v => 
@@ -67,15 +81,19 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
               (v.name.toLowerCase().includes('google') || v.name.includes('हिन्दी') || v.name.toLowerCase().includes('hindi'))
             );
           }
-
+ 
           // 3. Fall back to any Hindi voice (like Lekha or Siri Hindi on iOS)
           if (!googleHindi) {
             googleHindi = loadedVoices.find(v => v.lang.toLowerCase().startsWith('hi'));
           }
-
+ 
           if (googleHindi) {
             setSelectedVoiceName(googleHindi.name);
-            localStorage.setItem('chroniclelab_tts_voice', googleHindi.name);
+            try {
+              localStorage.setItem('chroniclelab_tts_voice', googleHindi.name);
+            } catch (e) {
+              // ignore
+            }
           } else if (!savedVoice) {
             setSelectedVoiceName('Auto');
           }
@@ -316,7 +334,11 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
 
   const handleRateChange = (newRate: number) => {
     setRate(newRate);
-    localStorage.setItem('chroniclelab_tts_speed', newRate.toString());
+    try {
+      localStorage.setItem('chroniclelab_tts_speed', newRate.toString());
+    } catch (e) {
+      console.warn('LocalStorage is disabled:', e);
+    }
     if (status === 'playing' || status === 'paused') {
       playChunk(currentChunkIndex);
     }
@@ -324,7 +346,11 @@ export function useArticleTTS({ chunks }: UseArticleTTSProps) {
 
   const handleVoiceChange = (voiceName: string) => {
     setSelectedVoiceName(voiceName);
-    localStorage.setItem('chroniclelab_tts_voice', voiceName);
+    try {
+      localStorage.setItem('chroniclelab_tts_voice', voiceName);
+    } catch (e) {
+      console.warn('LocalStorage is disabled:', e);
+    }
     if (status === 'playing' || status === 'paused') {
       // Re-trigger current chunk with the new voice setting
       playChunk(currentChunkIndex);

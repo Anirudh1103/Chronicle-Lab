@@ -6,6 +6,7 @@ import { RichTextEditor } from '../RichTextEditor';
 import { MediaPicker } from '../MediaPicker';
 import { AnimatePresence, motion } from 'framer-motion';
 import api from '../../../api/client';
+import { getUploadUrl } from '../../../utils/url';
 
 interface TableBlockProps {
   id: string;
@@ -38,7 +39,7 @@ export const TableBlock: React.FC<TableBlockProps> = ({ id, content }) => {
 
     try {
       const { data } = await api.post('media/upload', formData);
-      const url = `http://localhost:5000/uploads/${data.path}`;
+      const url = getUploadUrl(data.path);
       const imgHtml = `<img src="${url}" class="max-h-24 rounded-lg inline-block my-2" />`;
       const { r, c } = activeCell;
       updateCell(r, c, content.rows[r][c] + imgHtml);
