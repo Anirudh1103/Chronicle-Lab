@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Gauge, Database, Image as ImageIcon, AlertTriangle, Terminal, X, ChevronUp, Zap, Clock, ShieldAlert } from 'lucide-react';
 
 export function PerformancePanel() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'db' | 'images' | 'bottlenecks' | 'logs'>('overview');
+
   const {
     isDeveloperMode,
     currentRoute,
@@ -18,15 +21,14 @@ export function PerformancePanel() {
     logs,
   } = usePerformanceStore();
 
-  // Only render if Developer Mode is enabled by Admin (default OFF)
-  if (!isDeveloperMode) return null;
-
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'db' | 'images' | 'bottlenecks' | 'logs'>('overview');
-
   useEffect(() => {
-    analyzeBottlenecks();
-  }, [requests, images]);
+    if (isDeveloperMode) {
+      analyzeBottlenecks();
+    }
+  }, [isDeveloperMode, requests, images]);
+
+  // Only render UI if Developer Mode is enabled by Admin (default OFF)
+  if (!isDeveloperMode) return null;
 
   // Aggregate stats
   const totalDbTime = requests.reduce((acc, r) => acc + (r.dbDuration || 0), 0);
