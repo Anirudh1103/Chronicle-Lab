@@ -121,12 +121,18 @@ model Tag {
 }
 
 model Media {
-  id        String   @id @default(cuid())
-  filename  String
-  path      String
-  mimetype  String
-  size      Int
-  createdAt DateTime @default(now())
+  id               String   @id @default(cuid())
+  filename         String
+  path             String
+  mimetype         String   @default("image/webp")
+  size             Int
+  originalFormat   String?
+  originalSize     Int?
+  optimizedSize    Int?
+  compressionRatio Float?
+  width            Int?
+  height           Int?
+  createdAt        DateTime @default(now())
 }
 
 model Subscriber {

@@ -7,13 +7,16 @@
     "dev": "ts-node-dev --respawn src/index.ts",
     "build": "prisma generate && tsc",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "migrate:media": "ts-node src/scripts/migrate-images-to-webp.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",
+    "@supabase/supabase-js": "^2.110.7",
+    "@types/sharp": "^0.31.1",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -22,6 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "qrcode": "^1.5.4",
+    "sharp": "^0.35.3",
     "zod": "^3.22.4"
   },
   "devDependencies": {

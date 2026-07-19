@@ -45,12 +45,14 @@ export interface PostInput {
 
 function calculateStats(blocks: BlockInput[]) {
   let wordCount = 0;
-  blocks.forEach(block => {
-    if (block.type === 'paragraph' || block.type === 'heading' || block.type === 'summary') {
-      const text = block.content.text || '';
-      wordCount += text.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length;
-    }
-  });
+  if (blocks && Array.isArray(blocks)) {
+    blocks.forEach(block => {
+      if (block.type === 'paragraph' || block.type === 'heading' || block.type === 'summary') {
+        const text = block.content.text || '';
+        wordCount += text.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length;
+      }
+    });
+  }
   const readingTime = Math.ceil(wordCount / 200) || 1;
   return { wordCount, readingTime };
 }
@@ -108,7 +110,7 @@ export class PostService {
       });
 
       return post;
-    });
+    }, { maxWait: 10000, timeout: 25000 });
   }
 
   static async updatePost(postId: string, data: PostInput) {
@@ -173,7 +175,7 @@ export class PostService {
       });
 
       return updatedPost;
-    });
+    }, { maxWait: 10000, timeout: 25000 });
   }
 
   static async getPostById(id: string) {
