@@ -62,7 +62,7 @@ export const BlogEditorPage: React.FC = () => {
             coverImage: post.coverImage,
             coverImageAlt: post.coverImageAlt,
             coverImageCaption: post.coverImageCaption,
-            categoryId: post.categoryId,
+            categoryIds: post.categories?.map((c: any) => c.id) || [],
             tagIds: post.tags?.map((t: any) => t.id) || [],
             completionQuote: post.completionQuote || '',
             completionQuoteAuthor: post.completionQuoteAuthor || '',

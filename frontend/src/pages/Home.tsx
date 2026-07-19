@@ -73,7 +73,7 @@ export function Home() {
         // Grouping all posts by Category for the Library section
         const categoriesWithPosts = cats.map((cat: any) => ({
           ...cat,
-          posts: posts.filter((p: any) => p.categoryId === cat.id)
+          posts: posts.filter((p: any) => p.categories?.some((c: any) => c.id === cat.id))
         })).filter((cat: any) => cat.posts.length > 0);
 
         setCategories(categoriesWithPosts);

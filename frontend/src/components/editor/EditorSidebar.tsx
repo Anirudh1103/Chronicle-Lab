@@ -153,18 +153,32 @@ export const EditorSidebar: React.FC = () => {
                   <TagIcon size={16} />
                   Categories & Tags
                </div>
-               <select
-                className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none dark:bg-slate-800 dark:border-slate-700"
-                value={metadata.categoryId || ''}
-                onChange={(e) => setMetadata({ categoryId: e.target.value || undefined })}
-               >
-                 <option value="">Select Category</option>
-                 {categories.map((category) => (
-                   <option key={category.id} value={category.id}>
-                     {category.name}
-                   </option>
-                 ))}
-               </select>
+                <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg p-3 bg-white dark:bg-slate-800">
+                  {categories.map((category) => {
+                    const isChecked = metadata.categoryIds?.includes(category.id) || false;
+                    return (
+                      <label key={category.id} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 p-1 rounded transition-all">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const currentIds = metadata.categoryIds || [];
+                            if (e.target.checked) {
+                              setMetadata({ categoryIds: [...currentIds, category.id] });
+                            } else {
+                              setMetadata({ categoryIds: currentIds.filter(id => id !== category.id) });
+                            }
+                          }}
+                          className="rounded border-slate-300 text-primary focus:ring-primary w-4 h-4"
+                        />
+                        <span>{category.name}</span>
+                      </label>
+                    );
+                  })}
+                  {categories.length === 0 && (
+                    <span className="text-xs text-slate-400 italic">No categories available</span>
+                  )}
+                </div>
 
                <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5 mt-4">
                   <div className="flex items-center gap-2">

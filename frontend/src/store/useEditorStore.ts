@@ -37,6 +37,7 @@ const initialMetadata: PostMetadata = {
   status: 'DRAFT',
   featured: false,
   featuredOrder: null,
+  categoryIds: [],
   tagIds: [],
   authorId: '', // Should be set from authStore
 };

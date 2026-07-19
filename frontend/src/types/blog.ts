@@ -41,7 +41,7 @@ export interface Post {
   published: boolean;
   featured: boolean;
   authorId: string;
-  categoryId?: string;
+  categories?: Array<{ id: string; name: string }>;
   tags: string[];
   views: number;
   likes: number;

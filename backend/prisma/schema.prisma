@@ -50,7 +50,6 @@ model Post {
   readingTime       Int        @default(0)
   wordCount         Int        @default(0)
   authorId          String
-  categoryId        String?
   seoTitle          String?
   seoDescription    String?
   seoKeywords       String?
@@ -68,7 +67,7 @@ model Post {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   blocks            Block[]
-  category          Category?  @relation(fields: [categoryId], references: [id])
+  categories        Category[] @relation("PostToCategory")
   author            User       @relation(fields: [authorId], references: [id])
   revisions         Revision[]
   tags              Tag[]      @relation("PostToTag")
@@ -111,7 +110,7 @@ model Category {
   parentId      String?
   parent        Category?  @relation("SubCategories", fields: [parentId], references: [id])
   subCategories Category[] @relation("SubCategories")
-  posts         Post[]
+  posts         Post[]     @relation("PostToCategory")
 }
 
 model Tag {

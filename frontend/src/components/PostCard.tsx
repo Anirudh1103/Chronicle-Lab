@@ -12,7 +12,7 @@ interface PostCardProps {
     slug: string;
     coverImage?: string;
     author: { name: string };
-    category?: { name: string };
+    categories?: Array<{ id: string; name: string }>;
     readingTime?: number;
     createdAt: string;
     featured?: boolean;
@@ -42,9 +42,17 @@ export function PostCard({ post, index }: PostCardProps) {
             </div>
           )}
           <div className="absolute bottom-6 right-6 flex items-center gap-2">
-            <span className="glass px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-white">
-              {post.category?.name || 'Uncategorized'}
-            </span>
+            {post.categories && post.categories.length > 0 ? (
+              post.categories.map((cat, idx) => (
+                <span key={idx} className="glass px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                  {cat.name}
+                </span>
+              ))
+            ) : (
+              <span className="glass px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                Uncategorized
+              </span>
+            )}
             {post.featured && (
               <div className="bg-amber-500 text-white p-1.5 rounded-full shadow-lg">
                 <Star size={10} fill="currentColor" />

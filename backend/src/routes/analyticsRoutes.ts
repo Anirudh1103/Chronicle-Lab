@@ -141,7 +141,7 @@ router.get('/overview', protect, admin, async (req, res) => {
         likes: true,
         dislikes: true,
         shares: true,
-        category: { select: { name: true } }
+        categories: { select: { name: true } }
       }
     });
 

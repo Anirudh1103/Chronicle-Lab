@@ -23,7 +23,7 @@ export interface PostInput {
   coverImageAlt?: string;
   coverImageCaption?: string;
   authorId: string;
-  categoryId?: string;
+  categoryIds?: string[];
   tagIds?: string[];
   completionQuote?: string;
   completionQuoteAuthor?: string;
@@ -57,7 +57,7 @@ function calculateStats(blocks: BlockInput[]) {
 
 export class PostService {
   static async createPost(data: PostInput) {
-    const { blocks, tagIds, categoryId, ...postData } = data;
+    const { blocks, tagIds, categoryIds, ...postData } = data;
     const { wordCount, readingTime } = calculateStats(blocks);
     const featuredOrder = data.featuredOrder ? parseInt(data.featuredOrder as any, 10) : null;
 
@@ -79,10 +79,10 @@ export class PostService {
         data: {
           ...postData,
           featuredOrder,
-          categoryId: categoryId || null,
           wordCount,
           readingTime,
           tags: tagIds && tagIds.length > 0 ? { connect: tagIds.map(id => ({ id })) } : undefined,
+          categories: categoryIds && categoryIds.length > 0 ? { connect: categoryIds.map(id => ({ id })) } : undefined,
           blocks: {
             create: blocks.map(block => ({
               type: block.type,
@@ -94,7 +94,7 @@ export class PostService {
         include: {
           blocks: true,
           tags: true,
-          category: true,
+          categories: true,
           author: true
         }
       });
@@ -112,7 +112,7 @@ export class PostService {
   }
 
   static async updatePost(postId: string, data: PostInput) {
-    const { blocks, tagIds, categoryId, ...postData } = data;
+    const { blocks, tagIds, categoryIds, ...postData } = data;
     const { wordCount, readingTime } = calculateStats(blocks);
     const featuredOrder = data.featuredOrder ? parseInt(data.featuredOrder as any, 10) : null;
 
@@ -136,10 +136,10 @@ export class PostService {
         data: {
           ...postData,
           featuredOrder: data.featured ? featuredOrder : null,
-          categoryId: categoryId || null,
           wordCount,
           readingTime,
           tags: tagIds ? { set: tagIds.map(id => ({ id })) } : undefined,
+          categories: categoryIds ? { set: categoryIds.map(id => ({ id })) } : undefined,
         }
       });
 
@@ -162,7 +162,7 @@ export class PostService {
       // 3. Create Revision
       const updatedPost = await tx.post.findUnique({
         where: { id: postId },
-        include: { blocks: true, tags: true, category: true }
+        include: { blocks: true, tags: true, categories: true }
       });
 
       await tx.revision.create({
@@ -182,7 +182,7 @@ export class PostService {
       include: {
         blocks: { orderBy: { orderIndex: 'asc' } },
         tags: true,
-        category: true,
+        categories: true,
         author: { select: { name: true, email: true } }
       }
     });
@@ -204,7 +204,7 @@ export class PostService {
       include: {
         blocks: { orderBy: { orderIndex: 'asc' } },
         tags: true,
-        category: true,
+        categories: true,
         author: { select: { name: true, email: true } }
       }
     });
@@ -214,7 +214,7 @@ export class PostService {
     return await prisma.post.findMany({
       where: onlyPublished ? { status: 'PUBLISHED' } : {},
       include: {
-        category: true,
+        categories: true,
         author: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' }
@@ -250,7 +250,7 @@ export class PostService {
         status: 'PUBLISHED'
       },
       include: {
-        category: true,
+        categories: true,
         author: { select: { name: true } }
       },
       take: 10

@@ -27,7 +27,7 @@ export function LibraryPage() {
         setAllPosts(posts);
         // Show categories that have posts OR matches the query parameter category
         setCategories(cats.filter((c: any) => 
-          posts.some((p: any) => p.categoryId === c.id) || 
+          posts.some((p: any) => p.categories?.some((cat: any) => cat.id === c.id)) || 
           (categoryQuery && c.slug.toLowerCase() === categoryQuery.toLowerCase())
         ));
       } catch (error) {
@@ -68,7 +68,7 @@ export function LibraryPage() {
 
   const filteredPosts = useMemo(() => {
     return allPosts.filter(post => {
-      const matchesCategory = activeCategory === 'all' || post.categoryId === activeCategory;
+      const matchesCategory = activeCategory === 'all' || post.categories?.some((cat: any) => cat.id === activeCategory);
       const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            post.subtitle?.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
@@ -164,7 +164,7 @@ export function LibraryPage() {
                     "px-2 py-1 rounded-lg text-[10px] font-black",
                     activeCategory === cat.id ? "bg-white/20" : "bg-slate-100 dark:bg-white/5"
                   )}>
-                    {allPosts.filter(p => p.categoryId === cat.id).length}
+                    {allPosts.filter(p => p.categories?.some((catObj: any) => catObj.id === cat.id)).length}
                   </div>
                 </button>
               ))}

@@ -46,7 +46,7 @@ export interface PostMetadata {
   coverImage?: string;
   coverImageAlt?: string;
   coverImageCaption?: string;
-  categoryId?: string;
+  categoryIds: string[];
   tagIds: string[];
   authorId: string;
   completionQuote?: string;

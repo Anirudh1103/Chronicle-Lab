@@ -376,9 +376,11 @@ export const BlogDetailsPage: React.FC = () => {
 
           <div className="space-y-4 md:space-y-6">
             <div className="flex flex-wrap items-center gap-2 md:gap-3">
-               <span className="px-2 md:px-3 py-1 bg-primary/10 text-primary text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-full">
-                  {post.category?.name}
-               </span>
+               {post.categories?.map((cat: any) => (
+                 <span key={cat.id} className="px-2 md:px-3 py-1 bg-primary/10 text-primary text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-full">
+                    {cat.name}
+                 </span>
+               ))}
                {post.featured && (
                  <span className="px-2 md:px-3 py-1 bg-amber-500/10 text-amber-500 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-full">
                    Featured
