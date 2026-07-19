@@ -468,17 +468,28 @@ export const logout = async (req: Request, res: Response) => {
  */
 export const getMe = async (req: Request, res: Response) => {
   try {
+    const userReq = (req as any).user;
+    if (!userReq) {
+      return res.json({ authenticated: false, user: null });
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: (req as any).user.id },
+      where: { id: userReq.id },
       select: { id: true, name: true, email: true, role: true, mfaEnabled: true, passwordLastChanged: true },
     });
+
+    if (!user) {
+      return res.json({ authenticated: false, user: null });
+    }
+
     const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') ? req.headers.authorization.split(' ')[1] : null);
     return res.json({
+      authenticated: true,
       ...user,
       token
     });
   } catch (error) {
-    return res.status(500).json({ message: 'Server error' });
+    return res.json({ authenticated: false, user: null });
   }
 };
 

@@ -22,7 +22,7 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    if (getMeQuery.isFetched && getMeQuery.data) {
+    if (getMeQuery.isFetched && getMeQuery.data && getMeQuery.data.authenticated !== false) {
       setUser(getMeQuery.data);
       if (getMeQuery.data.token) {
         localStorage.setItem('admin_token', getMeQuery.data.token);

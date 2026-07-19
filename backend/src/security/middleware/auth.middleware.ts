@@ -66,6 +66,55 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 };
 
 /**
+ * Optional authentication middleware: Attaches user context if valid,
+ * otherwise sets (req as any).user = null without throwing 401 error.
+ */
+export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
+  let token = req.cookies.token;
+
+  if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    (req as any).user = null;
+    return next();
+  }
+
+  try {
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    
+    if (decoded.sessionId) {
+      const session = await prisma.session.findUnique({
+        where: { token: decoded.sessionId }
+      });
+      
+      if (!session || !session.isValid) {
+        (req as any).user = null;
+        return next();
+      }
+      
+      await prisma.session.update({
+        where: { id: session.id },
+        data: { lastActivity: new Date() }
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, role: true, name: true, email: true, mfaEnabled: true },
+    });
+
+    (req as any).user = user || null;
+    (req as any).sessionId = decoded.sessionId;
+    next();
+  } catch (error) {
+    (req as any).user = null;
+    next();
+  }
+};
+
+/**
  * Admin check middleware: Restricts actions to verified admin sessions.
  */
 export const admin = (req: Request, res: Response, next: NextFunction) => {

@@ -14,14 +14,14 @@ import {
   getFeedback,
   updatePassword
 } from '../controllers/authController';
-import { protect, admin } from '../security/middleware/auth.middleware';
+import { protect, optionalAuth, admin } from '../security/middleware/auth.middleware';
 
 const router = Router();
 
 router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', protect, logout);
-router.get('/me', protect, getMe);
+router.get('/me', optionalAuth, getMe);
 router.post('/subscribe', subscribe);
 router.post('/feedback', submitFeedback);
 router.get('/feedback', protect, admin, getFeedback);

@@ -145,17 +145,14 @@ export class PostService {
         }
       });
 
-      // 2. Handle Blocks
-      // For simplicity in this phase, we'll delete existing blocks and recreate them.
-      // In a more optimized version, we would upsert and delete only the removed ones.
-      await tx.block.deleteMany({ where: { postId } });
-
-      if (blocks && blocks.length > 0) {
+      // 2. Handle Blocks safely (only recreate if blocks are explicitly provided and non-empty)
+      if (Array.isArray(blocks) && blocks.length > 0) {
+        await tx.block.deleteMany({ where: { postId } });
         await tx.block.createMany({
           data: blocks.map(block => ({
             postId,
             type: block.type,
-            content: JSON.stringify(block.content),
+            content: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
             orderIndex: block.orderIndex,
           }))
         });
