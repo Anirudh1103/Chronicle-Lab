@@ -3,7 +3,12 @@ export const getUploadUrl = (filename: string | null | undefined): string => {
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const baseUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : (apiUrl.endsWith('/api/') ? apiUrl.slice(0, -5) : apiUrl);
-  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  let cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+  // Enforce https in production
+  if (!cleanBase.includes('localhost:5000')) {
+    cleanBase = cleanBase.replace('http://', 'https://');
+  }
 
   // If the filename is already a full URL, check if we need to rewrite localhost
   if (filename.startsWith('http://') || filename.startsWith('https://')) {
