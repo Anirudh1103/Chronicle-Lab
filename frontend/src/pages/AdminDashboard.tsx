@@ -28,11 +28,13 @@ import {
   ThumbsDown,
   Share2,
   Menu,
-  KeyRound
+  KeyRound,
+  Gauge
 } from 'lucide-react';
 import { EditorPage } from './EditorPage';
 import { MediaLibrary } from './MediaLibrary';
 import { useAuth } from '../hooks/useAuth';
+import { usePerformanceStore } from '../store/performanceStore';
 import { blogApi } from '../api/blog.api';
 import { cn } from '../utils/cn';
 import { GlossaryManager } from './GlossaryManager';
@@ -46,6 +48,7 @@ export function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { isDeveloperMode, setDeveloperMode } = usePerformanceStore();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -210,7 +213,32 @@ export function AdminDashboard() {
           </nav>
         </div>
 
-        <div className="space-y-2 flex-shrink-0 pt-4 border-t border-white/5">
+        <div className="space-y-3 flex-shrink-0 pt-4 border-t border-white/5">
+          {/* Developer Performance Mode Toggle (Off by Default) */}
+          <div className="flex items-center justify-between px-4 py-3 bg-muted/40 rounded-xl border border-white/5">
+            <div className="flex items-center gap-2.5">
+              <Gauge size={18} className={isDeveloperMode ? 'text-primary' : 'text-muted-foreground'} />
+              <div className="flex flex-col">
+                <span className="text-xs font-bold leading-none">Developer Mode</span>
+                <span className="text-[9px] text-muted-foreground mt-0.5 font-semibold">Perf Diagnostics</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDeveloperMode(!isDeveloperMode)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                isDeveloperMode ? 'bg-primary' : 'bg-muted-foreground/30'
+              }`}
+              title="Toggle Developer Performance HUD"
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  isDeveloperMode ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
           <Link to="/" className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
             <ExternalLink size={20} /> View Website
           </Link>

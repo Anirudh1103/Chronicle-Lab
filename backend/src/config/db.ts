@@ -1,7 +1,10 @@
 import { PrismaClient } from '@prisma/client';
+import { createProfiledPrismaClient } from '../services/db-profiler';
 
-export const prisma = new PrismaClient({
+const basePrisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
 });
 
-export default prisma;
+export const prisma = createProfiledPrismaClient(basePrisma);
+
+export default prisma as unknown as PrismaClient;

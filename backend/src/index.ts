@@ -13,6 +13,7 @@ import glossaryRoutes from './routes/glossaryRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import securityRoutes from './routes/securityRoutes';
 import { setSecurityHeaders } from './security/headers/headers.middleware';
+import { requestProfiler } from './middleware/performance.middleware';
 import prisma from './config/db';
 
 import { DEFAULT_GLOSSARY } from './constants/glossary';
@@ -22,6 +23,9 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+// Enable Performance Request Profiler as top-level middleware
+app.use(requestProfiler);
 
 const allowedOrigins = [
   'http://localhost:5173',

@@ -19,9 +19,25 @@ import { NewsletterUnsubscribePage } from './pages/NewsletterUnsubscribePage';
 
 import { BlogEditorPage } from './pages/BlogEditorPage';
 import { CommandCenter } from './components/CommandCenter';
+import { PerformancePanel } from './components/dev/PerformancePanel';
+import { initImagePerformanceObserver } from './utils/imagePerformanceObserver';
+import { initWebVitalsObserver } from './utils/webVitalsObserver';
+import { usePerformanceStore } from './store/performanceStore';
 import { cn } from './utils/cn';
 
 function App() {
+  const location = useLocation();
+  const setCurrentRoute = usePerformanceStore((state) => state.setCurrentRoute);
+
+  useEffect(() => {
+    initImagePerformanceObserver();
+    initWebVitalsObserver();
+  }, []);
+
+  useEffect(() => {
+    setCurrentRoute(location.pathname);
+  }, [location.pathname, setCurrentRoute]);
+
   const [showIntro, setShowIntro] = useState(() => {
     // Show intro only once per session
     return !sessionStorage.getItem('hasSeenIntro');
@@ -109,7 +125,6 @@ function App() {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/admin');
 
   return (
@@ -166,6 +181,8 @@ function App() {
           </div>
         )}
       </AnimatePresence>
+
+      <PerformancePanel />
     </div>
   );
 }

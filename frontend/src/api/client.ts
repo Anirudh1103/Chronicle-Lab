@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { setupPerformanceInterceptor } from './performanceInterceptor';
 
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
@@ -8,6 +9,8 @@ const api = axios.create({
   withCredentials: true,
   timeout: 60000, // Increased timeout to 60s for large high-quality images
 });
+
+setupPerformanceInterceptor(api);
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token');
