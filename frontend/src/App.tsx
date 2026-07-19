@@ -68,7 +68,7 @@ function App() {
       }, INACTIVITY_LIMIT);
     };
 
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click', 'input'];
     events.forEach(event => {
       window.addEventListener(event, resetTimer);
     });

@@ -18,9 +18,13 @@ export const updatePost = async (req: Request, res: Response) => {
     const postData: PostInput = req.body;
     const post = await PostService.updatePost(id, postData);
     res.json(post);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update Post Error:', error);
-    res.status(500).json({ error: 'Failed to update post' });
+    res.status(500).json({ 
+      error: 'Failed to update post',
+      message: error?.message || String(error),
+      stack: error?.stack
+    });
   }
 };
 
