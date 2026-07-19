@@ -28,7 +28,7 @@ import { PostCard } from '../components/PostCard';
 import { useAuthStore } from '../store/authStore';
 import { X } from 'lucide-react';
 import { getUploadUrl } from '../utils/url';
-import { CyberLoadingScreen } from '../components/blog/CyberLoadingScreen';
+import { LoadingScreen } from '../components/blog/LoadingScreen/LoadingScreen';
 
 const CodeBlockDetails: React.FC<{ content: any }> = ({ content }) => {
   const [copied, setCopied] = useState(false);
@@ -71,6 +71,7 @@ export const BlogDetailsPage: React.FC = () => {
   const { slug } = useParams();
   const [post, setPost] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoaderFinished, setIsLoaderFinished] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [fontTheme, setFontTheme] = useState<'serif' | 'sans'>('serif');
   const [activeImage, setActiveImage] = useState<{src: string, alt?: string, caption?: string} | null>(null);
@@ -319,15 +320,29 @@ export const BlogDetailsPage: React.FC = () => {
     }
   };
 
-  if (loading) return <CyberLoadingScreen title={post?.title} />;
-  if (!post) return <div className="min-h-screen flex items-center justify-center font-bold text-2xl">Chronicle not found.</div>;
-
-  const personalInsights = post.blocks.filter((b: any) => b.type === 'personalTouch');
-  const mainContentBlocks = post.blocks.filter((b: any) => b.type !== 'personalTouch');
+  const personalInsights = post ? post.blocks.filter((b: any) => b.type === 'personalTouch') : [];
+  const mainContentBlocks = post ? post.blocks.filter((b: any) => b.type !== 'personalTouch') : [];
   const hasPersonalInsights = personalInsights.length > 0;
 
   return (
-    <div className={cn("min-h-screen bg-background pb-32 transition-all duration-700", isFocusMode && "pt-0")}>
+    <>
+      <LoadingScreen isLoading={loading} onComplete={() => setIsLoaderFinished(true)} />
+
+      {!loading && !post && (
+        <div className="min-h-screen flex items-center justify-center font-bold text-2xl">Chronicle not found.</div>
+      )}
+
+      {post && (
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.99 }}
+          animate={{
+            opacity: isLoaderFinished ? 1 : 0,
+            y: isLoaderFinished ? 0 : 30,
+            scale: isLoaderFinished ? 1 : 0.99,
+          }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className={cn("min-h-screen bg-background pb-32 transition-all duration-700", isFocusMode && "pt-0")}
+        >
       {!isFocusMode && <ReadingNavigator blocks={post.blocks} />}
 
       {/* Top Progress Bar */}
@@ -800,7 +815,9 @@ export const BlogDetailsPage: React.FC = () => {
         </div>,
         document.body
       )}
-    </div>
+        </motion.div>
+      )}
+    </>
   );
 };
 
