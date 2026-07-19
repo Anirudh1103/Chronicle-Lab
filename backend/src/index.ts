@@ -49,7 +49,13 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 app.use(setSecurityHeaders);
 
-// Serve uploads folder statically
+// Serve uploads from Supabase Storage with local static fallback
+app.get('/uploads/:filename', (req: express.Request, res: express.Response) => {
+  const supabaseUrl = process.env.SUPABASE_URL || 'https://espfrijljdzvzfoeuieg.supabase.co';
+  const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'media';
+  const filename = req.params.filename;
+  return res.redirect(301, `${supabaseUrl}/storage/v1/object/public/${bucketName}/${filename}`);
+});
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api/auth', authRoutes);
