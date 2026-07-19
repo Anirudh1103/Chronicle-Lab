@@ -16,6 +16,30 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+const normalizeResponseUrls = (data: any): any => {
+  if (!data) return data;
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const baseUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : (apiUrl.endsWith('/api/') ? apiUrl.slice(0, -5) : apiUrl);
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  if (cleanBase === 'http://localhost:5000') {
+    return data;
+  }
+  try {
+    const jsonStr = JSON.stringify(data);
+    if (jsonStr.includes('http://localhost:5000')) {
+      return JSON.parse(jsonStr.replace(/http:\/\/localhost:5000/g, cleanBase));
+    }
+  } catch (e) {
+    // Ignore
+  }
+  return data;
+};
+
+api.interceptors.response.use((response) => {
+  response.data = normalizeResponseUrls(response.data);
+  return response;
+});
+
 export const blogApi = {
   createPost: async (data: any) => {
     const response = await api.post('/posts', data);

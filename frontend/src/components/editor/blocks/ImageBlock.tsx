@@ -30,7 +30,7 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({ id, content }) => {
     formData.append('file', file);
     try {
       const { data } = await api.post('media/upload', formData);
-      const url = `http://localhost:5000/uploads/${data.path}`;
+      const url = getUploadUrl(data.path);
       updateBlock(id, { ...content, url });
     } catch (error) {
       console.error('Upload failed:', error);

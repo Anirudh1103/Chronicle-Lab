@@ -2,6 +2,7 @@ import React from 'react';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { Image as ImageIcon, Plus, Trash2, LayoutGrid, Layout } from 'lucide-react';
 import { cn } from '../../../utils/cn';
+import { getUploadUrl } from '../../../utils/url';
 
 interface GalleryImage {
   url: string;
@@ -62,7 +63,7 @@ export const GalleryBlock: React.FC<GalleryBlockProps> = ({ id, content }) => {
           <div key={index} className="relative aspect-square rounded-2xl bg-slate-200 dark:bg-slate-800 overflow-hidden group">
             {img.url ? (
               <>
-                <img src={img.url} className="w-full h-full object-cover" />
+                <img src={getUploadUrl(img.url)} className="w-full h-full object-cover" />
                 <button
                   onClick={() => removeImage(index)}
                   className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
