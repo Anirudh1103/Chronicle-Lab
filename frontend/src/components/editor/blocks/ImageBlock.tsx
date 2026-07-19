@@ -5,6 +5,7 @@ import { cn } from '../../../utils/cn';
 import api from '../../../api/client';
 import { MediaPicker } from '../MediaPicker';
 import { AnimatePresence } from 'framer-motion';
+import { getUploadUrl } from '../../../utils/url';
 
 interface ImageBlockProps {
   id: string;
@@ -55,7 +56,7 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({ id, content }) => {
       {content.url ? (
         <div className="relative group">
           <img
-            src={content.url}
+            src={getUploadUrl(content.url)}
             alt={content.alt}
             className={cn(
               'rounded-xl transition-all shadow-lg',
