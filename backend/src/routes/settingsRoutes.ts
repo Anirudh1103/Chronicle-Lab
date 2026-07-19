@@ -4,27 +4,42 @@ import { protect, admin } from '../security/middleware/auth.middleware';
 
 const router = Router();
 
+let cachedQuotes: any[] | null = null;
+let cachedConfig: any | null = null;
 
-// Public: Get all quotes
+export function invalidateSettingsCache() {
+  cachedQuotes = null;
+  cachedConfig = null;
+}
+
+// Public: Get all quotes (Ultra-fast cached endpoint)
 router.get('/quotes', async (req, res) => {
   try {
+    if (cachedQuotes) {
+      return res.json(cachedQuotes);
+    }
     const quotes = await prisma.quote.findMany({
       orderBy: { createdAt: 'desc' }
     });
+    cachedQuotes = quotes;
     res.json(quotes);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch quotes' });
   }
 });
 
-// Public: Get site config
+// Public: Get site config (Cached)
 router.get('/config', async (req, res) => {
   try {
+    if (cachedConfig) {
+      return res.json(cachedConfig);
+    }
     const config = await prisma.siteConfig.findMany();
     const configMap = config.reduce((acc: any, curr) => {
       acc[curr.key] = curr.value;
       return acc;
     }, {});
+    cachedConfig = configMap;
     res.json(configMap);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch config' });
@@ -62,6 +77,7 @@ router.post('/quotes', protect, admin, async (req, res) => {
     const quote = await prisma.quote.create({
       data: { text: normalized, translation, meaning, author, category }
     });
+    invalidateSettingsCache();
     res.status(201).json(quote);
   } catch (error) {
     res.status(500).json({ message: 'Failed to create quote' });
@@ -99,6 +115,7 @@ router.put('/quotes/:id', protect, admin, async (req, res) => {
       where: { id: req.params.id },
       data: { text: normalized, translation, meaning, author, category }
     });
+    invalidateSettingsCache();
     res.json(quote);
   } catch (error) {
     res.status(500).json({ message: 'Failed to update quote' });
@@ -109,6 +126,7 @@ router.put('/quotes/:id', protect, admin, async (req, res) => {
 router.delete('/quotes/:id', protect, admin, async (req, res) => {
   try {
     await prisma.quote.delete({ where: { id: req.params.id } });
+    invalidateSettingsCache();
     res.json({ message: 'Quote deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to delete quote' });
@@ -126,6 +144,7 @@ router.post('/config', protect, admin, async (req, res) => {
         create: { key, value: String(value) }
       });
     }
+    invalidateSettingsCache();
     res.json({ message: 'Config updated' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to update config' });

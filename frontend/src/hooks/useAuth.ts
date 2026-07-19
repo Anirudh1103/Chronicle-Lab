@@ -18,7 +18,7 @@ export function useAuth() {
       }
     },
     retry: false,
-    enabled: true,
+    enabled: typeof window !== 'undefined' && !!localStorage.getItem('admin_token'),
   });
 
   useEffect(() => {
