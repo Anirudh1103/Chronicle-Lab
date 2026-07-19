@@ -148,8 +148,15 @@ export const BlogEditorPage: React.FC = () => {
       if (publish) {
         setMetadata({ status: 'PUBLISHED' });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save:', error);
+      const serverError = error.response?.data;
+      if (serverError) {
+        console.error('Server Error Details:', serverError);
+        alert(`Failed to save: ${serverError.message || serverError.error || 'Unknown Server Error'}`);
+      } else {
+        alert('Failed to save: ' + error.message);
+      }
     } finally {
       setLoading(false);
     }
