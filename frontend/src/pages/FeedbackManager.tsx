@@ -59,7 +59,7 @@ export function FeedbackManager() {
                   <tr
                     key={item.id}
                     onClick={() => setSelectedFeedback(item)}
-                    className="border-b border-slate-100 dark:border-white/5 last:border-0 hover:bg-slate-55 dark:hover:bg-white/5 transition-colors cursor-pointer text-slate-800 dark:text-slate-200"
+                    className="border-b border-slate-100 dark:border-white/5 last:border-0 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer text-slate-800 dark:text-slate-200"
                   >
                     <td className="p-6 font-bold flex items-center gap-2">
                       <User size={14} className="text-slate-400 dark:text-slate-500" />
@@ -81,10 +81,10 @@ export function FeedbackManager() {
                         {item.type}
                       </span>
                     </td>
-                    <td className="p-6 text-slate-700 dark:text-slate-350 max-w-lg truncate leading-relaxed">
+                    <td className="p-6 text-slate-750 dark:text-slate-300 max-w-lg truncate leading-relaxed">
                       {item.message}
                     </td>
-                    <td className="p-6 text-slate-550 dark:text-slate-400 font-medium whitespace-nowrap">
+                    <td className="p-6 text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
                       <span className="flex items-center gap-1">
                         <Calendar size={14} />
                         {new Date(item.createdAt).toLocaleDateString()}

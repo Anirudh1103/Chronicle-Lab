@@ -260,7 +260,7 @@ function renderBlockPreview(block: EditorBlock) {
 
     case 'summary':
       return (
-        <div className="my-8 p-6 rounded-2xl bg-slate-55 border border-slate-150 dark:bg-slate-900/50 dark:border-slate-800">
+        <div className="my-8 p-6 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-slate-900/50 dark:border-slate-800">
           <div className="text-sm font-sans font-extrabold uppercase tracking-widest text-blue-600 mb-2">
             {content.title || 'Quick Read'}
           </div>
