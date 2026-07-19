@@ -107,6 +107,9 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
     restDelta: 0.001
   });
 
+  const collapsedRailHeight = useTransform(scrollProgress, [0, 1], ["0%", "100%"]);
+  const mobileFabHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+
   const scrollTo = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const el = document.getElementById(id);
@@ -388,7 +391,7 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
                   {/* Progress Stream Line */}
                   <motion.div
                     className="absolute top-0 left-0 right-0 bg-gradient-to-b from-amber-500 via-yellow-400 to-amber-600 shadow-[0_0_12px_rgba(245,158,11,0.5)] origin-top rounded-full"
-                    style={{ height: useTransform(scrollProgress, [0, 1], ["0%", "100%"]) }}
+                    style={{ height: collapsedRailHeight }}
                   />
                 </div>
 
@@ -500,7 +503,7 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
          >
             <motion.div
               className="absolute bottom-0 left-0 right-0 bg-amber-500/20"
-              style={{ height: useTransform(scrollYProgress, [0, 1], ["0%", "100%"]) }}
+              style={{ height: mobileFabHeight }}
             />
             <div className="relative z-10 flex flex-col items-center gap-0.5">
                <span className="text-[9px] font-black">{percent}%</span>
