@@ -441,7 +441,20 @@ export const getSecurityLogs = async (req: Request, res: Response) => {
 /**
  * Endpoint: Sign-out session logic.
  */
-export const logout = (req: Request, res: Response) => {
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const sessionId = (req as any).sessionId;
+    if (sessionId) {
+      // Invalidate stateful session
+      await prisma.session.update({
+        where: { token: sessionId },
+        data: { isValid: false }
+      });
+    }
+  } catch (err) {
+    console.error('Session invalidation failed on logout:', err);
+  }
+
   res.cookie('token', '', {
     httpOnly: true,
     expires: new Date(0),

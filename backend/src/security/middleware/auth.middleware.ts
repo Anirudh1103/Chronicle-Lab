@@ -58,6 +58,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     }
 
     (req as any).user = user;
+    (req as any).sessionId = decoded.sessionId;
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Not authorized, token failed' });
