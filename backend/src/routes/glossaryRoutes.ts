@@ -5,15 +5,26 @@ import { glossaryTermSchema } from '../security/validation/validation.helper';
 
 const router = Router();
 
+// In-memory cache for ultra-fast sub-5ms response times
+let cachedTerms: any[] | null = null;
+
+export function invalidateGlossaryCache() {
+  cachedTerms = null;
+}
 
 /**
  * Public endpoint: Retrieve all dynamic glossary terms sorted alphabetically.
+ * Uses in-memory caching for instant performance.
  */
 router.get('/', async (req, res) => {
   try {
+    if (cachedTerms) {
+      return res.json(cachedTerms);
+    }
     const terms = await prisma.glossaryTerm.findMany({
       orderBy: { term: 'asc' }
     });
+    cachedTerms = terms;
     res.json(terms);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch glossary terms' });
@@ -57,6 +68,8 @@ router.post('/', protect, admin, async (req, res) => {
       update: { term: normalizedTerm, definition, category },
       create: { term: normalizedTerm, definition, category }
     });
+
+    invalidateGlossaryCache();
     res.status(201).json(result);
   } catch (error: any) {
     if (error.name === 'ZodError') {
@@ -73,6 +86,7 @@ router.post('/', protect, admin, async (req, res) => {
 router.delete('/:id', protect, admin, async (req, res) => {
   try {
     await prisma.glossaryTerm.delete({ where: { id: req.params.id } });
+    invalidateGlossaryCache();
     res.json({ message: 'Glossary term deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to delete glossary term' });

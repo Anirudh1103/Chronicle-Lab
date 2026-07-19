@@ -22,6 +22,7 @@ import { CommandCenter } from './components/CommandCenter';
 import { PerformancePanel } from './components/dev/PerformancePanel';
 import { initImagePerformanceObserver } from './utils/imagePerformanceObserver';
 import { initWebVitalsObserver } from './utils/webVitalsObserver';
+import { initConsoleErrorObserver } from './utils/consoleErrorObserver';
 import { usePerformanceStore } from './store/performanceStore';
 import { cn } from './utils/cn';
 
@@ -32,6 +33,7 @@ function App() {
   useEffect(() => {
     initImagePerformanceObserver();
     initWebVitalsObserver();
+    initConsoleErrorObserver();
   }, []);
 
   useEffect(() => {

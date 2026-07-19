@@ -31,48 +31,50 @@ function parseUserAgent(userAgent: string | undefined) {
 }
 
 /**
- * Public Endpoint: Record a page view on a blog post.
+ * Public Endpoint: Record a page view on a blog post (non-blocking async execution).
  */
 router.post('/view', async (req, res) => {
-  try {
-    const { slug } = req.body;
-    if (!slug) {
-      return res.status(400).json({ message: 'Slug is required to record view.' });
-    }
-
-    const post = await prisma.post.findUnique({
-      where: { slug }
-    });
-
-    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || null;
-    const userAgent = req.headers['user-agent'] || undefined;
-    const { browser, os } = parseUserAgent(userAgent);
-
-    // Create PageView log
-    await prisma.pageView.create({
-      data: {
-        slug,
-        postId: post ? post.id : null,
-        ipAddress,
-        userAgent: userAgent || null,
-        browser,
-        os
-      }
-    });
-
-    // Increment views field on Post model for backwards compatibility
-    if (post) {
-      await prisma.post.update({
-        where: { id: post.id },
-        data: { views: { increment: 1 } }
-      });
-    }
-
-    return res.status(201).json({ success: true });
-  } catch (error) {
-    console.error('Failed to log page view:', error);
-    return res.status(500).json({ message: 'Failed to record page view.' });
+  const { slug } = req.body;
+  if (!slug) {
+    return res.status(400).json({ message: 'Slug is required to record view.' });
   }
+
+  // Return success immediately so the frontend request completes in ~2ms!
+  res.status(201).json({ success: true });
+
+  // Process PageView logging & Post views increment asynchronously in background
+  setImmediate(async () => {
+    try {
+      const post = await prisma.post.findUnique({
+        where: { slug },
+        select: { id: true }
+      });
+
+      const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || null;
+      const userAgent = req.headers['user-agent'] || undefined;
+      const { browser, os } = parseUserAgent(userAgent);
+
+      await prisma.pageView.create({
+        data: {
+          slug,
+          postId: post ? post.id : null,
+          ipAddress,
+          userAgent: userAgent || null,
+          browser,
+          os
+        }
+      });
+
+      if (post) {
+        await prisma.post.update({
+          where: { id: post.id },
+          data: { views: { increment: 1 } }
+        });
+      }
+    } catch (error) {
+      console.error('Async page view logging error:', error);
+    }
+  });
 });
 
 /**
