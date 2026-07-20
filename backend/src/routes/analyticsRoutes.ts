@@ -77,45 +77,55 @@ router.post('/view', async (req, res) => {
   });
 });
 
+let overviewCache: { data: any; timestamp: number } | null = null;
+const OVERVIEW_CACHE_TTL = 60 * 1000;
+
 /**
  * Admin Endpoint: Retrieve User traffic overview and daily charts.
  */
 router.get('/overview', protect, admin, async (req, res) => {
   try {
-    // 1. Total Page Views
-    const totalViews = await prisma.pageView.count();
+    const now = Date.now();
+    if (overviewCache && (now - overviewCache.timestamp < OVERVIEW_CACHE_TTL)) {
+      return res.json(overviewCache.data);
+    }
 
-    // 2. Total active newsletter subscribers
-    const totalSubscribers = await prisma.newsletterSubscriber.count({
-      where: { status: 'active' }
-    });
-
-    // 3. Total feedback comments
-    const totalFeedback = await prisma.feedback.count();
-
-    // 4. Total blogs count
-    const totalPosts = await prisma.post.count();
-
-    // 5. Daily traffic trend over last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-    const rawViews = await prisma.pageView.findMany({
-      where: {
-        timestamp: { gte: thirtyDaysAgo }
-      },
-      select: {
-        timestamp: true
-      }
-    });
+    // Run all 6 independent DB queries in parallel with Promise.all
+    const [totalViews, totalSubscribers, totalFeedback, totalPosts, rawViews, topPosts] = await Promise.all([
+      prisma.pageView.count(),
+      prisma.newsletterSubscriber.count({ where: { status: 'active' } }),
+      prisma.feedback.count(),
+      prisma.post.count(),
+      prisma.pageView.findMany({
+        where: { timestamp: { gte: thirtyDaysAgo } },
+        select: { timestamp: true }
+      }),
+      prisma.post.findMany({
+        orderBy: { views: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          views: true,
+          likes: true,
+          dislikes: true,
+          shares: true,
+          categories: { select: { name: true } }
+        }
+      })
+    ]);
 
     // Group daily counts
     const dailyMap = new Map<string, number>();
     for (let i = 29; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
+      const key = d.toISOString().slice(0, 10);
       dailyMap.set(key, 0);
     }
 
@@ -131,30 +141,17 @@ router.get('/overview', protect, admin, async (req, res) => {
       count
     }));
 
-    // 6. Top performing articles by view count
-    const topPosts = await prisma.post.findMany({
-      orderBy: { views: 'desc' },
-      take: 5,
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        views: true,
-        likes: true,
-        dislikes: true,
-        shares: true,
-        categories: { select: { name: true } }
-      }
-    });
-
-    return res.json({
+    const result = {
       totalViews,
       totalSubscribers,
       totalFeedback,
       totalPosts,
       trafficChart,
       topPosts
-    });
+    };
+
+    overviewCache = { data: result, timestamp: now };
+    return res.json(result);
   } catch (error) {
     console.error('Failed to load traffic overview metrics:', error);
     return res.status(500).json({ message: 'Failed to retrieve analytics overview.' });

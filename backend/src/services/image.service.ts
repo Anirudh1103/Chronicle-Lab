@@ -70,8 +70,8 @@ export class ImageService {
         withoutEnlargement: true,
       })
       .webp({
-        quality: 88,
-        effort: 4, // Optimal balance between speed and compression
+        quality: 82,
+        effort: 2, // Fast CPU conversion while maintaining excellent visual compression
         smartSubsample: true,
       });
 

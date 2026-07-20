@@ -6,6 +6,8 @@ import { logSecurityEvent } from '../logging/security.logger';
 
 
 
+const sessionLastActivityMap = new Map<string, number>();
+
 /**
  * Protect route middleware: Decrypts JWT cookies and attaches user context.
  */
@@ -33,11 +35,15 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
         return res.status(401).json({ message: 'Not authorized, session revoked or invalid.' });
       }
       
-      // Update lastActivity timestamp on active session
-      await prisma.session.update({
-        where: { id: session.id },
-        data: { lastActivity: new Date() }
-      });
+      // Throttle lastActivity timestamp updates in DB to once per 5 minutes
+      const lastUpdate = sessionLastActivityMap.get(session.id) || 0;
+      if (Date.now() - lastUpdate > 5 * 60 * 1000) {
+        sessionLastActivityMap.set(session.id, Date.now());
+        prisma.session.update({
+          where: { id: session.id },
+          data: { lastActivity: new Date() }
+        }).catch(() => {});
+      }
     } else {
       return res.status(401).json({ message: 'Not authorized, session expired.' });
     }
