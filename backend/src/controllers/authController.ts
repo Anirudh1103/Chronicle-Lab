@@ -57,13 +57,12 @@ async function fetchGeolocation(ip: string): Promise<{ country: string; city: st
   return { country: 'Unknown', city: 'Unknown' };
 }
 
-// Create a stateful session record in the database
+// Create a stateful session record in the database (non-blocking geolocation)
 async function createStatefulSession(userId: string, req: Request): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex');
   const userAgent = req.headers['user-agent'] || '';
   const { browser, os } = parseUserAgent(userAgent);
   const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1';
-  const { country, city } = await fetchGeolocation(ipAddress);
 
   let deviceName = 'Desktop Client';
   if (os === 'Android' || os === 'iOS') {
@@ -74,7 +73,7 @@ async function createStatefulSession(userId: string, req: Request): Promise<stri
     deviceName = 'Windows PC';
   }
 
-  await prisma.session.create({
+  const session = await prisma.session.create({
     data: {
       userId,
       token,
@@ -82,8 +81,23 @@ async function createStatefulSession(userId: string, req: Request): Promise<stri
       os,
       deviceName,
       ipAddress,
-      country,
-      city
+      country: 'Unknown',
+      city: 'Unknown'
+    }
+  });
+
+  // Asynchronous non-blocking IP geolocation update in background
+  setImmediate(async () => {
+    try {
+      const { country, city } = await fetchGeolocation(ipAddress);
+      if (country !== 'Unknown') {
+        await prisma.session.update({
+          where: { id: session.id },
+          data: { country, city }
+        });
+      }
+    } catch {
+      // Ignore background geo fetch failures
     }
   });
 

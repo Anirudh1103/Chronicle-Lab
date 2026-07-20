@@ -158,38 +158,48 @@ router.get('/overview', protect, admin, async (req, res) => {
   }
 });
 
+let loginCache: { data: any; timestamp: number } | null = null;
+let demographicsCache: { data: any; timestamp: number } | null = null;
+const ANALYTICS_CACHE_TTL = 60 * 1000;
+
 /**
  * Admin Endpoint: Retrieve Login Audits and brute-force events.
  */
 router.get('/login', protect, admin, async (req, res) => {
   try {
-    const successLogs = await prisma.securityLog.count({
-      where: { event: { in: ['LOGIN_SUCCESS', 'MFA_VERIFY_SUCCESS'] } }
-    });
+    const now = Date.now();
+    if (loginCache && (now - loginCache.timestamp < ANALYTICS_CACHE_TTL)) {
+      return res.json(loginCache.data);
+    }
 
-    const failureLogs = await prisma.securityLog.count({
-      where: { event: { in: ['LOGIN_FAILURE', 'MFA_VERIFY_FAILURE', 'UNAUTHORIZED_ACCESS'] } }
-    });
-
-    const mfaSetupLogs = await prisma.securityLog.count({
-      where: { event: 'MFA_SETUP_SUCCESS' }
-    });
+    const [successLogs, failureLogs, mfaSetupLogs, recentLogs] = await Promise.all([
+      prisma.securityLog.count({
+        where: { event: { in: ['LOGIN_SUCCESS', 'MFA_VERIFY_SUCCESS'] } }
+      }),
+      prisma.securityLog.count({
+        where: { event: { in: ['LOGIN_FAILURE', 'MFA_VERIFY_FAILURE', 'UNAUTHORIZED_ACCESS'] } }
+      }),
+      prisma.securityLog.count({
+        where: { event: 'MFA_SETUP_SUCCESS' }
+      }),
+      prisma.securityLog.findMany({
+        orderBy: { timestamp: 'desc' },
+        take: 15
+      })
+    ]);
 
     const activeBlocks = loginRateLimiter.getActiveBlocksCount();
 
-    // Recent login events timeline
-    const recentLogs = await prisma.securityLog.findMany({
-      orderBy: { timestamp: 'desc' },
-      take: 15
-    });
-
-    return res.json({
+    const result = {
       successLogs,
       failureLogs,
       mfaSetupLogs,
       activeBlocks,
       recentLogs
-    });
+    };
+
+    loginCache = { data: result, timestamp: now };
+    return res.json(result);
   } catch (error) {
     console.error('Failed to load login audit logs:', error);
     return res.status(500).json({ message: 'Failed to retrieve login analytics.' });
@@ -201,19 +211,21 @@ router.get('/login', protect, admin, async (req, res) => {
  */
 router.get('/demographics', protect, admin, async (req, res) => {
   try {
-    const browsersGroup = await prisma.pageView.groupBy({
-      by: ['browser'],
-      _count: {
-        id: true
-      }
-    });
+    const now = Date.now();
+    if (demographicsCache && (now - demographicsCache.timestamp < ANALYTICS_CACHE_TTL)) {
+      return res.json(demographicsCache.data);
+    }
 
-    const osGroup = await prisma.pageView.groupBy({
-      by: ['os'],
-      _count: {
-        id: true
-      }
-    });
+    const [browsersGroup, osGroup] = await Promise.all([
+      prisma.pageView.groupBy({
+        by: ['browser'],
+        _count: { id: true }
+      }),
+      prisma.pageView.groupBy({
+        by: ['os'],
+        _count: { id: true }
+      })
+    ]);
 
     const browsers = browsersGroup.map(item => ({
       name: item.browser || 'Unknown',
@@ -225,7 +237,9 @@ router.get('/demographics', protect, admin, async (req, res) => {
       count: item._count.id
     }));
 
-    return res.json({ browsers, os });
+    const result = { browsers, os };
+    demographicsCache = { data: result, timestamp: now };
+    return res.json(result);
   } catch (error) {
     console.error('Failed to load device demographics:', error);
     return res.status(500).json({ message: 'Failed to retrieve demographics.' });

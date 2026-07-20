@@ -51,23 +51,52 @@ api.interceptors.response.use((response) => {
   return response;
 });
 
+// Client-side In-Memory Cache Store (3-minute TTL)
+const apiCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 3 * 60 * 1000;
+
+const getCachedData = async (key: string, fetcher: () => Promise<any>, ttl = CACHE_TTL) => {
+  const cached = apiCache.get(key);
+  const now = Date.now();
+  if (cached && now - cached.timestamp < ttl) {
+    return cached.data;
+  }
+  const data = await fetcher();
+  apiCache.set(key, { data, timestamp: now });
+  return data;
+};
+
+export const invalidateApiCache = (keyPrefix?: string) => {
+  if (!keyPrefix) {
+    apiCache.clear();
+  } else {
+    for (const k of apiCache.keys()) {
+      if (k.startsWith(keyPrefix)) apiCache.delete(k);
+    }
+  }
+};
+
 export const blogApi = {
   createPost: async (data: any) => {
+    invalidateApiCache('posts');
     const response = await api.post('/posts', data);
     return response.data;
   },
 
   updatePost: async (id: string, data: any) => {
+    invalidateApiCache('posts');
     const response = await api.put(`/posts/${id}`, data);
     return response.data;
   },
+
   togglePostVisibility: async (id: string) => {
+    invalidateApiCache('posts');
     const response = await api.patch(`/posts/${id}/visibility`);
     return response.data;
   },
 
-
   deletePost: async (id: string) => {
+    invalidateApiCache('posts');
     const response = await api.delete(`/posts/${id}`);
     return response.data;
   },
@@ -78,13 +107,19 @@ export const blogApi = {
   },
 
   getPostBySlug: async (slug: string) => {
-    const response = await api.get(`/posts/${slug}`);
-    return response.data;
+    const cacheKey = `post_slug_${slug}`;
+    return getCachedData(cacheKey, async () => {
+      const response = await api.get(`/posts/${slug}`);
+      return response.data;
+    });
   },
 
   getAllPosts: async (status?: string) => {
-    const response = await api.get(`/posts${status ? `?status=${status}` : ''}`);
-    return response.data;
+    const cacheKey = `posts_${status || 'all'}`;
+    return getCachedData(cacheKey, async () => {
+      const response = await api.get(`/posts${status ? `?status=${status}` : ''}`);
+      return response.data;
+    });
   },
 
   searchPosts: async (query: string) => {
@@ -148,16 +183,20 @@ export const blogApi = {
   },
 
   getCategories: async () => {
-    const response = await api.get('/categories');
-    return response.data;
+    return getCachedData('categories', async () => {
+      const response = await api.get('/categories');
+      return response.data;
+    });
   },
 
   createCategory: async (data: { name: string; slug: string }) => {
+    invalidateApiCache('categories');
     const response = await api.post('/categories', data);
     return response.data;
   },
 
   deleteCategory: async (id: string) => {
+    invalidateApiCache('categories');
     const response = await api.delete(`/categories/${id}`);
     return response.data;
   },
@@ -174,21 +213,26 @@ export const blogApi = {
 
   // Settings & Config
   getQuotes: async () => {
-    const response = await api.get('/settings/quotes');
-    return response.data;
+    return getCachedData('quotes', async () => {
+      const response = await api.get('/settings/quotes');
+      return response.data;
+    });
   },
 
   addQuote: async (data: { text: string; author: string; category: string }) => {
+    invalidateApiCache('quotes');
     const response = await api.post('/settings/quotes', data);
     return response.data;
   },
 
   updateQuote: async (id: string, data: any) => {
+    invalidateApiCache('quotes');
     const response = await api.put(`/settings/quotes/${id}`, data);
     return response.data;
   },
 
   deleteQuote: async (id: string) => {
+    invalidateApiCache('quotes');
     const response = await api.delete(`/settings/quotes/${id}`);
     return response.data;
   },
@@ -214,16 +258,20 @@ export const blogApi = {
   },
 
   getGlossary: async () => {
-    const response = await api.get('/glossary');
-    return response.data;
+    return getCachedData('glossary', async () => {
+      const response = await api.get('/glossary');
+      return response.data;
+    });
   },
 
   saveGlossary: async (payload: any) => {
+    invalidateApiCache('glossary');
     const response = await api.post('/glossary', payload);
     return response.data;
   },
 
   deleteGlossary: async (id: string) => {
+    invalidateApiCache('glossary');
     const response = await api.delete(`/glossary/${id}`);
     return response.data;
   },
