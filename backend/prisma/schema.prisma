@@ -120,6 +120,16 @@ model Tag {
   posts Post[] @relation("PostToTag")
 }
 
+model Folder {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  color     String?  @default("#38bdf8")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  media     Media[]
+}
+
 model Media {
   id               String   @id @default(cuid())
   filename         String
@@ -132,6 +142,8 @@ model Media {
   compressionRatio Float?
   width            Int?
   height           Int?
+  folderId         String?
+  folder           Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   createdAt        DateTime @default(now())
 }
 
