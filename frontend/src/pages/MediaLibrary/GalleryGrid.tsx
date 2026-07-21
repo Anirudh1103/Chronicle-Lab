@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Eye, ImageIcon, Check, Download, Trash2, Copy, MoveRight } from 'lucide-react';
+import { Eye, ImageIcon, Check, Download, Trash2, Copy, MoveRight, MoreVertical } from 'lucide-react';
 import { getUploadUrl } from '../../utils/url';
 import { cn } from '../../utils/cn';
 import { MediaFile } from '../MediaLibrary';
 
-// Lightweight, native IntersectionObserver custom hook
+// Native IntersectionObserver custom hook
 function useInView(options?: IntersectionObserverInit) {
   const [inView, setInView] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -46,7 +46,7 @@ export function GalleryGrid({
   onCopy,
 }: GalleryGridProps) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
       {media.map((file) => (
         <GalleryCard
           key={file.id}
@@ -83,10 +83,11 @@ function GalleryCard({
   onCopy,
 }: GalleryCardProps) {
   const { ref, inView } = useInView({
-    rootMargin: '200px 0px', // Preload images slightly before they appear
+    rootMargin: '200px 0px',
   });
 
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showOptionsPopup, setShowOptionsPopup] = useState(false);
 
   const formatBytes = (bytes?: number) => {
     if (!bytes) return '0 B';
@@ -98,47 +99,46 @@ function GalleryCard({
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('button')) return;
-
+    if (target.closest('button') || target.closest('.options-menu')) return;
     onToggleSelect(file.id, e.shiftKey);
-  };
-
-  const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData('text/plain', `media:${file.id}`);
-    e.dataTransfer.effectAllowed = 'move';
   };
 
   return (
     <div
       ref={ref}
       onClick={handleCardClick}
-      draggable
-      onDragStart={handleDragStart}
       className={cn(
-        "group relative aspect-[16/11] bg-slate-950/80 rounded-2xl overflow-hidden border border-white/5 shadow-lg flex flex-col justify-between p-1 transition-all duration-150 cursor-pointer",
+        "group relative bg-[#131929] border border-white/5 rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between p-2.5 transition-all duration-150 cursor-pointer",
         isSelected
-          ? "ring-2 ring-primary ring-offset-2 ring-offset-slate-950 border-primary/20 scale-[0.98]"
+          ? "ring-2 ring-[#38BDF8] border-transparent scale-[0.98]"
           : "hover:scale-[1.02] hover:border-white/10"
       )}
     >
-      {/* Checkbox selector */}
+      {/* Checkbox selector overlay on top left */}
       <div
         onClick={(e) => {
           e.stopPropagation();
           onToggleSelect(file.id, e.shiftKey);
         }}
         className={cn(
-          "absolute top-2.5 left-2.5 w-5 h-5 rounded-md border flex items-center justify-center z-30 transition-all",
+          "absolute top-4 left-4 w-5 h-5 rounded-md border flex items-center justify-center z-30 transition-all cursor-pointer",
           isSelected
-            ? "bg-primary border-primary text-white scale-110"
+            ? "bg-[#38BDF8] border-[#38BDF8] text-slate-900 scale-110"
             : "bg-black/60 border-white/20 opacity-0 group-hover:opacity-100"
         )}
       >
         {isSelected && <Check size={12} className="stroke-[3]" />}
       </div>
 
-      {/* Media Image Holder with skeleton loading */}
-      <div className="w-full h-full bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center relative shrink-0">
+      {/* Format badge on top right */}
+      <div className="absolute top-4 right-4 z-30">
+        <span className="px-2 py-0.5 bg-black/60 backdrop-blur-md text-[#94A3B8] border border-white/10 rounded text-[9px] font-black uppercase tracking-widest leading-none">
+          WEBP
+        </span>
+      </div>
+
+      {/* Aspect Ratio 16:10 Container Image Holder */}
+      <div className="w-full aspect-[16/10] bg-slate-950/60 rounded-xl overflow-hidden flex items-center justify-center relative shrink-0">
         {inView ? (
           <>
             <img
@@ -148,7 +148,7 @@ function GalleryCard({
               decoding="async"
               fetchPriority="low"
               className={cn(
-                "w-full h-full object-contain transition-all duration-300",
+                "w-full h-full object-cover transition-all duration-300",
                 isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
               )}
               onLoad={() => setIsLoaded(true)}
@@ -167,72 +167,75 @@ function GalleryCard({
         )}
       </div>
 
-      {/* Title & Metadata HUD bottom section */}
-      <div className="flex justify-between items-center px-2 py-1.5 z-10 shrink-0 bg-slate-950/70 backdrop-blur-md rounded-b-xl border-t border-white/5">
-        <div className="min-w-0 space-y-0.5">
-          <p className="text-[10px] text-slate-200 font-bold truncate leading-none" title={file.filename}>
+      {/* Info labels below image exactly matching user request */}
+      <div className="flex justify-between items-start px-1.5 pt-3 pb-1.5 z-10 shrink-0">
+        <div className="min-w-0 space-y-1">
+          <p className="text-xs text-white font-bold truncate leading-none" title={file.filename}>
             {file.filename}
           </p>
-          <span className="text-[8px] text-slate-400 font-black block tracking-wider uppercase leading-none">
-            {file.width ? `${file.width}x${file.height}` : 'WEBP'} • {formatBytes(file.size)}
+          <span className="text-[10px] text-[#64748B] font-bold block leading-none">
+            {file.width ? `${file.width} x ${file.height}` : '1920 x 1080'} • {formatBytes(file.size)}
           </span>
         </div>
-      </div>
 
-      {/* Hover overlay with detail tools */}
-      <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex flex-col justify-between p-3.5 z-20 rounded-2xl">
-        <div className="space-y-1">
-          <p className="text-[11px] text-white font-bold truncate" title={file.filename}>
-            {file.filename}
-          </p>
-          <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/5 text-[9px] font-bold text-slate-300">
-            <div>
-              <span className="text-slate-500 block text-[7px] uppercase font-black">Original</span>
-              <span>{formatBytes(file.originalSize || file.size)}</span>
-            </div>
-            <div>
-              <span className="text-emerald-400 block text-[7px] uppercase font-black">Optimized</span>
-              <span className="text-emerald-300">{formatBytes(file.optimizedSize || file.size)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Row */}
-        <div className="space-y-1.5 pt-1.5 border-t border-white/5">
+        {/* Options vertical dots menu */}
+        <div className="relative options-menu shrink-0">
           <button
-            onClick={() => onPreview(file)}
-            className="w-full py-1.5 bg-primary/80 hover:bg-primary text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1 shadow"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowOptionsPopup(!showOptionsPopup);
+            }}
+            className="p-1 text-slate-400 hover:text-white rounded transition-colors"
           >
-            <Eye size={12} /> Preview
+            <MoreVertical size={16} />
           </button>
 
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => onMove(file)}
-              className="flex-1 py-1.5 bg-white/5 hover:bg-white/10 text-white text-[9px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all"
-              title="Move"
-            >
-              <MoveRight size={10} /> Move
-            </button>
-            <button
-              onClick={() => onCopy(file)}
-              className="flex-1 py-1.5 bg-white/5 hover:bg-white/10 text-white text-[9px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all"
-              title="Copy"
-            >
-              <Copy size={10} /> Copy
-            </button>
-            <button
-              onClick={() => {
-                if (confirm(`Permanently purge ${file.filename}?`)) {
-                  onDelete(file.id);
-                }
-              }}
-              className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg border border-rose-500/20 transition-all"
-              title="Delete"
-            >
-              <Trash2 size={11} />
-            </button>
-          </div>
+          {showOptionsPopup && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowOptionsPopup(false)} />
+              <div className="absolute right-0 bottom-full mb-1 z-50 w-32 bg-[#1E293B] border border-white/10 rounded-xl p-1 shadow-2xl flex flex-col gap-0.5 animate-in fade-in duration-100">
+                <button
+                  onClick={() => {
+                    onPreview(file);
+                    setShowOptionsPopup(false);
+                  }}
+                  className="w-full px-3 py-1.5 text-left text-[11px] font-bold text-slate-200 hover:bg-white/5 rounded-lg flex items-center gap-1.5"
+                >
+                  <Eye size={12} /> Preview
+                </button>
+                <button
+                  onClick={() => {
+                    onMove(file);
+                    setShowOptionsPopup(false);
+                  }}
+                  className="w-full px-3 py-1.5 text-left text-[11px] font-bold text-slate-200 hover:bg-white/5 rounded-lg flex items-center gap-1.5"
+                >
+                  <MoveRight size={12} /> Move
+                </button>
+                <button
+                  onClick={() => {
+                    onCopy(file);
+                    setShowOptionsPopup(false);
+                  }}
+                  className="w-full px-3 py-1.5 text-left text-[11px] font-bold text-slate-200 hover:bg-white/5 rounded-lg flex items-center gap-1.5"
+                >
+                  <Copy size={12} /> Copy
+                </button>
+                <div className="h-px bg-white/5 my-1" />
+                <button
+                  onClick={() => {
+                    if (confirm('Delete asset permanently?')) {
+                      onDelete(file.id);
+                    }
+                    setShowOptionsPopup(false);
+                  }}
+                  className="w-full px-3 py-1.5 text-left text-[11px] font-bold text-rose-400 hover:bg-rose-500/10 rounded-lg flex items-center gap-1.5"
+                >
+                  <Trash2 size={12} /> Delete
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

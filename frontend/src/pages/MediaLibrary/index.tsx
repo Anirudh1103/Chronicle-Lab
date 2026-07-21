@@ -3,10 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/client';
 import {
-  FolderPlus,
-  FolderOpen,
-  HelpCircle,
   Folder as FolderIcon,
+  FolderPlus,
   ChevronRight,
   Upload,
   Search,
@@ -14,7 +12,20 @@ import {
   Sparkles,
   ArrowRight,
   Menu,
-  X
+  X,
+  Grid,
+  List,
+  MoreVertical,
+  CheckSquare,
+  Copy,
+  Trash2,
+  MoveRight,
+  SlidersHorizontal,
+  ChevronDown,
+  UploadCloud,
+  ChevronLeft,
+  Settings,
+  ShieldAlert
 } from 'lucide-react';
 import { FolderTree } from './FolderTree';
 import { GalleryGrid } from './GalleryGrid';
@@ -64,11 +75,12 @@ export function MediaLibrary() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Drawer / Mobile Sidebar State
+  // Mobile Explorer Drawers
   const [isMobileExplorerOpen, setIsMobileExplorerOpen] = useState(false);
 
-  // Selections state
+  // Multiselect Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{
@@ -78,19 +90,25 @@ export function MediaLibrary() {
     target: any;
   } | null>(null);
 
-  // Modals state
+  // New Folder Modal
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
-  const [newFolderColor, setNewFolderColor] = useState('#38bdf8');
 
-  const [previewFile, setPreviewFile] = useState<MediaFile | null>(null);
+  // Move / Copy Targets
   const [moveModalItem, setMoveModalItem] = useState<MediaFile | null>(null);
   const [copyModalItem, setCopyModalItem] = useState<MediaFile | null>(null);
   const [bulkMoveModalOpen, setBulkMoveModalOpen] = useState(false);
   const [bulkCopyModalOpen, setBulkCopyModalOpen] = useState(false);
 
-  // Live Conversion / Upload Progress State
+  // Full Screen Preview
+  const [previewFile, setPreviewFile] = useState<MediaFile | null>(null);
+
+  // Paginated Page Sizes
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(48);
+
+  // Upload Progress Screen State
   const [uploadProgress, setUploadProgress] = useState<{
     total: number;
     completed: number;
@@ -98,7 +116,7 @@ export function MediaLibrary() {
     isConverting: boolean;
   } | null>(null);
 
-  // Fetch folders flat list (Guaranteed 0ms)
+  // Fetch Folders
   const { data: folders = [] } = useQuery<MediaFolder[]>({
     queryKey: ['folders'],
     queryFn: async () => {
@@ -107,7 +125,7 @@ export function MediaLibrary() {
     },
   });
 
-  // Fetch all media assets (Guaranteed 0ms)
+  // Fetch Media Assets
   const { data: media = [], isLoading } = useQuery<MediaFile[]>({
     queryKey: ['media', selectedFolderId],
     queryFn: async () => {
@@ -119,7 +137,7 @@ export function MediaLibrary() {
     },
   });
 
-  // Folder mutation handlers
+  // Mutation actions
   const createFolderMutation = useMutation({
     mutationFn: async (payload: { name: string; color: string; parentId: string | null }) => {
       const { data } = await api.post('/media/folders', payload);
@@ -156,7 +174,6 @@ export function MediaLibrary() {
 
   const moveFolderMutation = useMutation({
     mutationFn: async (payload: { folderId: string; targetParentId: string | null }) => {
-      // Moves a folder into a nested structure by updating parentId
       await api.post(`/media/move`, { mediaIds: [], targetFolderId: payload.targetParentId });
     },
     onSuccess: () => {
@@ -164,7 +181,6 @@ export function MediaLibrary() {
     },
   });
 
-  // Media mutation handlers
   const moveMediaMutation = useMutation({
     mutationFn: async (payload: { mediaIds: string[]; targetFolderId: string | null }) => {
       await api.post('/media/move', payload);
@@ -211,15 +227,7 @@ export function MediaLibrary() {
     },
   });
 
-  // Drag and Drop uploads
-  const handleFileDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const files = Array.from(e.dataTransfer.files || []);
-    if (files.length > 0) {
-      handleUploadFiles(files);
-    }
-  };
-
+  // Upload handler with client side WebP conversion
   const handleUploadFiles = async (files: File[]) => {
     setUploadProgress({
       total: files.length,
@@ -234,7 +242,6 @@ export function MediaLibrary() {
         formData.append('folderId', selectedFolderId);
       }
 
-      // Convert images to WebP client-side concurrently before uploading
       await Promise.all(
         files.map(async (file, idx) => {
           try {
@@ -253,7 +260,6 @@ export function MediaLibrary() {
                 : null
             );
           } catch (err) {
-            // Fallback: Append raw file if WebP conversion fails
             formData.append('files', file);
           }
         })
@@ -271,22 +277,28 @@ export function MediaLibrary() {
         queryClient.invalidateQueries({ queryKey: ['folders'] });
       }, 500);
     } catch (err) {
-      console.error('Upload failed:', err);
-      alert('Failed to upload file.');
+      console.error(err);
+      alert('Upload failed.');
       setUploadProgress(null);
     }
   };
 
-  // Keyboard Shortcuts (Ctrl+A / Delete)
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) {
+      handleUploadFiles(files);
+    }
+  };
+
+  // Keyboard Navigation & Range Selections
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if target is inside an input field
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
       if ((e.metaKey || e.ctrlKey) && e.key === 'a') {
         e.preventDefault();
-        // Select all currently visible grid items
         const allIds = sortedMedia.map((m) => m.id);
         setSelectedIds(new Set(allIds));
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -297,12 +309,10 @@ export function MediaLibrary() {
         }
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [media, selectedIds]);
 
-  // Shift selection helper
   const handleToggleSelect = (id: string, isShift = false) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -328,11 +338,10 @@ export function MediaLibrary() {
     });
   };
 
-  // Debounced search, sorting, and filter resolution
+  // Debounced search, sorting, and pagination
   const sortedMedia = useMemo(() => {
     const filtered = media.filter((m) => {
-      const label = m.filename.toLowerCase();
-      return label.includes(searchTerm.toLowerCase());
+      return m.filename.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
     return filtered.sort((a, b) => {
@@ -347,21 +356,21 @@ export function MediaLibrary() {
     });
   }, [media, searchTerm, sortBy, sortOrder]);
 
+  const totalPages = Math.ceil(sortedMedia.length / itemsPerPage);
+  const paginatedMedia = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return sortedMedia.slice(start, start + itemsPerPage);
+  }, [sortedMedia, currentPage, itemsPerPage]);
+
   const activeFolder = folders.find((f) => f.id === selectedFolderId);
 
-  // Compute folder metadata previews
-  const activeFolderCount = sortedMedia.length;
-  const activeFolderStorage = formatBytes(sortedMedia.reduce((acc, curr) => acc + curr.size, 0));
+  // Compute stats info
+  const folderStorageSum = useMemo(() => {
+    const totalBytes = sortedMedia.reduce((acc, curr) => acc + curr.size, 0);
+    const totalMB = totalBytes / (1024 * 1024);
+    return `${totalMB.toFixed(1)} MB`;
+  }, [sortedMedia]);
 
-  function formatBytes(bytes?: number) {
-    if (!bytes) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  }
-
-  // Right click trigger context menus
   const handleContextMenu = (e: React.MouseEvent, type: 'folder' | 'media' | 'blank', target: any) => {
     e.preventDefault();
     setContextMenu({
@@ -376,30 +385,9 @@ export function MediaLibrary() {
     <div
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleFileDrop}
-      className="flex flex-col lg:flex-row min-h-[85vh] w-full text-slate-100 font-sans p-6 gap-6 relative"
+      className="flex flex-col lg:flex-row min-h-screen w-full bg-[#0B0F19] text-slate-100 font-sans p-6 gap-6 relative"
     >
-      {/* Mobile Top Controls Bar */}
-      <div className="lg:hidden flex items-center justify-between bg-slate-900 border border-white/5 px-4 py-3 rounded-2xl">
-        <button
-          onClick={() => setIsMobileExplorerOpen(true)}
-          className="flex items-center gap-2.5 px-3 py-2 bg-white/5 border border-white/5 rounded-xl text-xs font-black uppercase text-slate-200"
-        >
-          <Menu size={16} /> Folder Tree
-        </button>
-
-        <label className="cursor-pointer px-4 py-2 bg-primary text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 active:scale-95 shadow">
-          <Upload size={14} /> Upload
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => handleUploadFiles(Array.from(e.target.files || []))}
-          />
-        </label>
-      </div>
-
-      {/* Collapsible slideout drawer for Mobile folders */}
+      {/* Collapsible Mobile Explorer Drawer */}
       <AnimatePresence>
         {isMobileExplorerOpen && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm lg:hidden flex">
@@ -407,12 +395,11 @@ export function MediaLibrary() {
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="w-80 h-full bg-slate-950 p-6 flex flex-col justify-between border-r border-white/5"
+              className="w-80 h-full bg-[#0E1322] border-r border-white/5 p-6 flex flex-col justify-between"
             >
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Folders View</h3>
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Folders View</h3>
                   <button
                     onClick={() => setIsMobileExplorerOpen(false)}
                     className="p-2 hover:bg-white/5 rounded-full text-slate-400"
@@ -436,7 +423,7 @@ export function MediaLibrary() {
                   onRenameFolder={(id, name) => renameFolderMutation.mutate({ id, name })}
                   onDeleteFolder={(f) => deleteFolderMutation.mutate(f.id)}
                   onMoveFolder={(folderId, targetParentId) => moveFolderMutation.mutate({ folderId, targetParentId })}
-                  onContextMenu={(e, type, target) => handleContextMenu(e, type, target)}
+                  onContextMenu={handleContextMenu}
                 />
               </div>
             </motion.div>
@@ -445,10 +432,10 @@ export function MediaLibrary() {
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar Left Side Tree Explorer */}
-      <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-slate-950 border border-white/5 rounded-3xl p-5 gap-4">
+      {/* Desktop Left Sidebar: Collapsible VS Code style Explorer */}
+      <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-[#0E1322] border border-white/5 rounded-3xl p-5 gap-4">
         <div className="flex justify-between items-center px-1">
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Folders</h3>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Folders</span>
           <button
             onClick={() => {
               setNewFolderName('New Folder');
@@ -474,52 +461,134 @@ export function MediaLibrary() {
           onRenameFolder={(id, name) => renameFolderMutation.mutate({ id, name })}
           onDeleteFolder={(f) => deleteFolderMutation.mutate(f.id)}
           onMoveFolder={(folderId, targetParentId) => moveFolderMutation.mutate({ folderId, targetParentId })}
-          onContextMenu={(e, type, target) => handleContextMenu(e, type, target)}
+          onContextMenu={handleContextMenu}
         />
       </aside>
 
-      {/* Right Side Main Viewport */}
-      <main className="flex-1 flex flex-col gap-6">
-        {/* Breadcrumb Info Bar */}
+      {/* Right Side Main Content Explorer Area */}
+      <main className="flex-1 flex flex-col gap-5 min-w-0">
+        {/* Top Breadcrumb toolbar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
+            <div className="flex items-center gap-1 text-[11px] font-black text-slate-500 uppercase tracking-widest">
               <span>Media Library</span>
               <ChevronRight size={12} />
               {activeFolder ? (
-                <span className="text-slate-300">{activeFolder.name}</span>
+                <span className="text-slate-350">{activeFolder.name}</span>
               ) : (
-                <span className="text-slate-300">
+                <span className="text-slate-350">
                   {selectedFolderId === 'null' ? 'Unassigned Root' : 'All Assets'}
                 </span>
               )}
             </div>
 
-            <h1 className="text-2xl font-black mt-1 text-white">
+            <h1 className="text-3xl font-black tracking-tight mt-1 text-white">
               {activeFolder ? activeFolder.name : selectedFolderId === 'null' ? 'Unassigned Root' : 'All Assets'}
             </h1>
-            <p className="text-[10px] text-slate-400 font-bold mt-1.5">
-              Contains {activeFolderCount} assets • {activeFolderStorage} total storage
-            </p>
+          </div>
+
+          {/* Action Row */}
+          <Toolbar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            sortBy={sortBy}
+            onSortByChange={setSortBy}
+            sortOrder={sortOrder}
+            onToggleSortOrder={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            onNewFolder={() => {
+              setNewFolderName('New Folder');
+              setNewFolderParentId(null);
+              setShowNewFolderModal(true);
+            }}
+            onUploadClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.multiple = true;
+              input.accept = 'image/*';
+              input.onchange = (e) => {
+                const files = Array.from((e.target as HTMLInputElement).files || []);
+                if (files.length > 0) handleUploadFiles(files);
+              };
+              input.click();
+            }}
+          />
+        </div>
+
+        {/* Selected Folder Metadata Status Card */}
+        <div className="bg-[#121824] border border-white/5 rounded-3xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl relative overflow-hidden">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+              <FolderIcon size={28} className="fill-blue-500/10" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-xl font-black text-white flex items-center gap-2 truncate">
+                {activeFolder ? activeFolder.name : selectedFolderId === 'null' ? 'Unassigned Root' : 'All Assets'}
+              </h2>
+              <p className="text-xs text-slate-400 font-bold mt-1">
+                {sortedMedia.length} items • {folderStorageSum} • Updated just now
+              </p>
+            </div>
+          </div>
+
+          {/* Action Tools */}
+          <div className="flex items-center gap-2.5 w-full md:w-auto">
+            <button
+              onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
+              className={cn(
+                "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border transition-all active:scale-95",
+                isMultiSelectMode
+                  ? "bg-primary border-primary text-white"
+                  : "bg-white/5 border-white/5 text-slate-300 hover:text-white"
+              )}
+            >
+              <CheckSquare size={13} /> {isMultiSelectMode ? 'Selecting...' : 'Select'}
+            </button>
+
+            <button
+              onClick={() => {
+                if (selectedIds.size > 0) setBulkMoveModalOpen(true);
+                else alert('Select items to move first!');
+              }}
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-white/5 active:scale-95 transition-all"
+            >
+              <MoveRight size={13} /> Move
+            </button>
+
+            <button
+              onClick={() => {
+                if (selectedIds.size > 0) setBulkCopyModalOpen(true);
+                else alert('Select items to copy first!');
+              }}
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-white/5 active:scale-95 transition-all"
+            >
+              <Copy size={13} /> Copy
+            </button>
+
+            <button
+              onClick={() => {
+                if (selectedIds.size > 0) {
+                  if (confirm(`Permanently delete ${selectedIds.size} assets?`)) {
+                    deleteMediaMutation.mutate(Array.from(selectedIds));
+                  }
+                } else {
+                  alert('Select items to delete first!');
+                }
+              }}
+              className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border border-rose-500/20 active:scale-95 transition-all"
+            >
+              <Trash2 size={13} /> Delete
+            </button>
           </div>
         </div>
 
-        {/* Toolbar */}
-        <Toolbar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          sortBy={sortBy}
-          onSortByChange={setSortBy}
-          sortOrder={sortOrder}
-          onToggleSortOrder={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          onNewFolder={() => {
-            setNewFolderName('New Folder');
-            setNewFolderParentId(null);
-            setShowNewFolderModal(true);
-          }}
-          onUploadClick={() => {
+        {/* Drag & Drop Upload Zone Area */}
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleFileDrop}
+          className="border-2 border-dashed border-slate-700/60 bg-[#121824]/40 hover:bg-[#121824]/60 transition-all rounded-3xl p-10 flex flex-col items-center justify-center text-center cursor-pointer group"
+          onClick={() => {
             const input = document.createElement('input');
             input.type = 'file';
             input.multiple = true;
@@ -530,9 +599,17 @@ export function MediaLibrary() {
             };
             input.click();
           }}
-        />
+        >
+          <UploadCloud size={32} className="text-slate-500 group-hover:text-primary transition-colors animate-pulse mb-3" />
+          <p className="text-xs font-bold text-slate-350">
+            Drag & drop files here or <span className="text-primary group-hover:underline">click to upload</span>
+          </p>
+          <p className="text-[10px] text-slate-500 mt-1 font-medium">
+            Supports WebP, PNG, JPG, BMP, TIFF, AVIF, and GIF up to 10MB
+          </p>
+        </div>
 
-        {/* virtualized Image Grid viewport */}
+        {/* Virtualized Gallery Grid */}
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -541,12 +618,12 @@ export function MediaLibrary() {
           </div>
         ) : sortedMedia.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-slate-500 border border-dashed border-white/5 rounded-3xl gap-3">
-            <ImageIcon size={32} className="opacity-30 animate-pulse" />
-            <p className="text-xs font-bold">No assets matches this folder scope.</p>
+            <ImageIcon size={32} className="opacity-20 animate-pulse" />
+            <p className="text-xs font-bold">No assets found in this folder.</p>
           </div>
         ) : (
           <GalleryGrid
-            media={sortedMedia}
+            media={paginatedMedia}
             selectedIds={selectedIds}
             onToggleSelect={handleToggleSelect}
             onPreview={setPreviewFile}
@@ -555,17 +632,71 @@ export function MediaLibrary() {
             onCopy={setCopyModalItem}
           />
         )}
+
+        {/* Paginated Footer HUD */}
+        {!isLoading && sortedMedia.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/5 pt-5 text-xs text-slate-400 font-bold">
+            <div>
+              Showing {Math.min(sortedMedia.length, (currentPage - 1) * itemsPerPage + 1)}-
+              {Math.min(sortedMedia.length, currentPage * itemsPerPage)} of {sortedMedia.length} items
+            </div>
+
+            <div className="flex items-center gap-6">
+              {/* Items Per Page Select */}
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500">Items per page:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-slate-950 border border-white/5 px-2 py-1 rounded-lg text-white font-bold focus:outline-none cursor-pointer"
+                >
+                  {[24, 48, 96].map((val) => (
+                    <option key={val} value={val} className="bg-slate-950 text-white font-bold">
+                      {val}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Paginated Page Selectors */}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 disabled:opacity-50 disabled:hover:bg-white/5"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <span className="px-3 py-1 bg-white/5 rounded-lg text-white font-black">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 disabled:opacity-50 disabled:hover:bg-white/5"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* Action Dialog modals */}
+      {/* Action Dialog Modals */}
       <AnimatePresence>
         {showNewFolderModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/75 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/75 backdrop-blur-sm animate-in fade-in duration-100">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-slate-900 border border-white/10 rounded-[2rem] p-6 max-w-sm w-full space-y-6 shadow-2xl"
+              className="bg-[#121824] border border-white/10 rounded-[2rem] p-6 max-w-sm w-full space-y-6 shadow-2xl"
             >
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">
@@ -606,7 +737,7 @@ export function MediaLibrary() {
                   onClick={() =>
                     createFolderMutation.mutate({
                       name: newFolderName,
-                      color: newFolderColor,
+                      color: '#38bdf8',
                       parentId: newFolderParentId,
                     })
                   }
@@ -628,7 +759,7 @@ export function MediaLibrary() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-slate-900 border border-white/10 rounded-[2rem] p-6 max-w-sm w-full space-y-5 shadow-2xl"
+              className="bg-[#121824] border border-white/10 rounded-[2rem] p-6 max-w-sm w-full space-y-5 shadow-2xl"
             >
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Move Asset</h3>
@@ -644,7 +775,7 @@ export function MediaLibrary() {
               <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
                 <button
                   onClick={() => moveMediaMutation.mutate({ mediaIds: [moveModalItem.id], targetFolderId: null })}
-                  className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-left text-xs font-bold text-slate-400 hover:text-white flex items-center gap-2"
+                  className="w-full p-3 rounded-xl bg-slate-955 hover:bg-slate-800 text-left text-xs font-bold text-slate-400 hover:text-white flex items-center gap-2"
                 >
                   <FolderIcon size={14} /> Root / Unassigned
                 </button>
@@ -653,7 +784,7 @@ export function MediaLibrary() {
                   <button
                     key={f.id}
                     onClick={() => moveMediaMutation.mutate({ mediaIds: [moveModalItem.id], targetFolderId: f.id })}
-                    className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-left text-xs font-bold text-slate-200 hover:text-white flex items-center gap-2"
+                    className="w-full p-3 rounded-xl bg-slate-955 hover:bg-slate-800 text-left text-xs font-bold text-slate-200 hover:text-white flex items-center gap-2"
                   >
                     <FolderIcon size={14} style={{ color: f.color }} /> {f.name}
                   </button>
@@ -672,7 +803,7 @@ export function MediaLibrary() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-slate-900 border border-white/10 rounded-[2rem] p-6 max-w-sm w-full space-y-5 shadow-2xl"
+              className="bg-[#121824] border border-white/10 rounded-[2rem] p-6 max-w-sm w-full space-y-5 shadow-2xl"
             >
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Copy Asset</h3>
@@ -688,7 +819,7 @@ export function MediaLibrary() {
               <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
                 <button
                   onClick={() => copyMediaMutation.mutate({ mediaIds: [copyModalItem.id], targetFolderId: null })}
-                  className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-left text-xs font-bold text-slate-400 hover:text-white flex items-center gap-2"
+                  className="w-full p-3 rounded-xl bg-slate-955 hover:bg-slate-800 text-left text-xs font-bold text-slate-400 hover:text-white flex items-center gap-2"
                 >
                   <FolderIcon size={14} /> Root / Unassigned
                 </button>
@@ -697,7 +828,7 @@ export function MediaLibrary() {
                   <button
                     key={f.id}
                     onClick={() => copyMediaMutation.mutate({ mediaIds: [copyModalItem.id], targetFolderId: f.id })}
-                    className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-left text-xs font-bold text-slate-200 hover:text-white flex items-center gap-2"
+                    className="w-full p-3 rounded-xl bg-slate-955 hover:bg-slate-800 text-left text-xs font-bold text-slate-200 hover:text-white flex items-center gap-2"
                   >
                     <FolderIcon size={14} style={{ color: f.color }} /> {f.name}
                   </button>
@@ -716,7 +847,7 @@ export function MediaLibrary() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-slate-900 border border-white/10 rounded-[2rem] p-6 max-w-sm w-full space-y-5 shadow-2xl"
+              className="bg-[#121824] border border-white/10 rounded-[2rem] p-6 max-w-sm w-full space-y-5 shadow-2xl"
             >
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Bulk Move Assets</h3>
@@ -732,7 +863,7 @@ export function MediaLibrary() {
               <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
                 <button
                   onClick={() => moveMediaMutation.mutate({ mediaIds: Array.from(selectedIds), targetFolderId: null })}
-                  className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-left text-xs font-bold text-slate-400 hover:text-white flex items-center gap-2"
+                  className="w-full p-3 rounded-xl bg-slate-955 hover:bg-slate-800 text-left text-xs font-bold text-slate-400 hover:text-white flex items-center gap-2"
                 >
                   <FolderIcon size={14} /> Root / Unassigned
                 </button>
@@ -741,7 +872,7 @@ export function MediaLibrary() {
                   <button
                     key={f.id}
                     onClick={() => moveMediaMutation.mutate({ mediaIds: Array.from(selectedIds), targetFolderId: f.id })}
-                    className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-left text-xs font-bold text-slate-200 hover:text-white flex items-center gap-2"
+                    className="w-full p-3 rounded-xl bg-slate-955 hover:bg-slate-800 text-left text-xs font-bold text-slate-200 hover:text-white flex items-center gap-2"
                   >
                     <FolderIcon size={14} style={{ color: f.color }} /> {f.name}
                   </button>
@@ -760,7 +891,7 @@ export function MediaLibrary() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-slate-900 border border-white/10 rounded-[2rem] p-6 max-w-sm w-full space-y-5 shadow-2xl"
+              className="bg-[#121824] border border-white/10 rounded-[2rem] p-6 max-w-sm w-full space-y-5 shadow-2xl"
             >
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Bulk Copy Assets</h3>
@@ -776,7 +907,7 @@ export function MediaLibrary() {
               <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
                 <button
                   onClick={() => copyMediaMutation.mutate({ mediaIds: Array.from(selectedIds), targetFolderId: null })}
-                  className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-left text-xs font-bold text-slate-400 hover:text-white flex items-center gap-2"
+                  className="w-full p-3 rounded-xl bg-slate-955 hover:bg-slate-800 text-left text-xs font-bold text-slate-400 hover:text-white flex items-center gap-2"
                 >
                   <FolderIcon size={14} /> Root / Unassigned
                 </button>
@@ -785,7 +916,7 @@ export function MediaLibrary() {
                   <button
                     key={f.id}
                     onClick={() => copyMediaMutation.mutate({ mediaIds: Array.from(selectedIds), targetFolderId: f.id })}
-                    className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-left text-xs font-bold text-slate-200 hover:text-white flex items-center gap-2"
+                    className="w-full p-3 rounded-xl bg-slate-955 hover:bg-slate-800 text-left text-xs font-bold text-slate-200 hover:text-white flex items-center gap-2"
                   >
                     <FolderIcon size={14} style={{ color: f.color }} /> {f.name}
                   </button>
@@ -822,7 +953,7 @@ export function MediaLibrary() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-slate-900 border border-white/10 rounded-[3rem] p-8 max-w-md w-full text-center space-y-6 shadow-2xl"
+              className="bg-[#121824] border border-white/10 rounded-[3rem] p-8 max-w-md w-full text-center space-y-6 shadow-2xl"
             >
               <div className="w-16 h-16 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto text-primary animate-pulse">
                 <Sparkles size={32} />
@@ -854,19 +985,6 @@ export function MediaLibrary() {
         )}
       </AnimatePresence>
 
-      {/* Bulk actions Bar footer */}
-      <BatchBar
-        selectedCount={selectedIds.size}
-        onClear={() => setSelectedIds(new Set())}
-        onDelete={() => {
-          if (confirm(`Permanently delete ${selectedIds.size} assets?`)) {
-            deleteMediaMutation.mutate(Array.from(selectedIds));
-          }
-        }}
-        onMove={() => setBulkMoveModalOpen(true)}
-        onCopy={() => setBulkCopyModalOpen(true)}
-      />
-
       {/* Context menus popup overlay */}
       {contextMenu && (
         <ContextMenu
@@ -883,7 +1001,6 @@ export function MediaLibrary() {
                     setShowNewFolderModal(true);
                   },
                   onRename: () => {
-                    // Triggers inline renaming directly in tree nodes
                     alert('Rename folder: use the double click inline rename option or edit button!');
                   },
                   onDelete: () => {
