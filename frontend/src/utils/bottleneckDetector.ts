@@ -39,24 +39,25 @@ export function analyzeBottlenecks() {
     }
   });
 
-  // 5. Check Image Bottlenecks
+  // 5. Check Image Bottlenecks (Exclude SVG icons & favicons)
   images.forEach((img) => {
     const filename = img.src.split('/').pop() || img.src;
+    const isSvg = img.src.toLowerCase().endsWith('.svg') || img.format === 'SVG';
 
-    if (img.isOver1MB) {
+    if (!isSvg && img.isOver1MB) {
       const mb = (img.size / (1024 * 1024)).toFixed(1);
       store.addRecommendation(
         `Oversized Image: Cover asset "${filename}" is ${mb} MB. Convert to WebP format for 80%+ savings.`
       );
     }
 
-    if (img.isOver1s) {
+    if (!isSvg && img.isOver1s) {
       store.addRecommendation(
         `Slow Image Load: "${filename}" took ${img.duration}ms to render. Consider adding loading="lazy" and decoding="async".`
       );
     }
 
-    if (!img.isWebP && img.format !== 'SVG') {
+    if (!isSvg && !img.isWebP) {
       store.addRecommendation(
         `Unoptimized Image Format: Asset "${filename}" is in legacy format (${img.format}). Upgrade to WebP.`
       );

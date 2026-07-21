@@ -230,6 +230,7 @@ model PageView {
 
   @@index([postId])
   @@index([timestamp])
+  @@index([slug])
 }
 
 model Comment {

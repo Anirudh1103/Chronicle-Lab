@@ -58,6 +58,8 @@ export const ImageBlock: React.FC<ImageBlockProps> = ({ id, content }) => {
           <img
             src={getUploadUrl(content.url)}
             alt={content.alt}
+            loading="lazy"
+            decoding="async"
             className={cn(
               'rounded-xl transition-all shadow-lg',
               content.alignment === 'left' && 'max-w-sm mr-auto',

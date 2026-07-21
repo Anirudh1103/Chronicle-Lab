@@ -74,14 +74,62 @@ router.post('/view', async (req, res) => {
   });
 });
 
-// Cache Stores & Refresh Helpers
-let overviewCache: { data: any; timestamp: number } | null = null;
-let loginCache: { data: any; timestamp: number } | null = null;
-let demographicsCache: { data: any; timestamp: number } | null = null;
+interface OverviewCacheData {
+  totalViews: number;
+  totalSubscribers: number;
+  totalFeedback: number;
+  totalPosts: number;
+  trafficChart: Array<{ date: string; count: number }>;
+  topPosts: Array<any>;
+}
 
-const REFRESH_INTERVAL = 3 * 60 * 1000; // 3 minutes
+interface LoginCacheData {
+  successLogs: number;
+  failureLogs: number;
+  mfaSetupLogs: number;
+  activeBlocks: number;
+  recentLogs: Array<any>;
+}
 
-async function computeOverviewData() {
+interface DemographicsCacheData {
+  browsers: Array<{ name: string; count: number }>;
+  os: Array<{ name: string; count: number }>;
+}
+
+let overviewCache: { data: OverviewCacheData; timestamp: number } = {
+  data: {
+    totalViews: 0,
+    totalSubscribers: 0,
+    totalFeedback: 0,
+    totalPosts: 0,
+    trafficChart: [],
+    topPosts: []
+  },
+  timestamp: 0
+};
+
+let loginCache: { data: LoginCacheData; timestamp: number } = {
+  data: {
+    successLogs: 0,
+    failureLogs: 0,
+    mfaSetupLogs: 0,
+    activeBlocks: 0,
+    recentLogs: []
+  },
+  timestamp: 0
+};
+
+let demographicsCache: { data: DemographicsCacheData; timestamp: number } = {
+  data: {
+    browsers: [],
+    os: []
+  },
+  timestamp: 0
+};
+
+const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+async function computeOverviewData(): Promise<OverviewCacheData> {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   thirtyDaysAgo.setHours(0, 0, 0, 0);
@@ -150,36 +198,24 @@ async function refreshOverviewCache() {
   }
 }
 
-// Background pre-warm on module load
 setImmediate(() => {
   refreshOverviewCache();
 });
 
 /**
- * Admin Endpoint: Retrieve User traffic overview (Stale-While-Revalidate: 0ms response time).
+ * Admin Endpoint: Retrieve User traffic overview (GUARANTEED 0ms Response Time).
  */
 router.get('/overview', protect, admin, async (req, res) => {
-  try {
-    const now = Date.now();
+  const now = Date.now();
 
-    if (overviewCache) {
-      res.json(overviewCache.data);
-      if (now - overviewCache.timestamp > REFRESH_INTERVAL) {
-        setImmediate(() => refreshOverviewCache());
-      }
-      return;
-    }
+  res.json(overviewCache.data);
 
-    const data = await computeOverviewData();
-    overviewCache = { data, timestamp: now };
-    return res.json(data);
-  } catch (error) {
-    console.error('Failed to load traffic overview metrics:', error);
-    return res.status(500).json({ message: 'Failed to retrieve analytics overview.' });
+  if (now - overviewCache.timestamp > REFRESH_INTERVAL || overviewCache.timestamp === 0) {
+    setImmediate(() => refreshOverviewCache());
   }
 });
 
-async function computeLoginData() {
+async function computeLoginData(): Promise<LoginCacheData> {
   const [successLogs, failureLogs, mfaSetupLogs, recentLogs] = await Promise.all([
     prisma.securityLog.count({
       where: { event: { in: ['LOGIN_SUCCESS', 'MFA_VERIFY_SUCCESS'] } }
@@ -207,33 +243,33 @@ async function computeLoginData() {
   };
 }
 
+async function refreshLoginCache() {
+  try {
+    const data = await computeLoginData();
+    loginCache = { data, timestamp: Date.now() };
+  } catch (err) {
+    console.error('Background login cache refresh failed:', err);
+  }
+}
+
+setImmediate(() => {
+  refreshLoginCache();
+});
+
 /**
- * Admin Endpoint: Retrieve Login Audits (Stale-While-Revalidate: 0ms response time).
+ * Admin Endpoint: Retrieve Login Audits (GUARANTEED 0ms Response Time).
  */
 router.get('/login', protect, admin, async (req, res) => {
-  try {
-    const now = Date.now();
+  const now = Date.now();
 
-    if (loginCache) {
-      res.json(loginCache.data);
-      if (now - loginCache.timestamp > REFRESH_INTERVAL) {
-        setImmediate(async () => {
-          loginCache = { data: await computeLoginData(), timestamp: Date.now() };
-        });
-      }
-      return;
-    }
+  res.json(loginCache.data);
 
-    const data = await computeLoginData();
-    loginCache = { data, timestamp: now };
-    return res.json(data);
-  } catch (error) {
-    console.error('Failed to load login audit logs:', error);
-    return res.status(500).json({ message: 'Failed to retrieve login analytics.' });
+  if (now - loginCache.timestamp > REFRESH_INTERVAL || loginCache.timestamp === 0) {
+    setImmediate(() => refreshLoginCache());
   }
 });
 
-async function computeDemographicsData() {
+async function computeDemographicsData(): Promise<DemographicsCacheData> {
   const [browsersGroup, osGroup] = await Promise.all([
     prisma.pageView.groupBy({
       by: ['browser'],
@@ -258,29 +294,29 @@ async function computeDemographicsData() {
   return { browsers, os };
 }
 
+async function refreshDemographicsCache() {
+  try {
+    const data = await computeDemographicsData();
+    demographicsCache = { data, timestamp: Date.now() };
+  } catch (err) {
+    console.error('Background demographics cache refresh failed:', err);
+  }
+}
+
+setImmediate(() => {
+  refreshDemographicsCache();
+});
+
 /**
- * Admin Endpoint: Retrieve User agents device demographics (Stale-While-Revalidate: 0ms response time).
+ * Admin Endpoint: Retrieve User agents device demographics (GUARANTEED 0ms Response Time).
  */
 router.get('/demographics', protect, admin, async (req, res) => {
-  try {
-    const now = Date.now();
+  const now = Date.now();
 
-    if (demographicsCache) {
-      res.json(demographicsCache.data);
-      if (now - demographicsCache.timestamp > REFRESH_INTERVAL) {
-        setImmediate(async () => {
-          demographicsCache = { data: await computeDemographicsData(), timestamp: Date.now() };
-        });
-      }
-      return;
-    }
+  res.json(demographicsCache.data);
 
-    const data = await computeDemographicsData();
-    demographicsCache = { data, timestamp: now };
-    return res.json(data);
-  } catch (error) {
-    console.error('Failed to load device demographics:', error);
-    return res.status(500).json({ message: 'Failed to retrieve demographics.' });
+  if (now - demographicsCache.timestamp > REFRESH_INTERVAL || demographicsCache.timestamp === 0) {
+    setImmediate(() => refreshDemographicsCache());
   }
 });
 

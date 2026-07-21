@@ -18,12 +18,15 @@ import {
 import { cn } from '../../utils/cn';
 import { GooglePreview } from './GooglePreview';
 import { getUploadUrl } from '../../utils/url';
+import { MediaPicker } from './MediaPicker';
+import { AnimatePresence } from 'framer-motion';
 
 export const EditorSidebar: React.FC = () => {
   const { metadata, seo, setMetadata, setSEO } = useEditorStore();
   const [activeTab, setActiveTab] = useState<'settings' | 'seo' | 'social'>('settings');
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
   const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,6 +61,19 @@ export const EditorSidebar: React.FC = () => {
 
   return (
     <aside className="w-80 border-l border-slate-200 bg-white overflow-y-auto dark:border-slate-800 dark:bg-slate-900 h-[calc(100vh-64px)] sticky top-16">
+      {/* Media Picker Modal */}
+      <AnimatePresence>
+        {showMediaPicker && (
+          <MediaPicker
+            onSelect={(url) => {
+              setMetadata({ coverImage: url });
+              setShowMediaPicker(false);
+            }}
+            onClose={() => setShowMediaPicker(false)}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="flex border-b border-slate-100 dark:border-slate-800">
         {(['settings', 'seo', 'social'] as const).map((tab) => (
           <button
@@ -235,51 +251,70 @@ export const EditorSidebar: React.FC = () => {
                     if (file) handleUpload(file);
                   }}
                   className={cn(
-                    "relative transition-all",
+                    "relative transition-all space-y-3",
                     isDragging && "scale-[1.02] ring-2 ring-blue-500 ring-offset-2"
                   )}
                >
                  {metadata.coverImage ? (
                    <div className="relative rounded-lg overflow-hidden group">
                       <img src={getUploadUrl(metadata.coverImage)} className="w-full aspect-video object-cover" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          className="bg-white text-black px-3 py-1.5 rounded-md text-xs font-bold hover:bg-slate-100 transition-colors"
-                        >
-                          Change
-                        </button>
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-2 transition-opacity p-2">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="bg-white text-black px-3 py-1.5 rounded-md text-xs font-bold hover:bg-slate-100 transition-colors flex items-center gap-1"
+                          >
+                            <Upload size={12} /> Local
+                          </button>
+                          <button
+                            onClick={() => setShowMediaPicker(true)}
+                            className="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-xs font-bold hover:opacity-90 transition-colors flex items-center gap-1"
+                          >
+                            <ImageIcon size={12} /> Media Library
+                          </button>
+                        </div>
                         <button
                           onClick={() => setMetadata({ coverImage: '' })}
                           className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-md text-xs font-bold hover:opacity-90 transition-colors"
                         >
-                          Remove
+                          Remove Cover
                         </button>
                       </div>
                    </div>
                  ) : (
-                   <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className={cn(
-                      "w-full py-8 border-2 border-dashed rounded-lg transition-colors flex flex-col items-center justify-center gap-2",
-                      isUploading ? "bg-slate-50 border-slate-100" : "border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300"
-                    )}
-                   >
+                   <div className="p-5 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center gap-3">
                       {isUploading ? (
-                        <div className="flex flex-col items-center gap-2">
-                           <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-                           <span className="text-[10px] font-bold uppercase">Uploading...</span>
+                        <div className="flex flex-col items-center gap-2 py-4">
+                           <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                           <span className="text-[10px] font-bold uppercase text-slate-400">Optimizing Cover...</span>
                         </div>
                       ) : (
                         <>
-                          <ImageIcon size={24} />
-                          <span className="text-xs font-bold">Add Cover Image</span>
-                          <span className="text-[10px]">or drag and drop</span>
+                          <div className="text-center space-y-1">
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 block">Select Cover Image</span>
+                            <span className="text-[10px] text-slate-400 block">Choose image source for cover</span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 w-full pt-1">
+                            <button
+                              onClick={() => fileInputRef.current?.click()}
+                              className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all text-slate-700 dark:text-slate-200"
+                            >
+                              <Upload size={14} className="text-blue-500" /> Upload Local
+                            </button>
+
+                            <button
+                              onClick={() => setShowMediaPicker(true)}
+                              className="py-2.5 px-3 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all border border-primary/20"
+                            >
+                              <ImageIcon size={14} /> Media Library
+                            </button>
+                          </div>
                         </>
                       )}
-                   </button>
+                   </div>
                  )}
+
                  <input
                   type="file"
                   ref={fileInputRef}
@@ -359,7 +394,6 @@ export const EditorSidebar: React.FC = () => {
                     className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-800 dark:border-slate-700"
                   />
                 </label>
-                {/* Image upload for social would go here */}
               </section>
            </div>
         )}

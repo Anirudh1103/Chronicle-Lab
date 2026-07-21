@@ -4,8 +4,6 @@ import prisma from '../../config/db';
 import { SECURITY_CONFIG } from '../constants/security.constants';
 import { logSecurityEvent } from '../logging/security.logger';
 
-
-
 const sessionLastActivityMap = new Map<string, number>();
 
 /**
@@ -24,17 +22,17 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 
   try {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-    
+
     // Stateful session verification
     if (decoded.sessionId) {
       const session = await prisma.session.findUnique({
         where: { token: decoded.sessionId }
       });
-      
+
       if (!session || !session.isValid) {
         return res.status(401).json({ message: 'Not authorized, session revoked or invalid.' });
       }
-      
+
       // Throttle lastActivity timestamp updates in DB to once per 5 minutes
       const lastUpdate = sessionLastActivityMap.get(session.id) || 0;
       if (Date.now() - lastUpdate > 5 * 60 * 1000) {
@@ -89,21 +87,26 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 
   try {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
-    
+
     if (decoded.sessionId) {
       const session = await prisma.session.findUnique({
         where: { token: decoded.sessionId }
       });
-      
+
       if (!session || !session.isValid) {
         (req as any).user = null;
         return next();
       }
-      
-      await prisma.session.update({
-        where: { id: session.id },
-        data: { lastActivity: new Date() }
-      });
+
+      // Throttle lastActivity timestamp updates in DB to once per 5 minutes
+      const lastUpdate = sessionLastActivityMap.get(session.id) || 0;
+      if (Date.now() - lastUpdate > 5 * 60 * 1000) {
+        sessionLastActivityMap.set(session.id, Date.now());
+        prisma.session.update({
+          where: { id: session.id },
+          data: { lastActivity: new Date() }
+        }).catch(() => {});
+      }
     }
 
     const user = await prisma.user.findUnique({

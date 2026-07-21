@@ -63,7 +63,7 @@ export const GalleryBlock: React.FC<GalleryBlockProps> = ({ id, content }) => {
           <div key={index} className="relative aspect-square rounded-2xl bg-slate-200 dark:bg-slate-800 overflow-hidden group">
             {img.url ? (
               <>
-                <img src={getUploadUrl(img.url)} className="w-full h-full object-cover" />
+                <img src={getUploadUrl(img.url)} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 <button
                   onClick={() => removeImage(index)}
                   className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
