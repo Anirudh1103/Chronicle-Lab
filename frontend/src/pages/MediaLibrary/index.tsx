@@ -433,7 +433,7 @@ export function MediaLibrary() {
       </AnimatePresence>
 
       {/* Desktop Left Sidebar: Collapsible VS Code style Explorer */}
-      <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-[#0E1322] border border-white/5 rounded-3xl p-5 gap-4">
+      <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-[#0E1322] border border-white/5 rounded-3xl p-5 gap-4 sticky top-6 h-[calc(100vh-160px)] overflow-y-auto scrollbar-none">
         <div className="flex justify-between items-center px-1">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Folders</span>
           <button

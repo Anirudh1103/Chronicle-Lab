@@ -153,7 +153,12 @@ function GalleryCard({
               )}
               onLoad={() => setIsLoaded(true)}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = getUploadUrl(file.path);
+                const imgEl = e.target as HTMLImageElement;
+                const fallbackUrl = getUploadUrl(file.path);
+                if (imgEl.src !== fallbackUrl) {
+                  imgEl.src = fallbackUrl;
+                }
+                setIsLoaded(true);
               }}
             />
             {!isLoaded && (

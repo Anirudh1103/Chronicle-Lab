@@ -82,24 +82,24 @@ setImmediate(() => {
   prewarmCaches();
 });
 
-// Format media item path to ensure it uses the direct Supabase URL if it's a relative filename
+// Clean media item path to relative filename so frontend uses the unified local-Express-Supabase resolver
 function formatMediaItem(item: any) {
   if (!item) return item;
 
-  const formatPath = (p: string | null) => {
+  const getCleanFilename = (p: string | null) => {
     if (!p) return null;
-    if (p.startsWith('http://') || p.startsWith('https://')) return p;
-    const supabaseUrl = process.env.SUPABASE_URL || 'https://espfrijljdzvzfoeuieg.supabase.co';
-    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'media';
-    return `${supabaseUrl}/storage/v1/object/public/${bucketName}/${p}`;
+    if (p.startsWith('http://') || p.startsWith('https://')) {
+      return p.split('/').pop() || p;
+    }
+    return p;
   };
 
   return {
     ...item,
-    path: formatPath(item.path),
-    largePreviewPath: formatPath(item.largePreviewPath),
-    mediumThumbnailPath: formatPath(item.mediumThumbnailPath),
-    smallThumbnailPath: formatPath(item.smallThumbnailPath),
+    path: getCleanFilename(item.path),
+    largePreviewPath: getCleanFilename(item.largePreviewPath),
+    mediumThumbnailPath: getCleanFilename(item.mediumThumbnailPath),
+    smallThumbnailPath: getCleanFilename(item.smallThumbnailPath),
   };
 }
 
