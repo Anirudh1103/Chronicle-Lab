@@ -6,7 +6,7 @@ import { StorageService } from '../services/storage.service';
 // In-Memory Cache Stores (0ms Stale-While-Revalidate)
 let foldersCache: { data: any; timestamp: number } | null = null;
 const mediaCache = new Map<string, { data: any; timestamp: number }>();
-const MEDIA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const MEDIA_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 export const clearMediaCaches = () => {
   foldersCache = null;
@@ -54,57 +54,71 @@ setImmediate(async () => {
 });
 
 /**
- * Controller: Handles image uploads into Media Library (with optional folderId).
+ * Controller: Handles single OR multiple image uploads into Media Library.
  */
 export const uploadMedia = async (req: Request, res: Response) => {
   try {
-    if (!req.file || !req.file.buffer) {
-      return res.status(400).json({ message: 'No image file uploaded' });
+    const files: Express.Multer.File[] = [];
+    if (req.file) {
+      files.push(req.file);
+    } else if (req.files && Array.isArray(req.files)) {
+      files.push(...(req.files as Express.Multer.File[]));
+    } else if (req.files && typeof req.files === 'object') {
+      Object.values(req.files).forEach(fArr => {
+        if (Array.isArray(fArr)) files.push(...fArr);
+      });
+    }
+
+    if (files.length === 0) {
+      return res.status(400).json({ message: 'No image files uploaded' });
     }
 
     const { folderId } = req.body;
+    const createdAssets = [];
 
-    // 1. Optimize image in memory (WebP, max 1920x1080, 82% quality)
-    const optimized = await ImageService.optimizeImage(
-      req.file.buffer,
-      req.file.originalname,
-      req.file.mimetype
-    );
+    for (const file of files) {
+      if (!file.buffer) continue;
 
-    // 2. Save optimized WebP to storage
-    const storedPath = await StorageService.uploadFile(
-      optimized.buffer,
-      optimized.filename,
-      optimized.mimetype
-    );
+      const optimized = await ImageService.optimizeImage(
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
 
-    // 3. Store optimization metrics in Prisma Media table
-    const media = await prisma.media.create({
-      data: {
-        filename: req.file.originalname,
-        path: storedPath,
-        mimetype: optimized.mimetype,
-        size: optimized.optimizedSize,
-        originalFormat: optimized.originalFormat,
-        originalSize: optimized.originalSize,
-        optimizedSize: optimized.optimizedSize,
-        compressionRatio: optimized.compressionRatio,
-        width: optimized.width,
-        height: optimized.height,
-        folderId: folderId || null,
-      },
-      include: {
-        folder: true
-      }
-    });
+      const storedPath = await StorageService.uploadFile(
+        optimized.buffer,
+        optimized.filename,
+        optimized.mimetype
+      );
 
-    // Invalidate media cache & revalidate background
-    mediaCache.clear();
+      const media = await prisma.media.create({
+        data: {
+          filename: file.originalname,
+          path: storedPath,
+          mimetype: optimized.mimetype,
+          size: optimized.optimizedSize,
+          originalFormat: optimized.originalFormat,
+          originalSize: optimized.originalSize,
+          optimizedSize: optimized.optimizedSize,
+          compressionRatio: optimized.compressionRatio,
+          width: optimized.width,
+          height: optimized.height,
+          folderId: folderId || null,
+        },
+        include: { folder: true }
+      });
+
+      createdAssets.push(media);
+    }
+
+    // Clear caches so new uploads appear immediately
+    clearMediaCaches();
     setImmediate(async () => {
       foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
+      mediaCache.set('all', { data: await computeMediaData(), timestamp: Date.now() });
     });
 
-    res.status(201).json(media);
+    res.status(201).json(createdAssets.length === 1 ? createdAssets[0] : createdAssets);
   } catch (error) {
     console.error('[MediaController] Upload processing error:', error);
     res.status(500).json({
@@ -157,8 +171,8 @@ export const deleteMedia = async (req: Request, res: Response) => {
 
     await StorageService.deleteFile(media.path);
     await prisma.media.delete({ where: { id } });
-    
-    mediaCache.clear();
+
+    clearMediaCaches();
     setImmediate(async () => {
       foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
     });
@@ -207,7 +221,6 @@ export const createFolder = async (req: Request, res: Response) => {
     const trimmedName = name.trim();
     const slug = trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-    // Quick in-memory check first
     if (foldersCache && Array.isArray(foldersCache.data)) {
       const existsInCache = foldersCache.data.some(
         (f: any) => f.name.toLowerCase() === trimmedName.toLowerCase() || f.slug === slug
@@ -228,14 +241,12 @@ export const createFolder = async (req: Request, res: Response) => {
       }
     });
 
-    // Optimistically push to in-memory foldersCache
     if (foldersCache && Array.isArray(foldersCache.data)) {
       foldersCache.data = [...foldersCache.data, folder];
     } else {
       foldersCache = { data: [folder], timestamp: Date.now() };
     }
 
-    // Revalidate in background
     setImmediate(async () => {
       foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
     });
@@ -253,7 +264,7 @@ export const createFolder = async (req: Request, res: Response) => {
 export const deleteFolder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     await prisma.media.updateMany({
       where: { folderId: id },
       data: { folderId: null }
@@ -264,7 +275,7 @@ export const deleteFolder = async (req: Request, res: Response) => {
     if (foldersCache && Array.isArray(foldersCache.data)) {
       foldersCache.data = foldersCache.data.filter((f: any) => f.id !== id);
     }
-    mediaCache.clear();
+    clearMediaCaches();
 
     setImmediate(async () => {
       foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
@@ -294,7 +305,7 @@ export const moveMedia = async (req: Request, res: Response) => {
       data: { folderId: destination }
     });
 
-    mediaCache.clear();
+    clearMediaCaches();
     setImmediate(async () => {
       foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
     });
@@ -340,7 +351,7 @@ export const copyMedia = async (req: Request, res: Response) => {
       });
     }
 
-    mediaCache.clear();
+    clearMediaCaches();
     setImmediate(async () => {
       foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
     });

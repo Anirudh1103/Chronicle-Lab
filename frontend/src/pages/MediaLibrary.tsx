@@ -18,7 +18,9 @@ import {
   Plus,
   X,
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { getUploadUrl } from '../utils/url';
 import { cn } from '../utils/cn';
@@ -51,6 +53,16 @@ export interface MediaFile {
   createdAt: string;
 }
 
+interface UploadProgressState {
+  isOpen: boolean;
+  totalFiles: number;
+  currentFileIndex: number;
+  currentFileName: string;
+  completedFiles: number;
+  percent: number;
+  isComplete: boolean;
+}
+
 function formatBytes(bytes?: number): string {
   if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
@@ -62,10 +74,12 @@ function formatBytes(bytes?: number): string {
 export function MediaLibrary() {
   const queryClient = useQueryClient();
   const [selectedFolderId, setSelectedFolderId] = useState<string>('all');
-  const [isUploading, setIsUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Conversion Progress Modal State
+  const [progressState, setProgressState] = useState<UploadProgressState | null>(null);
 
   // Folder creation modal state
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -86,7 +100,7 @@ export function MediaLibrary() {
       const { data } = await api.get('media/folders');
       return data;
     },
-    staleTime: 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch Media Assets
@@ -97,7 +111,7 @@ export function MediaLibrary() {
       const { data } = await api.get('media', { params });
       return data;
     },
-    staleTime: 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Create Folder Mutation
@@ -131,27 +145,82 @@ export function MediaLibrary() {
     }
   });
 
-  // Upload Mutation
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
+  // Batch Upload Files
+  const processBatchUpload = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    const total = files.length;
+    setProgressState({
+      isOpen: true,
+      totalFiles: total,
+      currentFileIndex: 1,
+      currentFileName: files[0].name,
+      completedFiles: 0,
+      percent: 5,
+      isComplete: false
+    });
+
+    try {
       const formData = new FormData();
-      formData.append('file', file);
+      files.forEach((f) => formData.append('files', f));
       if (selectedFolderId !== 'all' && selectedFolderId !== 'root') {
         formData.append('folderId', selectedFolderId);
       }
-      const { data } = await api.post('media/upload', formData);
-      return data;
-    },
-    onSuccess: () => {
+
+      // Simulate step progress while processing server side Sharp WebP conversion
+      let currentPct = 10;
+      const interval = setInterval(() => {
+        currentPct = Math.min(currentPct + 15, 90);
+        const comp = Math.min(Math.floor((currentPct / 100) * total), total - 1);
+        setProgressState(prev => prev ? {
+          ...prev,
+          percent: currentPct,
+          completedFiles: comp,
+          currentFileIndex: comp + 1,
+          currentFileName: files[comp]?.name || files[0].name
+        } : null);
+      }, 400);
+
+      await api.post('media/upload', formData);
+
+      clearInterval(interval);
+      setProgressState({
+        isOpen: true,
+        totalFiles: total,
+        currentFileIndex: total,
+        currentFileName: 'All assets converted to WebP successfully!',
+        completedFiles: total,
+        percent: 100,
+        isComplete: true
+      });
+
       queryClient.invalidateQueries({ queryKey: ['media'] });
       queryClient.invalidateQueries({ queryKey: ['media-folders'] });
-      setIsUploading(false);
-    },
-    onError: (err: any) => {
-      setIsUploading(false);
+
+      setTimeout(() => {
+        setProgressState(null);
+      }, 1800);
+    } catch (err: any) {
       alert('Upload failed: ' + (err.response?.data?.message || err.message));
+      setProgressState(null);
     }
-  });
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (fileList && fileList.length > 0) {
+      processBatchUpload(Array.from(fileList));
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (droppedFiles.length > 0) {
+      processBatchUpload(droppedFiles);
+    }
+  };
 
   // Move Mutation
   const moveMutation = useMutation({
@@ -190,24 +259,6 @@ export function MediaLibrary() {
     },
   });
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setIsUploading(true);
-      uploadMutation.mutate(file);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setIsUploading(true);
-      uploadMutation.mutate(file);
-    }
-  };
-
   const handleCopyUrl = (file: MediaFile) => {
     const fullUrl = getUploadUrl(file.path);
     navigator.clipboard.writeText(fullUrl);
@@ -240,9 +291,60 @@ export function MediaLibrary() {
           >
             <div className="bg-background p-8 rounded-[2rem] shadow-2xl flex flex-col items-center gap-4">
               <Upload size={48} className="text-primary animate-bounce" />
-              <p className="text-2xl font-black uppercase tracking-tighter">Drop to optimize & upload</p>
+              <p className="text-2xl font-black uppercase tracking-tighter">Drop assets to optimize & convert to WebP</p>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* WebP Conversion & Upload Progress Modal */}
+      <AnimatePresence>
+        {progressState?.isOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="glass p-8 rounded-3xl border-primary/30 shadow-2xl space-y-6 max-w-lg w-full text-center relative overflow-hidden"
+            >
+              <div className="flex items-center justify-center gap-3">
+                {progressState.isComplete ? (
+                  <CheckCircle2 size={36} className="text-emerald-400 animate-bounce" />
+                ) : (
+                  <Loader2 size={36} className="text-primary animate-spin" />
+                )}
+                <h3 className="text-2xl font-black tracking-tight text-white">
+                  {progressState.isComplete ? 'Conversion Complete!' : 'Optimizing & Converting Assets'}
+                </h3>
+              </div>
+
+              <p className="text-xs text-muted-foreground font-mono truncate px-4">
+                {progressState.currentFileName}
+              </p>
+
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="w-full bg-slate-800/80 h-4 rounded-full overflow-hidden p-0.5 border border-white/10">
+                  <motion.div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-300",
+                      progressState.isComplete ? "bg-emerald-400 shadow-lg shadow-emerald-500/50" : "bg-primary shadow-lg shadow-primary/50"
+                    )}
+                    style={{ width: `${progressState.percent}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-slate-300">
+                  <span>{progressState.completedFiles} / {progressState.totalFiles} Assets</span>
+                  <span className="text-primary">{progressState.percent}%</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 text-[11px] text-slate-300 flex items-center justify-center gap-2">
+                <Sparkles size={14} className="text-primary" />
+                <span>Sharp WebP Engine: 82% quality compression & max 1920x1080 resolution</span>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -255,7 +357,7 @@ export function MediaLibrary() {
               <Zap size={12} /> WebP Engine
             </span>
           </div>
-          <p className="text-muted-foreground text-sm">Organize blog images into dedicated folders with WebP optimization.</p>
+          <p className="text-muted-foreground text-sm">Organize blog images into dedicated folders with multi-asset WebP optimization.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
@@ -279,8 +381,8 @@ export function MediaLibrary() {
 
           <label className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-2xl font-black cursor-pointer hover:opacity-90 transition-all shadow-xl shadow-primary/20 text-xs uppercase tracking-wider whitespace-nowrap">
             <Upload size={16} />
-            {isUploading ? 'Optimizing...' : 'Upload Asset'}
-            <input type="file" className="hidden" onChange={handleFileUpload} accept="image/png, image/jpeg, image/jpg, image/webp, image/avif" />
+            Upload Assets
+            <input type="file" multiple className="hidden" onChange={handleFileUpload} accept="image/png, image/jpeg, image/jpg, image/webp, image/avif" />
           </label>
         </div>
       </div>
@@ -577,6 +679,8 @@ export function MediaLibrary() {
                   <img
                     src={getUploadUrl(file.path)}
                     alt={file.filename}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
 
