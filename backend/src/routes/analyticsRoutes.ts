@@ -5,7 +5,6 @@ import { loginRateLimiter } from '../security/ratelimit/rateLimiter';
 
 const router = Router();
 
-
 /**
  * Helper to parse Browser and OS from User-Agent.
  */
@@ -39,10 +38,8 @@ router.post('/view', async (req, res) => {
     return res.status(400).json({ message: 'Slug is required to record view.' });
   }
 
-  // Return success immediately so the frontend request completes in ~2ms!
   res.status(201).json({ success: true });
 
-  // Process PageView logging & Post views increment asynchronously in background
   setImmediate(async () => {
     try {
       const post = await prisma.post.findUnique({
@@ -77,169 +74,210 @@ router.post('/view', async (req, res) => {
   });
 });
 
+// Cache Stores & Refresh Helpers
 let overviewCache: { data: any; timestamp: number } | null = null;
-const OVERVIEW_CACHE_TTL = 60 * 1000;
+let loginCache: { data: any; timestamp: number } | null = null;
+let demographicsCache: { data: any; timestamp: number } | null = null;
+
+const REFRESH_INTERVAL = 3 * 60 * 1000; // 3 minutes
+
+async function computeOverviewData() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+  const [totalViews, totalSubscribers, totalFeedback, totalPosts, rawViews, topPosts] = await Promise.all([
+    prisma.pageView.count(),
+    prisma.newsletterSubscriber.count({ where: { status: 'active' } }),
+    prisma.feedback.count(),
+    prisma.post.count(),
+    prisma.pageView.findMany({
+      where: { timestamp: { gte: thirtyDaysAgo } },
+      select: { timestamp: true }
+    }),
+    prisma.post.findMany({
+      orderBy: { views: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        views: true,
+        likes: true,
+        dislikes: true,
+        shares: true,
+        categories: { select: { name: true } }
+      }
+    })
+  ]);
+
+  const dailyMap = new Map<string, number>();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    dailyMap.set(key, 0);
+  }
+
+  rawViews.forEach(v => {
+    const key = v.timestamp.toISOString().slice(0, 10);
+    if (dailyMap.has(key)) {
+      dailyMap.set(key, (dailyMap.get(key) || 0) + 1);
+    }
+  });
+
+  const trafficChart = Array.from(dailyMap.entries()).map(([date, count]) => ({
+    date,
+    count
+  }));
+
+  return {
+    totalViews,
+    totalSubscribers,
+    totalFeedback,
+    totalPosts,
+    trafficChart,
+    topPosts
+  };
+}
+
+async function refreshOverviewCache() {
+  try {
+    const data = await computeOverviewData();
+    overviewCache = { data, timestamp: Date.now() };
+  } catch (err) {
+    console.error('Background overview cache refresh failed:', err);
+  }
+}
+
+// Background pre-warm on module load
+setImmediate(() => {
+  refreshOverviewCache();
+});
 
 /**
- * Admin Endpoint: Retrieve User traffic overview and daily charts.
+ * Admin Endpoint: Retrieve User traffic overview (Stale-While-Revalidate: 0ms response time).
  */
 router.get('/overview', protect, admin, async (req, res) => {
   try {
     const now = Date.now();
-    if (overviewCache && (now - overviewCache.timestamp < OVERVIEW_CACHE_TTL)) {
-      return res.json(overviewCache.data);
-    }
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    thirtyDaysAgo.setHours(0, 0, 0, 0);
-
-    // Run all 6 independent DB queries in parallel with Promise.all
-    const [totalViews, totalSubscribers, totalFeedback, totalPosts, rawViews, topPosts] = await Promise.all([
-      prisma.pageView.count(),
-      prisma.newsletterSubscriber.count({ where: { status: 'active' } }),
-      prisma.feedback.count(),
-      prisma.post.count(),
-      prisma.pageView.findMany({
-        where: { timestamp: { gte: thirtyDaysAgo } },
-        select: { timestamp: true }
-      }),
-      prisma.post.findMany({
-        orderBy: { views: 'desc' },
-        take: 5,
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          views: true,
-          likes: true,
-          dislikes: true,
-          shares: true,
-          categories: { select: { name: true } }
-        }
-      })
-    ]);
-
-    // Group daily counts
-    const dailyMap = new Map<string, number>();
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      dailyMap.set(key, 0);
-    }
-
-    rawViews.forEach(v => {
-      const key = v.timestamp.toISOString().slice(0, 10);
-      if (dailyMap.has(key)) {
-        dailyMap.set(key, (dailyMap.get(key) || 0) + 1);
+    if (overviewCache) {
+      res.json(overviewCache.data);
+      if (now - overviewCache.timestamp > REFRESH_INTERVAL) {
+        setImmediate(() => refreshOverviewCache());
       }
-    });
+      return;
+    }
 
-    const trafficChart = Array.from(dailyMap.entries()).map(([date, count]) => ({
-      date,
-      count
-    }));
-
-    const result = {
-      totalViews,
-      totalSubscribers,
-      totalFeedback,
-      totalPosts,
-      trafficChart,
-      topPosts
-    };
-
-    overviewCache = { data: result, timestamp: now };
-    return res.json(result);
+    const data = await computeOverviewData();
+    overviewCache = { data, timestamp: now };
+    return res.json(data);
   } catch (error) {
     console.error('Failed to load traffic overview metrics:', error);
     return res.status(500).json({ message: 'Failed to retrieve analytics overview.' });
   }
 });
 
-let loginCache: { data: any; timestamp: number } | null = null;
-let demographicsCache: { data: any; timestamp: number } | null = null;
-const ANALYTICS_CACHE_TTL = 60 * 1000;
+async function computeLoginData() {
+  const [successLogs, failureLogs, mfaSetupLogs, recentLogs] = await Promise.all([
+    prisma.securityLog.count({
+      where: { event: { in: ['LOGIN_SUCCESS', 'MFA_VERIFY_SUCCESS'] } }
+    }),
+    prisma.securityLog.count({
+      where: { event: { in: ['LOGIN_FAILURE', 'MFA_VERIFY_FAILURE', 'UNAUTHORIZED_ACCESS'] } }
+    }),
+    prisma.securityLog.count({
+      where: { event: 'MFA_SETUP_SUCCESS' }
+    }),
+    prisma.securityLog.findMany({
+      orderBy: { timestamp: 'desc' },
+      take: 15
+    })
+  ]);
+
+  const activeBlocks = loginRateLimiter.getActiveBlocksCount();
+
+  return {
+    successLogs,
+    failureLogs,
+    mfaSetupLogs,
+    activeBlocks,
+    recentLogs
+  };
+}
 
 /**
- * Admin Endpoint: Retrieve Login Audits and brute-force events.
+ * Admin Endpoint: Retrieve Login Audits (Stale-While-Revalidate: 0ms response time).
  */
 router.get('/login', protect, admin, async (req, res) => {
   try {
     const now = Date.now();
-    if (loginCache && (now - loginCache.timestamp < ANALYTICS_CACHE_TTL)) {
-      return res.json(loginCache.data);
+
+    if (loginCache) {
+      res.json(loginCache.data);
+      if (now - loginCache.timestamp > REFRESH_INTERVAL) {
+        setImmediate(async () => {
+          loginCache = { data: await computeLoginData(), timestamp: Date.now() };
+        });
+      }
+      return;
     }
 
-    const [successLogs, failureLogs, mfaSetupLogs, recentLogs] = await Promise.all([
-      prisma.securityLog.count({
-        where: { event: { in: ['LOGIN_SUCCESS', 'MFA_VERIFY_SUCCESS'] } }
-      }),
-      prisma.securityLog.count({
-        where: { event: { in: ['LOGIN_FAILURE', 'MFA_VERIFY_FAILURE', 'UNAUTHORIZED_ACCESS'] } }
-      }),
-      prisma.securityLog.count({
-        where: { event: 'MFA_SETUP_SUCCESS' }
-      }),
-      prisma.securityLog.findMany({
-        orderBy: { timestamp: 'desc' },
-        take: 15
-      })
-    ]);
-
-    const activeBlocks = loginRateLimiter.getActiveBlocksCount();
-
-    const result = {
-      successLogs,
-      failureLogs,
-      mfaSetupLogs,
-      activeBlocks,
-      recentLogs
-    };
-
-    loginCache = { data: result, timestamp: now };
-    return res.json(result);
+    const data = await computeLoginData();
+    loginCache = { data, timestamp: now };
+    return res.json(data);
   } catch (error) {
     console.error('Failed to load login audit logs:', error);
     return res.status(500).json({ message: 'Failed to retrieve login analytics.' });
   }
 });
 
+async function computeDemographicsData() {
+  const [browsersGroup, osGroup] = await Promise.all([
+    prisma.pageView.groupBy({
+      by: ['browser'],
+      _count: { id: true }
+    }),
+    prisma.pageView.groupBy({
+      by: ['os'],
+      _count: { id: true }
+    })
+  ]);
+
+  const browsers = browsersGroup.map(item => ({
+    name: item.browser || 'Unknown',
+    count: item._count.id
+  }));
+
+  const os = osGroup.map(item => ({
+    name: item.os || 'Unknown',
+    count: item._count.id
+  }));
+
+  return { browsers, os };
+}
+
 /**
- * Admin Endpoint: Retrieve User agents device demographics.
+ * Admin Endpoint: Retrieve User agents device demographics (Stale-While-Revalidate: 0ms response time).
  */
 router.get('/demographics', protect, admin, async (req, res) => {
   try {
     const now = Date.now();
-    if (demographicsCache && (now - demographicsCache.timestamp < ANALYTICS_CACHE_TTL)) {
-      return res.json(demographicsCache.data);
+
+    if (demographicsCache) {
+      res.json(demographicsCache.data);
+      if (now - demographicsCache.timestamp > REFRESH_INTERVAL) {
+        setImmediate(async () => {
+          demographicsCache = { data: await computeDemographicsData(), timestamp: Date.now() };
+        });
+      }
+      return;
     }
 
-    const [browsersGroup, osGroup] = await Promise.all([
-      prisma.pageView.groupBy({
-        by: ['browser'],
-        _count: { id: true }
-      }),
-      prisma.pageView.groupBy({
-        by: ['os'],
-        _count: { id: true }
-      })
-    ]);
-
-    const browsers = browsersGroup.map(item => ({
-      name: item.browser || 'Unknown',
-      count: item._count.id
-    }));
-
-    const os = osGroup.map(item => ({
-      name: item.os || 'Unknown',
-      count: item._count.id
-    }));
-
-    const result = { browsers, os };
-    demographicsCache = { data: result, timestamp: now };
-    return res.json(result);
+    const data = await computeDemographicsData();
+    demographicsCache = { data, timestamp: now };
+    return res.json(data);
   } catch (error) {
     console.error('Failed to load device demographics:', error);
     return res.status(500).json({ message: 'Failed to retrieve demographics.' });

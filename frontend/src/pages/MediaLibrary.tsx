@@ -18,9 +18,7 @@ import {
   Plus,
   X,
   ChevronRight,
-  MoreVertical,
-  CheckSquare,
-  Square
+  AlertTriangle
 } from 'lucide-react';
 import { getUploadUrl } from '../utils/url';
 import { cn } from '../utils/cn';
@@ -73,6 +71,9 @@ export function MediaLibrary() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
+  // Folder deletion modal state
+  const [folderToDelete, setFolderToDelete] = useState<MediaFolder | null>(null);
+
   // Move & Copy Modal States
   const [moveModalItem, setMoveModalItem] = useState<MediaFile | null>(null);
   const [copyModalItem, setCopyModalItem] = useState<MediaFile | null>(null);
@@ -85,6 +86,7 @@ export function MediaLibrary() {
       const { data } = await api.get('media/folders');
       return data;
     },
+    staleTime: 60 * 1000,
   });
 
   // Fetch Media Assets
@@ -95,6 +97,7 @@ export function MediaLibrary() {
       const { data } = await api.get('media', { params });
       return data;
     },
+    staleTime: 60 * 1000,
   });
 
   // Create Folder Mutation
@@ -124,6 +127,7 @@ export function MediaLibrary() {
       if (selectedFolderId !== 'all' && selectedFolderId !== 'root') {
         setSelectedFolderId('all');
       }
+      setFolderToDelete(null);
     }
   });
 
@@ -290,7 +294,7 @@ export function MediaLibrary() {
             exit={{ opacity: 0, scale: 0.95 }}
             className="glass p-6 rounded-3xl border-white/10 shadow-2xl space-y-4 max-w-md"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <h3 className="font-black text-lg flex items-center gap-2">
                 <FolderPlus size={20} className="text-primary" /> Create Blog Folder
               </h3>
@@ -321,6 +325,54 @@ export function MediaLibrary() {
                 className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-black uppercase tracking-wider shadow-lg shadow-primary/20"
               >
                 {createFolderMutation.isPending ? 'Creating...' : 'Create Folder'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Folder Modal */}
+      <AnimatePresence>
+        {folderToDelete && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="glass p-6 rounded-3xl border-rose-500/20 shadow-2xl space-y-4 max-w-md"
+          >
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <h3 className="font-black text-lg text-rose-400 flex items-center gap-2">
+                <AlertTriangle size={20} /> Delete Folder
+              </h3>
+              <button onClick={() => setFolderToDelete(null)} className="text-muted-foreground hover:text-white">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-bold text-white leading-normal">
+                Are you sure you want to delete folder <span className="text-primary">"{folderToDelete.name}"</span>?
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Any media assets inside this folder will be safely unassigned and moved to <strong>Unassigned Root</strong>.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setFolderToDelete(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  deleteFolderMutation.mutate(folderToDelete.id);
+                }}
+                disabled={deleteFolderMutation.isPending}
+                className="px-5 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-rose-500/20"
+              >
+                {deleteFolderMutation.isPending ? 'Deleting...' : 'Delete Folder'}
               </button>
             </div>
           </motion.div>
@@ -384,14 +436,12 @@ export function MediaLibrary() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (confirm(`Delete folder "${folder.name}"? Media files inside will be unassigned.`)) {
-                    deleteFolderMutation.mutate(folder.id);
-                  }
+                  setFolderToDelete(folder);
                 }}
                 className="pr-3 text-slate-400 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
                 title="Delete Folder"
               >
-                <X size={14} />
+                <Trash2 size={13} />
               </button>
             </div>
           ))}
@@ -416,7 +466,7 @@ export function MediaLibrary() {
             exit={{ opacity: 0, scale: 0.95 }}
             className="glass p-6 rounded-3xl border-white/10 shadow-2xl space-y-4 max-w-md"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <h3 className="font-black text-base flex items-center gap-2">
                 <MoveRight size={18} className="text-primary" /> Move Asset to Folder
               </h3>
@@ -463,7 +513,7 @@ export function MediaLibrary() {
             exit={{ opacity: 0, scale: 0.95 }}
             className="glass p-6 rounded-3xl border-white/10 shadow-2xl space-y-4 max-w-md"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <h3 className="font-black text-base flex items-center gap-2">
                 <Copy size={18} className="text-primary" /> Copy Asset to Folder
               </h3>
@@ -515,7 +565,6 @@ export function MediaLibrary() {
               const origFormat = file.originalFormat || 'IMG';
               const origSizeStr = formatBytes(file.originalSize || file.size);
               const optSizeStr = formatBytes(file.optimizedSize || file.size);
-              const ratio = file.compressionRatio || 0;
 
               return (
                 <motion.div

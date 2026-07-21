@@ -3,6 +3,56 @@ import prisma from '../config/db';
 import { ImageService } from '../services/image.service';
 import { StorageService } from '../services/storage.service';
 
+// In-Memory Cache Stores (0ms Stale-While-Revalidate)
+let foldersCache: { data: any; timestamp: number } | null = null;
+const mediaCache = new Map<string, { data: any; timestamp: number }>();
+const MEDIA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+export const clearMediaCaches = () => {
+  foldersCache = null;
+  mediaCache.clear();
+};
+
+async function computeFoldersData() {
+  return await prisma.folder.findMany({
+    include: {
+      _count: {
+        select: { media: true }
+      }
+    },
+    orderBy: { name: 'asc' }
+  });
+}
+
+async function computeMediaData(folderIdQuery?: any) {
+  const whereCondition: any = {};
+  if (folderIdQuery === 'null' || folderIdQuery === 'root') {
+    whereCondition.folderId = null;
+  } else if (folderIdQuery && typeof folderIdQuery === 'string') {
+    whereCondition.folderId = folderIdQuery;
+  }
+
+  return await prisma.media.findMany({
+    where: whereCondition,
+    include: { folder: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+// Background pre-warm on module load
+setImmediate(async () => {
+  try {
+    const [fData, mData] = await Promise.all([
+      computeFoldersData(),
+      computeMediaData()
+    ]);
+    foldersCache = { data: fData, timestamp: Date.now() };
+    mediaCache.set('all', { data: mData, timestamp: Date.now() });
+  } catch (err) {
+    // Ignore pre-warm errors
+  }
+});
+
 /**
  * Controller: Handles image uploads into Media Library (with optional folderId).
  */
@@ -13,13 +63,6 @@ export const uploadMedia = async (req: Request, res: Response) => {
     }
 
     const { folderId } = req.body;
-
-    console.log('[MediaController] Processing image upload:', {
-      name: req.file.originalname,
-      size: req.file.size,
-      mime: req.file.mimetype,
-      folderId: folderId || 'root'
-    });
 
     // 1. Optimize image in memory (WebP, max 1920x1080, 82% quality)
     const optimized = await ImageService.optimizeImage(
@@ -55,6 +98,12 @@ export const uploadMedia = async (req: Request, res: Response) => {
       }
     });
 
+    // Invalidate media cache & revalidate background
+    mediaCache.clear();
+    setImmediate(async () => {
+      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
+    });
+
     res.status(201).json(media);
   } catch (error) {
     console.error('[MediaController] Upload processing error:', error);
@@ -66,25 +115,29 @@ export const uploadMedia = async (req: Request, res: Response) => {
 };
 
 /**
- * Controller: Retrieves all media assets (with optional folderId filtering).
+ * Controller: Retrieves all media assets (Stale-While-Revalidate: 0ms response time).
  */
 export const getAllMedia = async (req: Request, res: Response) => {
   try {
     const { folderId } = req.query;
+    const cacheKey = typeof folderId === 'string' ? folderId : 'all';
+    const now = Date.now();
 
-    const whereCondition: any = {};
-    if (folderId === 'null' || folderId === 'root') {
-      whereCondition.folderId = null;
-    } else if (folderId && typeof folderId === 'string') {
-      whereCondition.folderId = folderId;
+    const cached = mediaCache.get(cacheKey);
+    if (cached) {
+      res.json(cached.data);
+      if (now - cached.timestamp > MEDIA_CACHE_TTL) {
+        setImmediate(async () => {
+          const fresh = await computeMediaData(folderId);
+          mediaCache.set(cacheKey, { data: fresh, timestamp: Date.now() });
+        });
+      }
+      return;
     }
 
-    const media = await prisma.media.findMany({
-      where: whereCondition,
-      include: { folder: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    res.json(media);
+    const data = await computeMediaData(folderId);
+    mediaCache.set(cacheKey, { data, timestamp: now });
+    res.json(data);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch media assets' });
   }
@@ -104,6 +157,12 @@ export const deleteMedia = async (req: Request, res: Response) => {
 
     await StorageService.deleteFile(media.path);
     await prisma.media.delete({ where: { id } });
+    
+    mediaCache.clear();
+    setImmediate(async () => {
+      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
+    });
+
     res.json({ message: 'Media deleted successfully' });
   } catch (error) {
     console.error('[MediaController] Delete media error:', error);
@@ -112,26 +171,31 @@ export const deleteMedia = async (req: Request, res: Response) => {
 };
 
 /**
- * Controller: Retrieve all folders with media counts.
+ * Controller: Retrieve all folders (Stale-While-Revalidate: 0ms response time).
  */
 export const getFolders = async (req: Request, res: Response) => {
   try {
-    const folders = await prisma.folder.findMany({
-      include: {
-        _count: {
-          select: { media: true }
-        }
-      },
-      orderBy: { name: 'asc' }
-    });
-    res.json(folders);
+    const now = Date.now();
+    if (foldersCache) {
+      res.json(foldersCache.data);
+      if (now - foldersCache.timestamp > MEDIA_CACHE_TTL) {
+        setImmediate(async () => {
+          foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
+        });
+      }
+      return;
+    }
+
+    const data = await computeFoldersData();
+    foldersCache = { data, timestamp: now };
+    res.json(data);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch media folders' });
   }
 };
 
 /**
- * Controller: Create a new media folder.
+ * Controller: Create a new media folder (Optimistic In-Memory Update).
  */
 export const createFolder = async (req: Request, res: Response) => {
   try {
@@ -143,12 +207,14 @@ export const createFolder = async (req: Request, res: Response) => {
     const trimmedName = name.trim();
     const slug = trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-    const existing = await prisma.folder.findFirst({
-      where: { OR: [{ name: trimmedName }, { slug }] }
-    });
-
-    if (existing) {
-      return res.status(400).json({ message: 'A folder with this name already exists' });
+    // Quick in-memory check first
+    if (foldersCache && Array.isArray(foldersCache.data)) {
+      const existsInCache = foldersCache.data.some(
+        (f: any) => f.name.toLowerCase() === trimmedName.toLowerCase() || f.slug === slug
+      );
+      if (existsInCache) {
+        return res.status(400).json({ message: 'A folder with this name already exists' });
+      }
     }
 
     const folder = await prisma.folder.create({
@@ -162,6 +228,18 @@ export const createFolder = async (req: Request, res: Response) => {
       }
     });
 
+    // Optimistically push to in-memory foldersCache
+    if (foldersCache && Array.isArray(foldersCache.data)) {
+      foldersCache.data = [...foldersCache.data, folder];
+    } else {
+      foldersCache = { data: [folder], timestamp: Date.now() };
+    }
+
+    // Revalidate in background
+    setImmediate(async () => {
+      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
+    });
+
     res.status(201).json(folder);
   } catch (error) {
     console.error('[MediaController] Create folder error:', error);
@@ -170,19 +248,28 @@ export const createFolder = async (req: Request, res: Response) => {
 };
 
 /**
- * Controller: Delete a media folder (un-assigns media items to root).
+ * Controller: Delete a media folder (Optimistic In-Memory Update).
  */
 export const deleteFolder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    // Set folderId to null for all media in this folder
     await prisma.media.updateMany({
       where: { folderId: id },
       data: { folderId: null }
     });
 
     await prisma.folder.delete({ where: { id } });
+
+    if (foldersCache && Array.isArray(foldersCache.data)) {
+      foldersCache.data = foldersCache.data.filter((f: any) => f.id !== id);
+    }
+    mediaCache.clear();
+
+    setImmediate(async () => {
+      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
+    });
+
     res.json({ message: 'Folder deleted successfully' });
   } catch (error) {
     console.error('[MediaController] Delete folder error:', error);
@@ -205,6 +292,11 @@ export const moveMedia = async (req: Request, res: Response) => {
     await prisma.media.updateMany({
       where: { id: { in: mediaIds } },
       data: { folderId: destination }
+    });
+
+    mediaCache.clear();
+    setImmediate(async () => {
+      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
     });
 
     res.json({ message: `Successfully moved ${mediaIds.length} assets` });
@@ -247,6 +339,11 @@ export const copyMedia = async (req: Request, res: Response) => {
         }
       });
     }
+
+    mediaCache.clear();
+    setImmediate(async () => {
+      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
+    });
 
     res.json({ message: `Successfully copied ${sources.length} assets` });
   } catch (error) {

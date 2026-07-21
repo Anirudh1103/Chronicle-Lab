@@ -145,6 +145,9 @@ model Media {
   folderId         String?
   folder           Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   createdAt        DateTime @default(now())
+
+  @@index([folderId])
+  @@index([createdAt])
 }
 
 model Subscriber {
