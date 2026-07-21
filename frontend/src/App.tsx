@@ -128,6 +128,7 @@ function App() {
   };
 
   const isAdminPath = location.pathname.startsWith('/admin');
+  const isHideFooterPath = isAdminPath || location.pathname === '/login' || location.pathname === '/register';
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col overflow-x-hidden">
@@ -178,7 +179,7 @@ function App() {
                 </Routes>
               </main>
 
-              {!isAdminPath && <Footer />}
+              {!isHideFooterPath && <Footer />}
             </motion.div>
           </div>
         )}

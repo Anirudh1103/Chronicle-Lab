@@ -297,7 +297,21 @@ export const BlogDetailsPage: React.FC = () => {
             blocks: processedBlocks,
           });
           document.title = `${data.title || 'Chronicle'} | Chronicle Lab`;
-          api.post('analytics/view', { slug: slug! }).catch(err => console.error('Failed to log page view:', err));
+          // Record page view dynamically in background using sendBeacon for 0ms network impact
+          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+          const beaconUrl = `${apiUrl}/analytics/view`;
+          const payload = JSON.stringify({ slug: slug! });
+          if (navigator.sendBeacon) {
+            const blob = new Blob([payload], { type: 'application/json' });
+            navigator.sendBeacon(beaconUrl, blob);
+          } else {
+            fetch(beaconUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: payload,
+              keepalive: true,
+            }).catch(() => {});
+          }
         }
       } catch (error) {
         console.error("Error fetching post:", error);
