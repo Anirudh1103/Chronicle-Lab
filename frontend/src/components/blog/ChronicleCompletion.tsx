@@ -174,6 +174,8 @@ export const ChronicleCompletion: React.FC<ChronicleCompletionProps> = ({ post, 
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.href)}`} 
                     alt="QR Code"
+                    loading="lazy"
+                    decoding="async"
                     className="w-36 h-36 dark:invert-[0.05] rounded-2xl"
                   />
                 </div>

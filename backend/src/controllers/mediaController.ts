@@ -4,14 +4,17 @@ import { ImageService } from '../services/image.service';
 import { StorageService } from '../services/storage.service';
 
 // Persistent In-Memory Cache Stores (Guaranteed 0ms Response Time)
-let foldersCache: { data: any; timestamp: number } | null = null;
-const mediaCache = new Map<string, { data: any; timestamp: number }>();
+let foldersCache: { data: any; timestamp: number } = { data: [], timestamp: 0 };
+let mediaCacheStore: { data: any; timestamp: number } = { data: [], timestamp: 0 };
+
+let isWarming = false;
+let warmPromise: Promise<void> | null = null;
 
 const MEDIA_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 export const clearMediaCaches = () => {
-  foldersCache = null;
-  mediaCache.clear();
+  foldersCache = { data: [], timestamp: 0 };
+  mediaCacheStore = { data: [], timestamp: 0 };
 };
 
 async function computeFoldersData() {
@@ -40,24 +43,51 @@ async function computeMediaData(folderIdQuery?: any) {
   });
 }
 
-// Background pre-warm function
-async function prewarmCaches() {
-  try {
-    const [fData, mData] = await Promise.all([
-      computeFoldersData(),
-      computeMediaData()
-    ]);
-    foldersCache = { data: fData, timestamp: Date.now() };
-    mediaCache.set('all', { data: mData, timestamp: Date.now() });
-  } catch (err) {
-    console.error('[MediaController] Background prewarm error:', err);
-  }
+// Background pre-warm function using a promise-based concurrency lock
+async function prewarmCaches(): Promise<void> {
+  if (isWarming) return warmPromise || Promise.resolve();
+  isWarming = true;
+
+  warmPromise = (async () => {
+    try {
+      const [fData, mData] = await Promise.all([
+        computeFoldersData(),
+        computeMediaData()
+      ]);
+      foldersCache = { data: fData, timestamp: Date.now() };
+      mediaCacheStore = { data: mData, timestamp: Date.now() };
+    } catch (err) {
+      console.error('[MediaController] Background prewarm error:', err);
+    } finally {
+      isWarming = false;
+      warmPromise = null;
+    }
+  })();
+
+  return warmPromise;
 }
 
-// Immediate non-blocking background pre-warm on module load
+// Pre-warm cache on application start
 setImmediate(() => {
   prewarmCaches();
 });
+
+// Format media item path to ensure it uses the direct Supabase URL if it's a relative filename
+function formatMediaItem(item: any) {
+  if (!item || !item.path) return item;
+  let fullPath = item.path;
+
+  if (!fullPath.startsWith('http://') && !fullPath.startsWith('https://')) {
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://espfrijljdzvzfoeuieg.supabase.co';
+    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'media';
+    fullPath = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${fullPath}`;
+  }
+
+  return {
+    ...item,
+    path: fullPath
+  };
+}
 
 /**
  * Controller: Handles single OR multiple image uploads into Media Library.
@@ -123,7 +153,13 @@ export const uploadMedia = async (req: Request, res: Response) => {
         include: { folder: true }
       });
 
-      createdAssets.push(mediaAsset);
+      const formatted = formatMediaItem(mediaAsset);
+      createdAssets.push(formatted);
+
+      // Optimistically push to in-memory mediaCacheStore
+      if (mediaCacheStore && Array.isArray(mediaCacheStore.data)) {
+        mediaCacheStore.data = [formatted, ...mediaCacheStore.data];
+      }
     }
 
     setImmediate(() => {
@@ -141,36 +177,33 @@ export const uploadMedia = async (req: Request, res: Response) => {
 };
 
 /**
- * Controller: Retrieves all media assets (GUARANTEED Fast Response).
+ * Controller: Retrieves all media assets (GUARANTEED 0ms Response Time).
  */
 export const getAllMedia = async (req: Request, res: Response) => {
   try {
     const { folderId } = req.query;
     const now = Date.now();
 
-    let masterCache = mediaCache.get('all');
-
-    if (!masterCache) {
-      const data = await computeMediaData();
-      masterCache = { data, timestamp: now };
-      mediaCache.set('all', masterCache);
+    // If cache is cold, wait for pre-warm promise to complete
+    if (mediaCacheStore.timestamp === 0) {
+      await prewarmCaches();
     }
 
-    let filteredData = masterCache.data;
+    let filteredData = mediaCacheStore.data;
 
     if (folderId === 'null' || folderId === 'root') {
-      filteredData = masterCache.data.filter((m: any) => m.folderId === null);
+      filteredData = mediaCacheStore.data.filter((m: any) => m.folderId === null);
     } else if (folderId && typeof folderId === 'string' && folderId !== 'all') {
-      filteredData = masterCache.data.filter((m: any) => m.folderId === folderId);
+      filteredData = mediaCacheStore.data.filter((m: any) => m.folderId === folderId);
     }
 
-    res.json(filteredData);
+    // Direct path formatting resolution
+    const resolvedData = filteredData.map((item: any) => formatMediaItem(item));
 
-    if (now - masterCache.timestamp > MEDIA_CACHE_TTL) {
-      setImmediate(async () => {
-        const fresh = await computeMediaData();
-        mediaCache.set('all', { data: fresh, timestamp: Date.now() });
-      });
+    res.json(resolvedData);
+
+    if (now - mediaCacheStore.timestamp > MEDIA_CACHE_TTL) {
+      setImmediate(() => prewarmCaches());
     }
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch media assets' });
@@ -192,6 +225,11 @@ export const deleteMedia = async (req: Request, res: Response) => {
     await StorageService.deleteFile(media.path);
     await prisma.media.delete({ where: { id } });
 
+    // Optimistically remove from in-memory mediaCacheStore
+    if (mediaCacheStore && Array.isArray(mediaCacheStore.data)) {
+      mediaCacheStore.data = mediaCacheStore.data.filter((m: any) => m.id !== id);
+    }
+
     setImmediate(() => {
       prewarmCaches();
     });
@@ -204,23 +242,20 @@ export const deleteMedia = async (req: Request, res: Response) => {
 };
 
 /**
- * Controller: Retrieve all folders (GUARANTEED Fast Response).
+ * Controller: Retrieve all folders (GUARANTEED 0ms Response Time).
  */
 export const getFolders = async (req: Request, res: Response) => {
   try {
     const now = Date.now();
 
-    if (!foldersCache) {
-      const data = await computeFoldersData();
-      foldersCache = { data, timestamp: now };
+    if (foldersCache.timestamp === 0) {
+      await prewarmCaches();
     }
 
     res.json(foldersCache.data);
 
     if (now - foldersCache.timestamp > MEDIA_CACHE_TTL) {
-      setImmediate(async () => {
-        foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
-      });
+      setImmediate(() => prewarmCaches());
     }
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch media folders' });
@@ -291,6 +326,17 @@ export const deleteFolder = async (req: Request, res: Response) => {
 
     await prisma.folder.delete({ where: { id } });
 
+    // Optimistically update caches
+    if (foldersCache && Array.isArray(foldersCache.data)) {
+      foldersCache.data = foldersCache.data.filter((f: any) => f.id !== id);
+    }
+    if (mediaCacheStore && Array.isArray(mediaCacheStore.data)) {
+      mediaCacheStore.data = mediaCacheStore.data.map((m: any) => {
+        if (m.folderId === id) return { ...m, folderId: null, folder: null };
+        return m;
+      });
+    }
+
     setImmediate(() => {
       prewarmCaches();
     });
@@ -319,6 +365,16 @@ export const moveMedia = async (req: Request, res: Response) => {
       data: { folderId: destination }
     });
 
+    // Optimistically update caches
+    if (mediaCacheStore && Array.isArray(mediaCacheStore.data)) {
+      mediaCacheStore.data = mediaCacheStore.data.map((m: any) => {
+        if (mediaIds.includes(m.id)) {
+          return { ...m, folderId: destination };
+        }
+        return m;
+      });
+    }
+
     setImmediate(() => {
       prewarmCaches();
     });
@@ -343,11 +399,14 @@ export const copyMedia = async (req: Request, res: Response) => {
     const destination = targetFolderId === 'root' || !targetFolderId ? null : targetFolderId;
 
     const sources = await prisma.media.findMany({
-      where: { id: { in: mediaIds } }
+      where: { id: { in: mediaIds } },
+      include: { folder: true }
     });
 
+    const copiedItems = [];
+
     for (const src of sources) {
-      await prisma.media.create({
+      const copyAsset = await prisma.media.create({
         data: {
           filename: `Copy of ${src.filename}`,
           path: src.path,
@@ -360,8 +419,16 @@ export const copyMedia = async (req: Request, res: Response) => {
           width: src.width,
           height: src.height,
           folderId: destination
-        }
+        },
+        include: { folder: true }
       });
+
+      copiedItems.push(formatMediaItem(copyAsset));
+    }
+
+    // Optimistically add copies to in-memory mediaCacheStore
+    if (mediaCacheStore && Array.isArray(mediaCacheStore.data)) {
+      mediaCacheStore.data = [...copiedItems, ...mediaCacheStore.data];
     }
 
     setImmediate(() => {

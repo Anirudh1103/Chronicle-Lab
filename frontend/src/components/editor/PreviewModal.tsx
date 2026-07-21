@@ -74,7 +74,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({ isOpen, onClose, met
               )}
               {metadata.coverImage && (
                 <div className="mt-8 rounded-2xl overflow-hidden">
-                  <img src={getUploadUrl(metadata.coverImage)} alt={metadata.coverImageAlt} className="w-full object-cover" />
+                  <img src={getUploadUrl(metadata.coverImage)} alt={metadata.coverImageAlt} loading="lazy" decoding="async" className="w-full object-cover" />
                   {metadata.coverImageCaption && (
                     <p className="mt-3 text-center text-sm text-slate-400 italic">{metadata.coverImageCaption}</p>
                   )}
@@ -171,7 +171,7 @@ function renderBlockPreview(block: EditorBlock) {
           content.alignment === 'right' && "md:w-1/2 float-right ml-8",
           content.alignment === 'full' && "w-full"
         )}>
-          <img src={getUploadUrl(content.url)} alt={content.alt} className="rounded-xl w-full" />
+          <img src={getUploadUrl(content.url)} alt={content.alt} loading="lazy" decoding="async" className="rounded-xl w-full" />
           {content.caption && <figcaption className="mt-3 text-center text-sm text-slate-400 italic">{content.caption}</figcaption>}
         </figure>
       );

@@ -21,7 +21,8 @@ import {
   AlertTriangle,
   Loader2,
   Sparkles,
-  Eye
+  Eye,
+  Maximize2
 } from 'lucide-react';
 import { getUploadUrl } from '../utils/url';
 import { cn } from '../utils/cn';
@@ -339,7 +340,7 @@ export function MediaLibrary() {
       {/* Fullscreen Image Preview Lightbox Modal */}
       <AnimatePresence>
         {previewModalItem && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -347,18 +348,23 @@ export function MediaLibrary() {
               className="relative max-w-5xl w-full max-h-[90vh] bg-slate-900 border border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl"
             >
               {/* Lightbox Header */}
-              <div className="p-6 border-b border-white/10 flex justify-between items-center bg-slate-950/60">
+              <div className="p-6 border-b border-white/10 flex justify-between items-center bg-slate-950/80">
                 <div>
-                  <h3 className="text-xl font-black text-white">{previewModalItem.filename}</h3>
-                  <p className="text-xs text-slate-400">
-                    High-Resolution WebP Visual • {previewModalItem.width || 1920}x{previewModalItem.height || 1080} Resolution
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-sky-500/20 text-sky-400 rounded-full text-[10px] font-black uppercase border border-sky-500/30">
+                      Full Asset Preview
+                    </span>
+                    <span className="text-xs text-slate-400 font-medium">
+                      {previewModalItem.width || 1920} x {previewModalItem.height || 1080} Resolution
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-black text-white mt-1">{previewModalItem.filename}</h3>
                 </div>
                 <button
                   onClick={() => setPreviewModalItem(null)}
-                  className="p-2.5 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"
+                  className="p-3 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"
                 >
-                  <X size={20} />
+                  <X size={22} />
                 </button>
               </div>
 
@@ -390,7 +396,7 @@ export function MediaLibrary() {
                     onClick={() => handleCopyUrl(previewModalItem)}
                     className="w-full py-2.5 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow"
                   >
-                    Copy Asset URL
+                    Copy WebP URL
                   </button>
                 </div>
               </div>
@@ -656,7 +662,8 @@ export function MediaLibrary() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="group relative aspect-[16/10] bg-slate-950 rounded-[2rem] overflow-hidden border border-white/10 shadow-xl flex flex-col justify-between p-1"
+                  onClick={() => setPreviewModalItem(file)}
+                  className="group relative aspect-[16/10] bg-slate-950 rounded-[2rem] overflow-hidden border border-white/10 shadow-xl flex flex-col justify-between p-1 cursor-pointer"
                 >
                   <img
                     src={getUploadUrl(file.path)}
@@ -683,19 +690,14 @@ export function MediaLibrary() {
                   </div>
 
                   {/* Hover Overlay with Metadata & Action Controls */}
-                  <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4 z-20 rounded-[2rem]">
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4 z-20 rounded-[2rem]"
+                  >
                     <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-white font-bold tracking-wide truncate pr-2" title={file.filename}>
-                          {file.filename}
-                        </p>
-                        <button
-                          onClick={() => setPreviewModalItem(file)}
-                          className="px-2.5 py-1 bg-sky-500/20 hover:bg-sky-500/40 text-sky-300 border border-sky-500/30 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 transition-all"
-                        >
-                          <Eye size={12} /> Preview
-                        </button>
-                      </div>
+                      <p className="text-xs text-white font-bold tracking-wide truncate" title={file.filename}>
+                        {file.filename}
+                      </p>
 
                       <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10 text-[9px]">
                         <div>
@@ -709,7 +711,15 @@ export function MediaLibrary() {
                       </div>
                     </div>
 
-                    <div className="space-y-2 pt-2 border-t border-white/10">
+                    {/* Prominent Full Preview Button */}
+                    <button
+                      onClick={() => setPreviewModalItem(file)}
+                      className="w-full py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-lg flex items-center justify-center gap-1.5 active:scale-95"
+                    >
+                      <Eye size={14} /> Preview Image
+                    </button>
+
+                    <div className="space-y-1.5 pt-1.5 border-t border-white/10">
                       {/* Action buttons row 1 */}
                       <div className="flex gap-1.5">
                         <button
@@ -732,7 +742,7 @@ export function MediaLibrary() {
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => handleCopyUrl(file)}
-                          className="flex-1 py-2 bg-primary/80 hover:bg-primary text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1 shadow"
+                          className="flex-1 py-1.5 bg-primary/80 hover:bg-primary text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1 shadow"
                         >
                           {copiedId === file.id ? (
                             <>
@@ -740,7 +750,7 @@ export function MediaLibrary() {
                             </>
                           ) : (
                             <>
-                              <ImageIcon size={12} /> Copy WebP URL
+                              <ImageIcon size={12} /> Copy URL
                             </>
                           )}
                         </button>
@@ -751,7 +761,7 @@ export function MediaLibrary() {
                               deleteMutation.mutate(file.id);
                             }
                           }}
-                          className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30 rounded-xl transition-all"
+                          className="p-1.5 bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30 rounded-xl transition-all"
                           title="Delete asset"
                         >
                           <Trash2 size={14} />

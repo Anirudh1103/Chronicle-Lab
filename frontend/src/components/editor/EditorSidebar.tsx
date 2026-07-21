@@ -257,7 +257,7 @@ export const EditorSidebar: React.FC = () => {
                >
                  {metadata.coverImage ? (
                    <div className="relative rounded-lg overflow-hidden group">
-                      <img src={getUploadUrl(metadata.coverImage)} className="w-full aspect-video object-cover" />
+                      <img src={getUploadUrl(metadata.coverImage)} loading="lazy" decoding="async" className="w-full aspect-video object-cover" />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-2 transition-opacity p-2">
                         <div className="flex gap-2">
                           <button

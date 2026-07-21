@@ -30,10 +30,11 @@ export class StorageService {
    * @param buffer - WebP buffer
    * @param filename - Unique WebP filename
    * @param mimetype - WebP mimetype ('image/webp')
-   * @returns Public relative path or filename
+   * @returns Direct public URL or local filename
    */
   static async uploadFile(buffer: Buffer, filename: string, mimetype: string = 'image/webp'): Promise<string> {
     const supabase = this.getClient();
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://espfrijljdzvzfoeuieg.supabase.co';
 
     if (supabase) {
       try {
@@ -46,7 +47,7 @@ export class StorageService {
           });
 
         if (!error && data) {
-          return filename;
+          return `${supabaseUrl}/storage/v1/object/public/${this.bucketName}/${filename}`;
         }
         console.warn('[StorageService] Supabase upload failed/fallback to local:', error?.message);
       } catch (err) {
@@ -71,17 +72,18 @@ export class StorageService {
    */
   static async deleteFile(filename: string): Promise<void> {
     const supabase = this.getClient();
+    const cleanFilename = filename.includes('/') ? filename.split('/').pop() || filename : filename;
 
     if (supabase) {
       try {
-        await supabase.storage.from(this.bucketName).remove([filename]);
+        await supabase.storage.from(this.bucketName).remove([cleanFilename]);
       } catch (err) {
         console.warn('[StorageService] Supabase delete warning:', err);
       }
     }
 
     // Also remove local file if present
-    const localPath = path.join(this.uploadDir, filename);
+    const localPath = path.join(this.uploadDir, cleanFilename);
     if (fs.existsSync(localPath)) {
       try {
         await fs.promises.unlink(localPath);

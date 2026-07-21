@@ -589,7 +589,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({ isOpen, onClose, t
                     className="aspect-[16/10] w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-white/5 bg-slate-150 dark:bg-slate-950/40 shadow-inner shrink-0 relative cursor-pointer group/image hover:border-primary/40 transition-all duration-300"
                   >
                     {selectedItem.coverImage ? (
-                      <img src={getUploadUrl(selectedItem.coverImage)} className="w-full h-full object-cover group-hover/image:scale-[1.04] transition-transform duration-500" />
+                      <img src={getUploadUrl(selectedItem.coverImage)} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover/image:scale-[1.04] transition-transform duration-500" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xs font-black text-slate-500 bg-slate-900">CHRONICLE LAB</div>
                     )}

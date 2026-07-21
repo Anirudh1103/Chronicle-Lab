@@ -208,6 +208,8 @@ export const Lightbox: React.FC<LightboxProps> = ({ src, alt, caption, isOpen, o
                   ref={imgRef}
                   src={src}
                   alt={alt || "Chronicle Visual Asset"}
+                  loading="lazy"
+                  decoding="async"
                   className="max-h-[75vh] w-auto max-w-[90vw] object-contain select-none rounded-2xl shadow-2xl pointer-events-none"
                   draggable={false}
                 />
