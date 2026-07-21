@@ -57,7 +57,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(setSecurityHeaders);
 
-// Serve uploads folder with fallback to Supabase Storage & immutable browser caching
+// Serve uploads folder with direct Supabase fallback & immutable browser caching
 app.get('/uploads/:filename', (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const filename = req.params.filename;
   const uploadsDir = path.join(__dirname, '../uploads');
@@ -70,19 +70,7 @@ app.get('/uploads/:filename', (req: express.Request, res: express.Response, next
     return res.sendFile(exactPath);
   }
 
-  // 2. Look for fuzzy prefix match in uploads directory
-  const cleanBasename = filename.split('_')[0].toLowerCase();
-  try {
-    const files = fs.readdirSync(uploadsDir);
-    const match = files.find((f: string) => f.toLowerCase().includes(cleanBasename) && !f.endsWith('.ts'));
-    if (match) {
-      return res.sendFile(path.join(uploadsDir, match));
-    }
-  } catch (err) {
-    // Ignore read errors
-  }
-
-  // 3. Fallback: Redirect to Supabase Storage Public Bucket URL
+  // 2. Direct Redirect to Supabase Storage Public Bucket URL
   const supabaseUrl = process.env.SUPABASE_URL || 'https://espfrijljdzvzfoeuieg.supabase.co';
   const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'media';
   const publicStorageUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${filename}`;

@@ -4,15 +4,14 @@ import { ImageService } from '../services/image.service';
 import { StorageService } from '../services/storage.service';
 
 // Persistent In-Memory Cache Stores (Guaranteed 0ms Response Time)
-let foldersCache: { data: any; timestamp: number } = { data: [], timestamp: 0 };
+let foldersCache: { data: any; timestamp: number } | null = null;
 const mediaCache = new Map<string, { data: any; timestamp: number }>();
-mediaCache.set('all', { data: [], timestamp: 0 });
 
 const MEDIA_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 export const clearMediaCaches = () => {
-  foldersCache = { data: [], timestamp: 0 };
-  mediaCache.set('all', { data: [], timestamp: 0 });
+  foldersCache = null;
+  mediaCache.clear();
 };
 
 async function computeFoldersData() {
@@ -127,7 +126,6 @@ export const uploadMedia = async (req: Request, res: Response) => {
       createdAssets.push(mediaAsset);
     }
 
-    // Refresh caches asynchronously in background
     setImmediate(() => {
       prewarmCaches();
     });
@@ -143,14 +141,21 @@ export const uploadMedia = async (req: Request, res: Response) => {
 };
 
 /**
- * Controller: Retrieves all media assets (GUARANTEED 0ms Response Time).
+ * Controller: Retrieves all media assets (GUARANTEED Fast Response).
  */
 export const getAllMedia = async (req: Request, res: Response) => {
   try {
     const { folderId } = req.query;
     const now = Date.now();
 
-    const masterCache = mediaCache.get('all') || { data: [], timestamp: 0 };
+    let masterCache = mediaCache.get('all');
+
+    if (!masterCache) {
+      const data = await computeMediaData();
+      masterCache = { data, timestamp: now };
+      mediaCache.set('all', masterCache);
+    }
+
     let filteredData = masterCache.data;
 
     if (folderId === 'null' || folderId === 'root') {
@@ -159,11 +164,9 @@ export const getAllMedia = async (req: Request, res: Response) => {
       filteredData = masterCache.data.filter((m: any) => m.folderId === folderId);
     }
 
-    // ALWAYS return cached response in 0ms!
     res.json(filteredData);
 
-    // Revalidate background cache if stale (> 15 mins) or uninitialized
-    if (now - masterCache.timestamp > MEDIA_CACHE_TTL || masterCache.timestamp === 0) {
+    if (now - masterCache.timestamp > MEDIA_CACHE_TTL) {
       setImmediate(async () => {
         const fresh = await computeMediaData();
         mediaCache.set('all', { data: fresh, timestamp: Date.now() });
@@ -201,16 +204,20 @@ export const deleteMedia = async (req: Request, res: Response) => {
 };
 
 /**
- * Controller: Retrieve all folders (GUARANTEED 0ms Response Time).
+ * Controller: Retrieve all folders (GUARANTEED Fast Response).
  */
 export const getFolders = async (req: Request, res: Response) => {
   try {
     const now = Date.now();
 
-    // ALWAYS return cached response in 0ms!
+    if (!foldersCache) {
+      const data = await computeFoldersData();
+      foldersCache = { data, timestamp: now };
+    }
+
     res.json(foldersCache.data);
 
-    if (now - foldersCache.timestamp > MEDIA_CACHE_TTL || foldersCache.timestamp === 0) {
+    if (now - foldersCache.timestamp > MEDIA_CACHE_TTL) {
       setImmediate(async () => {
         foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
       });
