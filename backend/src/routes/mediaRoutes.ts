@@ -22,7 +22,7 @@ router.delete('/folders/:id', protect, admin, deleteFolder);
 // Media Operations
 router.post('/move', protect, admin, moveMedia);
 router.post('/copy', protect, admin, copyMedia);
-router.post('/upload', protect, admin, upload.array('files', 20), uploadMedia);
+router.post('/upload', protect, admin, upload.any(), uploadMedia);
 router.get('/', protect, admin, getAllMedia);
 router.delete('/:id', protect, admin, deleteMedia);
 

@@ -3,10 +3,10 @@ import prisma from '../config/db';
 import { ImageService } from '../services/image.service';
 import { StorageService } from '../services/storage.service';
 
-// In-Memory Cache Stores (0ms Stale-While-Revalidate)
+// Persistent In-Memory Cache Stores (0ms Instant Response)
 let foldersCache: { data: any; timestamp: number } | null = null;
 const mediaCache = new Map<string, { data: any; timestamp: number }>();
-const MEDIA_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const MEDIA_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 export const clearMediaCaches = () => {
   foldersCache = null;
@@ -28,7 +28,7 @@ async function computeMediaData(folderIdQuery?: any) {
   const whereCondition: any = {};
   if (folderIdQuery === 'null' || folderIdQuery === 'root') {
     whereCondition.folderId = null;
-  } else if (folderIdQuery && typeof folderIdQuery === 'string') {
+  } else if (folderIdQuery && typeof folderIdQuery === 'string' && folderIdQuery !== 'all') {
     whereCondition.folderId = folderIdQuery;
   }
 
@@ -40,7 +40,7 @@ async function computeMediaData(folderIdQuery?: any) {
 }
 
 // Background pre-warm on module load
-setImmediate(async () => {
+async function prewarmCaches() {
   try {
     const [fData, mData] = await Promise.all([
       computeFoldersData(),
@@ -51,6 +51,10 @@ setImmediate(async () => {
   } catch (err) {
     // Ignore pre-warm errors
   }
+}
+
+setImmediate(() => {
+  prewarmCaches();
 });
 
 /**
@@ -111,12 +115,8 @@ export const uploadMedia = async (req: Request, res: Response) => {
       createdAssets.push(media);
     }
 
-    // Clear caches so new uploads appear immediately
-    clearMediaCaches();
-    setImmediate(async () => {
-      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
-      mediaCache.set('all', { data: await computeMediaData(), timestamp: Date.now() });
-    });
+    // Refresh memory caches immediately
+    await prewarmCaches();
 
     res.status(201).json(createdAssets.length === 1 ? createdAssets[0] : createdAssets);
   } catch (error) {
@@ -129,29 +129,45 @@ export const uploadMedia = async (req: Request, res: Response) => {
 };
 
 /**
- * Controller: Retrieves all media assets (Stale-While-Revalidate: 0ms response time).
+ * Controller: Retrieves all media assets (In-Memory In-Process Filter: 0ms response time).
  */
 export const getAllMedia = async (req: Request, res: Response) => {
   try {
     const { folderId } = req.query;
-    const cacheKey = typeof folderId === 'string' ? folderId : 'all';
     const now = Date.now();
 
-    const cached = mediaCache.get(cacheKey);
-    if (cached) {
-      res.json(cached.data);
-      if (now - cached.timestamp > MEDIA_CACHE_TTL) {
+    // 1. Fast path: If master cache exists, filter in-memory in < 1ms
+    const masterCache = mediaCache.get('all');
+    if (masterCache && Array.isArray(masterCache.data)) {
+      let filteredData = masterCache.data;
+
+      if (folderId === 'null' || folderId === 'root') {
+        filteredData = masterCache.data.filter((m: any) => m.folderId === null);
+      } else if (folderId && typeof folderId === 'string' && folderId !== 'all') {
+        filteredData = masterCache.data.filter((m: any) => m.folderId === folderId);
+      }
+
+      res.json(filteredData);
+
+      // Background revalidate master cache if stale (> 15 mins)
+      if (now - masterCache.timestamp > MEDIA_CACHE_TTL) {
         setImmediate(async () => {
-          const fresh = await computeMediaData(folderId);
-          mediaCache.set(cacheKey, { data: fresh, timestamp: Date.now() });
+          const fresh = await computeMediaData();
+          mediaCache.set('all', { data: fresh, timestamp: Date.now() });
         });
       }
       return;
     }
 
+    // 2. Cold fallback path
     const data = await computeMediaData(folderId);
-    mediaCache.set(cacheKey, { data, timestamp: now });
     res.json(data);
+
+    // Warm master cache in background
+    setImmediate(async () => {
+      const allData = await computeMediaData();
+      mediaCache.set('all', { data: allData, timestamp: Date.now() });
+    });
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch media assets' });
   }
@@ -172,11 +188,7 @@ export const deleteMedia = async (req: Request, res: Response) => {
     await StorageService.deleteFile(media.path);
     await prisma.media.delete({ where: { id } });
 
-    clearMediaCaches();
-    setImmediate(async () => {
-      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
-    });
-
+    await prewarmCaches();
     res.json({ message: 'Media deleted successfully' });
   } catch (error) {
     console.error('[MediaController] Delete media error:', error);
@@ -272,15 +284,7 @@ export const deleteFolder = async (req: Request, res: Response) => {
 
     await prisma.folder.delete({ where: { id } });
 
-    if (foldersCache && Array.isArray(foldersCache.data)) {
-      foldersCache.data = foldersCache.data.filter((f: any) => f.id !== id);
-    }
-    clearMediaCaches();
-
-    setImmediate(async () => {
-      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
-    });
-
+    await prewarmCaches();
     res.json({ message: 'Folder deleted successfully' });
   } catch (error) {
     console.error('[MediaController] Delete folder error:', error);
@@ -305,11 +309,7 @@ export const moveMedia = async (req: Request, res: Response) => {
       data: { folderId: destination }
     });
 
-    clearMediaCaches();
-    setImmediate(async () => {
-      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
-    });
-
+    await prewarmCaches();
     res.json({ message: `Successfully moved ${mediaIds.length} assets` });
   } catch (error) {
     console.error('[MediaController] Move media error:', error);
@@ -351,11 +351,7 @@ export const copyMedia = async (req: Request, res: Response) => {
       });
     }
 
-    clearMediaCaches();
-    setImmediate(async () => {
-      foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
-    });
-
+    await prewarmCaches();
     res.json({ message: `Successfully copied ${sources.length} assets` });
   } catch (error) {
     console.error('[MediaController] Copy media error:', error);

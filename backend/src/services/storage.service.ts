@@ -41,7 +41,7 @@ export class StorageService {
           .from(this.bucketName)
           .upload(filename, buffer, {
             contentType: mimetype,
-            upsert: false,
+            upsert: true,
             cacheControl: '31536000', // 1 year cache
           });
 
