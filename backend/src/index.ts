@@ -24,6 +24,7 @@ const PORT = process.env.PORT || 5000;
 
 // CORS Security Configuration
 const allowedOrigins = [
+  'https://chronicle-lab.netlify.app',
   process.env.FRONTEND_URL || 'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:5174',
@@ -32,15 +33,26 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
-        callback(null, true);
-      } else {
-        callback(new Error('CORS Policy: Access Denied'));
+      // Allow requests with no origin (like mobile apps, Postman, or same-origin)
+      if (!origin) return callback(null, true);
+
+      // Match allowed origins array, any Netlify preview subdomain, or dev mode
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.netlify.app') ||
+        process.env.NODE_ENV !== 'production'
+      ) {
+        return callback(null, true);
       }
+      return callback(new Error(`CORS Policy: Origin ${origin} not allowed`));
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-device-id'],
   })
 );
+
+app.options('*', cors());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
