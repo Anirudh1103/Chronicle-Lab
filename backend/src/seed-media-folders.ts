@@ -3,25 +3,33 @@ import prisma from './config/db';
 async function seedFolders() {
   console.log('=== SEEDING MEDIA FOLDERS ===');
 
-  const folder1 = await prisma.folder.upsert({
-    where: { name: 'Shri Chhatrapati Shivaji Maharaj' },
-    update: {},
-    create: {
-      name: 'Shri Chhatrapati Shivaji Maharaj',
-      slug: 'shri-chhatrapati-shivaji-maharaj',
-      color: '#38bdf8'
-    }
+  let folder1 = await prisma.folder.findFirst({
+    where: { name: 'Shri Chhatrapati Shivaji Maharaj', parentId: null }
   });
 
-  const folder2 = await prisma.folder.upsert({
-    where: { name: 'Decoding Operation Sindhoor' },
-    update: {},
-    create: {
-      name: 'Decoding Operation Sindhoor',
-      slug: 'decoding-operation-sindhoor',
-      color: '#06b6d4'
-    }
+  if (!folder1) {
+    folder1 = await prisma.folder.create({
+      data: {
+        name: 'Shri Chhatrapati Shivaji Maharaj',
+        slug: 'shri-chhatrapati-shivaji-maharaj',
+        color: '#38bdf8'
+      }
+    });
+  }
+
+  let folder2 = await prisma.folder.findFirst({
+    where: { name: 'Decoding Operation Sindhoor', parentId: null }
   });
+
+  if (!folder2) {
+    folder2 = await prisma.folder.create({
+      data: {
+        name: 'Decoding Operation Sindhoor',
+        slug: 'decoding-operation-sindhoor',
+        color: '#06b6d4'
+      }
+    });
+  }
 
   console.log('Folders created/verified:');
   console.log(' - Folder 1:', folder1.name, '(ID:', folder1.id, ')');

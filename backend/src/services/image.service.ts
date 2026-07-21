@@ -1,39 +1,53 @@
-import sharp from 'sharp';
-import path from 'path';
-import crypto from 'crypto';
+import sharp, { Metadata, SharpOptions } from 'sharp';
 
-export interface OptimizedImageResult {
+export interface ImageVariant {
   buffer: Buffer;
-  filename: string;
-  mimetype: string;
-  originalFormat: string;
-  originalSize: number;
-  optimizedSize: number;
-  compressionRatio: number; // Percentage saved (e.g. 85.5)
   width: number;
   height: number;
+  size: number;
+}
+
+export interface OptimizedImageResult {
+  original: ImageVariant;
+  large: ImageVariant;
+  medium: ImageVariant;
+  small: ImageVariant;
+  originalFormat: string;
+  originalSize: number;
 }
 
 export class ImageService {
-  /**
-   * Supported MIME types and image extensions.
-   */
   private static ALLOWED_MIME_TYPES = new Set([
     'image/jpeg',
     'image/jpg',
     'image/png',
     'image/webp',
     'image/avif',
+    'image/bmp',
+    'image/tiff',
+    'image/gif',
+    'image/heic',
+  ]);
+
+  private static ALLOWED_FORMATS = new Set([
+    'jpeg',
+    'jpg',
+    'png',
+    'webp',
+    'avif',
+    'bmp',
+    'tiff',
+    'gif',
+    'heic',
   ]);
 
   /**
-   * Validates input image format, resizes to max 1920x1080 bounds (without enlarging),
-   * and converts to high-quality WebP (88% quality).
+   * Generates 4 scaled WebP variants of the input image.
+   * Max resolution: Original (4000px), Large (1600px), Medium (800px), Small (300px).
    *
-   * @param inputBuffer - Raw uncompressed/compressed image buffer
-   * @param originalFilename - Name of the uploaded file for generating WebP names
+   * @param inputBuffer - Raw image buffer
+   * @param originalFilename - Name of the uploaded file
    * @param mimetype - Input MIME type
-   * @returns Optimized image buffer and metadata metrics
    */
   static async optimizeImage(
     inputBuffer: Buffer,
@@ -41,72 +55,77 @@ export class ImageService {
     mimetype?: string
   ): Promise<OptimizedImageResult> {
     if (!inputBuffer || inputBuffer.length === 0) {
-      throw new Error('Invalid or empty image buffer.');
+      throw new Error('Uploaded image is empty.');
     }
 
-    const metadata = await sharp(inputBuffer).metadata();
-    const detectedFormat = (metadata.format || '').toLowerCase();
+    // Determine format using sharp metadata
+    let metadata: Metadata;
+    try {
+      metadata = await sharp(inputBuffer).metadata();
+    } catch (err) {
+      throw new Error('Failed to parse image file. File may be corrupted or in an unsupported format.');
+    }
 
-    // Verify format against allowed MIME types / formats
+    const detectedFormat = (metadata.format || '').toLowerCase();
     const isMimeAllowed = mimetype ? this.ALLOWED_MIME_TYPES.has(mimetype.toLowerCase()) : false;
-    const isFormatAllowed = ['jpeg', 'jpg', 'png', 'webp', 'avif'].includes(detectedFormat);
+    const isFormatAllowed = this.ALLOWED_FORMATS.has(detectedFormat);
 
     if (!isMimeAllowed && !isFormatAllowed) {
       throw new Error(
-        `Unsupported image format (${mimetype || detectedFormat}). Only JPG, JPEG, PNG, WEBP, and AVIF are allowed.`
+        `Unsupported format (${mimetype || detectedFormat}). We support PNG, JPEG, JPG, WEBP, AVIF, BMP, TIFF, GIF, and HEIC.`
       );
     }
 
     const originalSize = inputBuffer.length;
-    const originalFormatStr = (detectedFormat || mimetype?.split('/')[1] || 'IMAGE').toUpperCase();
+    const originalFormat = (detectedFormat || mimetype?.split('/')[1] || 'IMAGE').toUpperCase();
 
-    // High quality WebP conversion & proportional resize (max 1920x1080, never enlarge)
-    const pipeline = sharp(inputBuffer)
-      .rotate() // Auto-orient EXIF orientation
-      .resize({
-        width: 1920,
-        height: 1080,
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
-      .webp({
-        quality: 82,
-        effort: 2, // Fast CPU conversion while maintaining excellent visual compression
-        smartSubsample: true,
-      });
+    // Helper to generate a scaled variant
+    const generateVariant = async (maxSize: number, quality: number, firstFrameOnly: boolean = false): Promise<ImageVariant> => {
+      const options: SharpOptions = {};
+      if (firstFrameOnly && detectedFormat === 'gif') {
+        options.page = 0; // Take first frame of GIF
+      }
 
-    const optimizedBuffer = await pipeline.toBuffer();
-    const optimizedMetadata = await sharp(optimizedBuffer).metadata();
+      const pipeline = sharp(inputBuffer, options)
+        .rotate() // Auto-orient EXIF orientation
+        .resize({
+          width: maxSize,
+          height: maxSize,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({
+          quality,
+          effort: 2,
+          smartSubsample: true,
+        });
 
-    const optimizedSize = optimizedBuffer.length;
-    
-    // Calculate percentage saved: e.g., 4.2MB -> 420KB = 90% saved
-    let compressionRatio = 0;
-    if (originalSize > 0) {
-      const rawSavings = ((originalSize - optimizedSize) / originalSize) * 100;
-      compressionRatio = Math.max(0, Math.round(rawSavings * 10) / 10);
-    }
+      const buffer = await pipeline.toBuffer();
+      const meta = await sharp(buffer).metadata();
 
-    // Generate unique WebP filename: cover_1745678123_a9b8c.webp
-    const sanitizeBasename = path
-      .parse(originalFilename)
-      .name.toLowerCase()
-      .replace(/[^a-z0-9]/g, '_')
-      .slice(0, 30);
-    const timeHash = Date.now();
-    const randomHash = crypto.randomBytes(4).toString('hex');
-    const filename = `${sanitizeBasename || 'media'}_${timeHash}_${randomHash}.webp`;
+      return {
+        buffer,
+        width: meta.width || maxSize,
+        height: meta.height || maxSize,
+        size: buffer.length,
+      };
+    };
+
+    // Generate variants concurrently
+    const [original, large, medium, small] = await Promise.all([
+      generateVariant(4000, 88, true), // Original WebP
+      generateVariant(1600, 85, true), // Large Preview
+      generateVariant(800, 82, true),  // Medium Thumbnail
+      generateVariant(300, 80, true),  // Small Thumbnail
+    ]);
 
     return {
-      buffer: optimizedBuffer,
-      filename,
-      mimetype: 'image/webp',
-      originalFormat: originalFormatStr,
+      original,
+      large,
+      medium,
+      small,
+      originalFormat,
       originalSize,
-      optimizedSize,
-      compressionRatio,
-      width: optimizedMetadata.width || 0,
-      height: optimizedMetadata.height || 0,
     };
   }
 }

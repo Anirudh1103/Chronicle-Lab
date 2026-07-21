@@ -18,26 +18,36 @@ export const clearMediaCaches = () => {
 };
 
 async function computeFoldersData() {
-  return await prisma.folder.findMany({
+  const folders = await prisma.folder.findMany({
     include: {
+      media: {
+        select: { size: true }
+      },
       _count: {
         select: { media: true }
       }
     },
     orderBy: { name: 'asc' }
   });
+
+  return folders.map(f => {
+    const totalStorage = f.media.reduce((acc, curr) => acc + curr.size, 0);
+    return {
+      id: f.id,
+      name: f.name,
+      slug: f.slug,
+      color: f.color,
+      parentId: f.parentId,
+      createdAt: f.createdAt,
+      updatedAt: f.updatedAt,
+      mediaCount: f._count.media,
+      totalStorage
+    };
+  });
 }
 
-async function computeMediaData(folderIdQuery?: any) {
-  const whereCondition: any = {};
-  if (folderIdQuery === 'null' || folderIdQuery === 'root') {
-    whereCondition.folderId = null;
-  } else if (folderIdQuery && typeof folderIdQuery === 'string' && folderIdQuery !== 'all') {
-    whereCondition.folderId = folderIdQuery;
-  }
-
+async function computeMediaData() {
   return await prisma.media.findMany({
-    where: whereCondition,
     include: { folder: true },
     orderBy: { createdAt: 'desc' },
   });
@@ -74,18 +84,22 @@ setImmediate(() => {
 
 // Format media item path to ensure it uses the direct Supabase URL if it's a relative filename
 function formatMediaItem(item: any) {
-  if (!item || !item.path) return item;
-  let fullPath = item.path;
+  if (!item) return item;
 
-  if (!fullPath.startsWith('http://') && !fullPath.startsWith('https://')) {
+  const formatPath = (p: string | null) => {
+    if (!p) return null;
+    if (p.startsWith('http://') || p.startsWith('https://')) return p;
     const supabaseUrl = process.env.SUPABASE_URL || 'https://espfrijljdzvzfoeuieg.supabase.co';
     const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'media';
-    fullPath = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${fullPath}`;
-  }
+    return `${supabaseUrl}/storage/v1/object/public/${bucketName}/${p}`;
+  };
 
   return {
     ...item,
-    path: fullPath
+    path: formatPath(item.path),
+    largePreviewPath: formatPath(item.largePreviewPath),
+    mediumThumbnailPath: formatPath(item.mediumThumbnailPath),
+    smallThumbnailPath: formatPath(item.smallThumbnailPath),
   };
 }
 
@@ -126,28 +140,42 @@ export const uploadMedia = async (req: Request, res: Response) => {
       const cleanBase = originalFilename.substring(0, originalFilename.lastIndexOf('.')) || originalFilename;
       const sanitizedBase = cleanBase.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       const uniqueSuffix = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-      const webpFilename = `${sanitizedBase}_${uniqueSuffix}.webp`;
 
+      // Generate variant names
+      const baseName = `${sanitizedBase}_${uniqueSuffix}`;
+      const originalName = `${baseName}_original.webp`;
+      const largeName = `${baseName}_large.webp`;
+      const mediumName = `${baseName}_medium.webp`;
+      const smallName = `${baseName}_small.webp`;
+
+      // Optimize and generate 4 resolution buffers
       const optimization = await ImageService.optimizeImage(file.buffer, originalFilename, file.mimetype);
 
-      const storagePath = await StorageService.uploadFile(
-        optimization.buffer,
-        webpFilename,
-        'image/webp'
-      );
+      // Upload all 4 variants concurrently
+      const [originalPath, largePath, mediumPath, smallPath] = await Promise.all([
+        StorageService.uploadFile(optimization.original.buffer, originalName, 'image/webp'),
+        StorageService.uploadFile(optimization.large.buffer, largeName, 'image/webp'),
+        StorageService.uploadFile(optimization.medium.buffer, mediumName, 'image/webp'),
+        StorageService.uploadFile(optimization.small.buffer, smallName, 'image/webp'),
+      ]);
+
+      const compressionRatio = Math.max(0, Math.round(((optimization.originalSize - optimization.original.size) / optimization.originalSize) * 100 * 10) / 10);
 
       const mediaAsset = await prisma.media.create({
         data: {
           filename: originalFilename,
-          path: storagePath,
+          path: originalPath,
+          largePreviewPath: largePath,
+          mediumThumbnailPath: mediumPath,
+          smallThumbnailPath: smallPath,
           mimetype: 'image/webp',
-          size: optimization.optimizedSize,
+          size: optimization.original.size,
           originalFormat: optimization.originalFormat,
           originalSize: optimization.originalSize,
-          optimizedSize: optimization.optimizedSize,
-          compressionRatio: optimization.compressionRatio,
-          width: optimization.width,
-          height: optimization.height,
+          optimizedSize: optimization.original.size,
+          compressionRatio,
+          width: optimization.original.width,
+          height: optimization.original.height,
           folderId: targetFolderId,
         },
         include: { folder: true }
@@ -222,7 +250,14 @@ export const deleteMedia = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Media not found' });
     }
 
-    await StorageService.deleteFile(media.path);
+    // Delete all 4 size variant files from Supabase Storage
+    await Promise.all([
+      StorageService.deleteFile(media.path),
+      media.largePreviewPath ? StorageService.deleteFile(media.largePreviewPath) : Promise.resolve(),
+      media.mediumThumbnailPath ? StorageService.deleteFile(media.mediumThumbnailPath) : Promise.resolve(),
+      media.smallThumbnailPath ? StorageService.deleteFile(media.smallThumbnailPath) : Promise.resolve(),
+    ]);
+
     await prisma.media.delete({ where: { id } });
 
     // Optimistically remove from in-memory mediaCacheStore
@@ -267,20 +302,21 @@ export const getFolders = async (req: Request, res: Response) => {
  */
 export const createFolder = async (req: Request, res: Response) => {
   try {
-    const { name, color } = req.body;
+    const { name, color, parentId } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ message: 'Folder name is required' });
     }
 
     const trimmedName = name.trim();
     const slug = trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const destinationParentId = parentId === 'root' || !parentId ? null : parentId;
 
     if (foldersCache && Array.isArray(foldersCache.data)) {
       const existsInCache = foldersCache.data.some(
-        (f: any) => f.name.toLowerCase() === trimmedName.toLowerCase() || f.slug === slug
+        (f: any) => f.name.toLowerCase() === trimmedName.toLowerCase() && f.parentId === destinationParentId
       );
       if (existsInCache) {
-        return res.status(400).json({ message: 'A folder with this name already exists' });
+        return res.status(400).json({ message: 'A folder with this name already exists in this scope' });
       }
     }
 
@@ -288,24 +324,38 @@ export const createFolder = async (req: Request, res: Response) => {
       data: {
         name: trimmedName,
         slug,
-        color: color || '#38bdf8'
+        color: color || '#38bdf8',
+        parentId: destinationParentId,
       },
       include: {
+        media: { select: { size: true } },
         _count: { select: { media: true } }
       }
     });
 
+    const formattedFolder = {
+      id: folder.id,
+      name: folder.name,
+      slug: folder.slug,
+      color: folder.color,
+      parentId: folder.parentId,
+      createdAt: folder.createdAt,
+      updatedAt: folder.updatedAt,
+      mediaCount: folder._count.media,
+      totalStorage: folder.media.reduce((acc, curr) => acc + curr.size, 0)
+    };
+
     if (foldersCache && Array.isArray(foldersCache.data)) {
-      foldersCache.data = [...foldersCache.data, folder];
+      foldersCache.data = [...foldersCache.data, formattedFolder];
     } else {
-      foldersCache = { data: [folder], timestamp: Date.now() };
+      foldersCache = { data: [formattedFolder], timestamp: Date.now() };
     }
 
     setImmediate(async () => {
       foldersCache = { data: await computeFoldersData(), timestamp: Date.now() };
     });
 
-    res.status(201).json(folder);
+    res.status(201).json(formattedFolder);
   } catch (error) {
     console.error('[MediaController] Create folder error:', error);
     res.status(500).json({ message: 'Failed to create folder' });
@@ -319,6 +369,7 @@ export const deleteFolder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
+    // Remove relations but do not delete items, or cascade delete folder structure
     await prisma.media.updateMany({
       where: { folderId: id },
       data: { folderId: null }
@@ -410,6 +461,9 @@ export const copyMedia = async (req: Request, res: Response) => {
         data: {
           filename: `Copy of ${src.filename}`,
           path: src.path,
+          largePreviewPath: src.largePreviewPath,
+          mediumThumbnailPath: src.mediumThumbnailPath,
+          smallThumbnailPath: src.smallThumbnailPath,
           mimetype: src.mimetype,
           size: src.size,
           originalFormat: src.originalFormat,

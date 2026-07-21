@@ -57,26 +57,45 @@ async function runMigration() {
       // 1. Convert to optimized WebP
       const optimized = await ImageService.optimizeImage(inputBuffer, media.filename, media.mimetype);
 
-      // 2. Upload WebP to storage
-      const newStoredPath = await StorageService.uploadFile(
-        optimized.buffer,
-        optimized.filename,
-        optimized.mimetype
-      );
+      // Generate unique filenames for each size variant
+      const sanitizeBasename = path
+        .parse(media.filename)
+        .name.toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .slice(0, 30);
+      const timeHash = Date.now();
+      const baseName = `${sanitizeBasename || 'media'}_${timeHash}`;
+      const originalName = `${baseName}_original.webp`;
+      const largeName = `${baseName}_large.webp`;
+      const mediumName = `${baseName}_medium.webp`;
+      const smallName = `${baseName}_small.webp`;
+
+      // 2. Upload WebP variants to storage
+      const [originalPath, largePath, mediumPath, smallPath] = await Promise.all([
+        StorageService.uploadFile(optimized.original.buffer, originalName, 'image/webp'),
+        StorageService.uploadFile(optimized.large.buffer, largeName, 'image/webp'),
+        StorageService.uploadFile(optimized.medium.buffer, mediumName, 'image/webp'),
+        StorageService.uploadFile(optimized.small.buffer, smallName, 'image/webp'),
+      ]);
+
+      const compressionRatio = Math.max(0, Math.round(((optimized.originalSize - optimized.original.size) / optimized.originalSize) * 100 * 10) / 10);
 
       // 3. Update Media record in database
       await prisma.media.update({
         where: { id: media.id },
         data: {
-          path: newStoredPath,
-          mimetype: optimized.mimetype,
-          size: optimized.optimizedSize,
+          path: originalPath,
+          largePreviewPath: largePath,
+          mediumThumbnailPath: mediumPath,
+          smallThumbnailPath: smallPath,
+          mimetype: 'image/webp',
+          size: optimized.original.size,
           originalFormat: optimized.originalFormat,
           originalSize: optimized.originalSize,
-          optimizedSize: optimized.optimizedSize,
-          compressionRatio: optimized.compressionRatio,
-          width: optimized.width,
-          height: optimized.height,
+          optimizedSize: optimized.original.size,
+          compressionRatio,
+          width: optimized.original.width,
+          height: optimized.original.height,
         },
       });
 
@@ -96,9 +115,9 @@ async function runMigration() {
         await prisma.post.update({
           where: { id: post.id },
           data: {
-            coverImage: post.coverImage ? post.coverImage.replace(oldPathPattern, newStoredPath) : null,
-            ogImage: post.ogImage ? post.ogImage.replace(oldPathPattern, newStoredPath) : null,
-            twitterImage: post.twitterImage ? post.twitterImage.replace(oldPathPattern, newStoredPath) : null,
+            coverImage: post.coverImage ? post.coverImage.replace(oldPathPattern, originalPath) : null,
+            ogImage: post.ogImage ? post.ogImage.replace(oldPathPattern, originalPath) : null,
+            twitterImage: post.twitterImage ? post.twitterImage.replace(oldPathPattern, originalPath) : null,
           },
         });
       }
@@ -111,7 +130,7 @@ async function runMigration() {
       });
 
       for (const block of blocksToUpdate) {
-        const updatedContent = block.content.replace(new RegExp(oldPathPattern, 'g'), newStoredPath);
+        const updatedContent = block.content.replace(new RegExp(oldPathPattern, 'g'), originalPath);
         await prisma.block.update({
           where: { id: block.id },
           data: { content: updatedContent },
@@ -128,10 +147,10 @@ async function runMigration() {
         }
       }
 
-      const bytesSaved = Math.max(0, optimized.originalSize - optimized.optimizedSize);
+      const bytesSaved = Math.max(0, optimized.originalSize - optimized.original.size);
       totalBytesSaved += bytesSaved;
       totalProcessed++;
-      console.log(`[Success] Migrated -> ${newStoredPath} (Saved ${optimized.compressionRatio}%)`);
+      console.log(`[Success] Migrated -> ${originalPath} (Saved ${compressionRatio}%)`);
     } catch (err) {
       console.error(`[Error] Failed to migrate image ${filename}:`, err);
       totalErrors++;
