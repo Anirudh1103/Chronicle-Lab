@@ -29,7 +29,11 @@ import {
   Share2,
   Menu,
   KeyRound,
-  Gauge
+  Gauge,
+  MoreHorizontal,
+  Search,
+  ChevronRight,
+  User
 } from 'lucide-react';
 import { EditorPage } from './EditorPage';
 import { MediaLibrary } from './MediaLibrary';
@@ -43,6 +47,8 @@ import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { FeedbackManager } from './FeedbackManager';
 import { CommentsManager } from './CommentsManager';
 import SecurityCenter from './security/SecurityCenter';
+
+import { getUploadUrl } from '../utils/url';
 
 export function AdminDashboard() {
   const location = useLocation();
@@ -73,105 +79,22 @@ export function AdminDashboard() {
   return (
     <div className="flex flex-col lg:flex-row min-h-screen -mx-6 -mt-24 w-full">
       {/* Mobile Navigation Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-card border-b z-[999] px-6 flex items-center justify-between">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-slate-950/90 border-b border-white/5 z-[990] px-4 flex items-center justify-between backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsMobileOpen(!isMobileOpen)}
-            className="p-2 -ml-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-muted transition-all"
-          >
-            <Menu size={24} />
-          </button>
-          <span className="font-black text-sm tracking-tight uppercase">Admin Panel</span>
+          <Link to="/admin" className="font-black text-sm tracking-tight text-white flex items-center gap-1.5">
+            <span className="text-primary font-black">CHRONICLE</span>
+            <span className="text-xs text-cyan-400 font-mono">LAB</span>
+          </Link>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-black text-xs">
-            {user?.name?.[0].toUpperCase()}
-          </div>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/admin/more"
+            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-black text-xs shadow"
+          >
+            {user?.name?.[0].toUpperCase() || 'A'}
+          </Link>
         </div>
       </div>
-
-      {/* Mobile Drawer Overlay */}
-      <AnimatePresence>
-        {isMobileOpen && (
-          <motion.div
-            key="mobile-sidebar-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsMobileOpen(false)}
-            className="lg:hidden fixed inset-0 bg-black z-[1000] cursor-pointer"
-          />
-        )}
-        
-        {isMobileOpen && (
-          <motion.aside
-            key="mobile-sidebar-aside"
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="lg:hidden fixed top-0 bottom-0 left-0 w-72 bg-card border-r z-[1001] px-6 flex flex-col justify-between pb-10 pt-6"
-          >
-            <div className="space-y-8">
-              <div className="flex items-center justify-between border-b pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-black text-xs">
-                    {user?.name?.[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-xs font-black tracking-tight">{user?.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{user?.role}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsMobileOpen(false)}
-                  className="p-1.5 hover:bg-muted rounded-lg transition-all text-slate-400"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <Link
-                to="/admin/editor"
-                onClick={() => setIsMobileOpen(false)}
-                className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-black hover:opacity-90 transition-all text-xs shadow-lg shadow-primary/20"
-              >
-                <Plus size={16} /> New Post
-              </Link>
-
-              <nav className="space-y-1 overflow-y-auto max-h-[60vh]">
-                {sidebarLinks.map((link) => (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    onClick={() => setIsMobileOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm ${
-                      location.pathname === link.path
-                        ? 'bg-primary/5 text-primary shadow-sm'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
-                  >
-                    {link.icon}
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-
-            <div className="space-y-2 border-t pt-4">
-              <Link to="/" onClick={() => setIsMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
-                <ExternalLink size={18} /> View Website
-              </Link>
-              <button
-                onClick={() => { setIsMobileOpen(false); handleLogout(); }}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold text-sm text-destructive hover:bg-destructive/5 transition-all"
-              >
-                <LogOut size={18} /> Sign Out
-              </button>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-72 border-r bg-card pt-28 px-6 flex-col justify-between pb-10 flex-shrink-0 h-screen sticky top-0">
@@ -252,7 +175,7 @@ export function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 pt-24 lg:pt-28 px-4 md:px-12 overflow-y-auto bg-muted/20 w-full min-h-screen">
+      <main className="flex-1 pt-20 lg:pt-28 pb-28 lg:pb-10 px-4 md:px-12 overflow-y-auto bg-muted/20 w-full min-h-screen">
         <Routes>
           <Route path="/" element={<Overview />} />
           <Route path="/posts" element={<PostsList />} />
@@ -265,8 +188,12 @@ export function AdminDashboard() {
           <Route path="/glossary" element={<GlossaryManager />} />
           <Route path="/analytics" element={<AnalyticsDashboard />} />
           <Route path="/settings" element={<SecurityCenter />} />
+          <Route path="/more" element={<MobileMorePage />} />
         </Routes>
       </main>
+
+      {/* Mobile Fixed Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 }
@@ -1006,6 +933,8 @@ function Overview() {
 function PostsList() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'PUBLISHED' | 'DRAFT'>('ALL');
   const navigate = useNavigate();
 
   const fetchPosts = async () => {
@@ -1034,6 +963,7 @@ function PostsList() {
       alert('Failed to delete.');
     }
   };
+
   const handleToggleVisibility = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
@@ -1044,11 +974,134 @@ function PostsList() {
     }
   };
 
+  const filteredPosts = posts.filter(post => {
+    const matchesSearch = post.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    if (activeFilter === 'ALL') return matchesSearch;
+    if (activeFilter === 'PUBLISHED') return matchesSearch && (post.status === 'PUBLISHED' || post.status === 'published');
+    if (activeFilter === 'DRAFT') return matchesSearch && (post.status === 'DRAFT' || post.status === 'draft');
+    return matchesSearch;
+  });
 
   return (
-    <div className="space-y-8 pb-10">
-      <h1 className="text-4xl font-black">All Posts</h1>
-      <div className="glass rounded-[2.5rem] overflow-hidden border-white/5">
+    <div className="space-y-6 pb-20">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-3xl md:text-4xl font-black">Posts</h1>
+      </div>
+
+      {/* Mobile Search & Filters (Shown on Mobile & Tablet) */}
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search posts..."
+            className="w-full bg-slate-900/60 border border-white/10 rounded-2xl pl-11 pr-4 py-3 text-sm outline-none focus:ring-2 ring-primary/30 transition-all font-medium text-white placeholder:text-muted-foreground"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <button
+            onClick={() => setActiveFilter('ALL')}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-black transition-all whitespace-nowrap",
+              activeFilter === 'ALL'
+                ? "bg-primary text-primary-foreground shadow"
+                : "bg-slate-900/60 border border-white/10 text-muted-foreground hover:text-white"
+            )}
+          >
+            All ({posts.length})
+          </button>
+          <button
+            onClick={() => setActiveFilter('PUBLISHED')}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-black transition-all whitespace-nowrap",
+              activeFilter === 'PUBLISHED'
+                ? "bg-primary text-primary-foreground shadow"
+                : "bg-slate-900/60 border border-white/10 text-muted-foreground hover:text-white"
+            )}
+          >
+            Published ({posts.filter(p => p.status === 'PUBLISHED' || p.status === 'published').length})
+          </button>
+          <button
+            onClick={() => setActiveFilter('DRAFT')}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-black transition-all whitespace-nowrap",
+              activeFilter === 'DRAFT'
+                ? "bg-primary text-primary-foreground shadow"
+                : "bg-slate-900/60 border border-white/10 text-muted-foreground hover:text-white"
+            )}
+          >
+            Draft ({posts.filter(p => p.status === 'DRAFT' || p.status === 'draft').length})
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Compact Cards List (Shown on Mobile) */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          [1, 2, 3].map(i => (
+            <div key={i} className="glass h-24 rounded-2xl animate-pulse" />
+          ))
+        ) : filteredPosts.length === 0 ? (
+          <div className="glass p-12 rounded-3xl text-center text-muted-foreground italic text-xs border-white/5">
+            No posts found matching filter.
+          </div>
+        ) : (
+          filteredPosts.map((post) => (
+            <div
+              key={post.id}
+              onClick={() => navigate(`/admin/editor/${post.id}`)}
+              className="glass p-3.5 rounded-2xl border-white/5 flex items-center justify-between gap-3 cursor-pointer hover:border-primary/30 transition-all active:scale-[0.99]"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <img
+                  src={getUploadUrl(post.coverImage)}
+                  alt={post.title}
+                  className="w-14 h-14 rounded-xl object-cover border border-white/10 bg-slate-900 shrink-0"
+                  onError={(e: any) => { e.target.src = 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=200&auto=format&fit=crop&q=60'; }}
+                />
+                <div className="min-w-0 space-y-1">
+                  <h3 className="font-bold text-sm text-white truncate leading-snug">{post.title}</h3>
+                  <div className="flex items-center gap-2 flex-wrap text-[10px] text-muted-foreground font-medium">
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-md font-black uppercase text-[8.5px] tracking-wider",
+                      (post.status === 'PUBLISHED' || post.status === 'published')
+                        ? "bg-emerald-500/10 text-emerald-400"
+                        : "bg-slate-500/20 text-slate-400"
+                    )}>
+                      {post.status}
+                    </span>
+                    <span>•</span>
+                    <span>{new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                    <span>•</span>
+                    <span>{post.views || 0} views</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={(e) => handleToggleVisibility(e, post.id)}
+                  className="p-2 text-slate-400 hover:text-white rounded-lg transition-colors"
+                >
+                  {post.status === 'HIDDEN' ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+                <button
+                  onClick={(e) => handleDelete(e, post.id)}
+                  className="p-2 text-slate-400 hover:text-red-400 rounded-lg transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View (Hidden on Mobile) */}
+      <div className="hidden md:block glass rounded-[2.5rem] overflow-hidden border-white/5">
         <table className="w-full text-left">
           <thead className="border-b bg-muted/50">
             <tr>
@@ -1068,14 +1121,14 @@ function PostsList() {
                   <td colSpan={7} className="px-8 py-6 h-16 bg-slate-50/50 dark:bg-slate-800/50" />
                 </tr>
               ))
-            ) : posts.length === 0 ? (
+            ) : filteredPosts.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-8 py-12 text-center text-muted-foreground italic">
-                  No posts found. Start by creating your first chronicle!
+                  No posts found matching filter.
                 </td>
               </tr>
             ) : (
-              posts.map((post) => (
+              filteredPosts.map((post) => (
                 <tr
                   key={post.id}
                   onClick={() => navigate(`/admin/editor/${post.id}`)}
@@ -1095,23 +1148,23 @@ function PostsList() {
                     </span>
                   </td>
                   <td className="px-8 py-6 text-muted-foreground font-medium">{post.views}</td>
-                   <td className="px-8 py-6 text-muted-foreground font-medium">
-                     <span className="inline-flex items-center gap-1 text-emerald-500">
-                       <ThumbsUp size={12} className="stroke-[2.5]" />
-                       {post.likes}
-                     </span>
-                     <span className="mx-2 text-slate-300 dark:text-white/10">/</span>
-                     <span className="inline-flex items-center gap-1 text-red-500">
-                       <ThumbsDown size={12} className="stroke-[2.5]" />
-                       {post.dislikes || 0}
-                     </span>
-                   </td>
-                   <td className="px-8 py-6 text-muted-foreground font-medium">
-                     <span className="inline-flex items-center gap-1 text-primary">
-                       <Share2 size={12} />
-                       {post.shares || 0}
-                     </span>
-                   </td>
+                  <td className="px-8 py-6 text-muted-foreground font-medium">
+                    <span className="inline-flex items-center gap-1 text-emerald-500">
+                      <ThumbsUp size={12} className="stroke-[2.5]" />
+                      {post.likes}
+                    </span>
+                    <span className="mx-2 text-slate-300 dark:text-white/10">/</span>
+                    <span className="inline-flex items-center gap-1 text-red-500">
+                      <ThumbsDown size={12} className="stroke-[2.5]" />
+                      {post.dislikes || 0}
+                    </span>
+                  </td>
+                  <td className="px-8 py-6 text-muted-foreground font-medium">
+                    <span className="inline-flex items-center gap-1 text-primary">
+                      <Share2 size={12} />
+                      {post.shares || 0}
+                    </span>
+                  </td>
                   <td className="px-8 py-6 text-muted-foreground font-medium">
                     {new Date(post.createdAt).toLocaleDateString()}
                   </td>
@@ -1136,6 +1189,168 @@ function PostsList() {
             )}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+function MobileBottomNav() {
+  const location = useLocation();
+
+  const navItems = [
+    { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/admin' },
+    { label: 'Posts', icon: <FileText size={18} />, path: '/admin/posts' },
+    { label: 'FAB', isFab: true, path: '/admin/editor' },
+    { label: 'Media', icon: <ImageIcon size={18} />, path: '/admin/media' },
+    { label: 'More', icon: <MoreHorizontal size={18} />, path: '/admin/more' },
+  ];
+
+  return (
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[999] bg-slate-950/95 border-t border-white/10 backdrop-blur-xl px-2 py-2 flex items-center justify-around select-none shadow-2xl">
+      {navItems.map((item) => {
+        if (item.isFab) {
+          return (
+            <Link
+              key="fab"
+              to="/admin/editor"
+              className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/40 -translate-y-4 border-4 border-slate-950 font-black hover:scale-105 active:scale-95 transition-all"
+              title="Create New Post"
+            >
+              <Plus size={24} />
+            </Link>
+          );
+        }
+
+        const isActive = location.pathname === item.path || (item.path === '/admin' && (location.pathname === '/admin/' || location.pathname === '/admin'));
+
+        return (
+          <Link
+            key={item.path}
+            to={item.path!}
+            className={cn(
+              "flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all text-[10px] font-bold",
+              isActive ? "text-primary font-black scale-105" : "text-muted-foreground hover:text-white"
+            )}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function MobileMorePage() {
+  const { user, logout } = useAuth();
+  const { isDeveloperMode, setDeveloperMode } = usePerformanceStore();
+
+  const manageLinks = [
+    { icon: <FolderTree size={18} />, label: 'Categories', path: '/admin/categories' },
+    { icon: <ImageIcon size={18} />, label: 'Media Library', path: '/admin/media' },
+    { icon: <MessageSquare size={18} />, label: 'Comments', path: '/admin/comments' },
+    { icon: <MessageSquare size={18} />, label: 'Feedback', path: '/admin/feedback' },
+    { icon: <Quote size={18} />, label: 'Quotes', path: '/admin/quotes' },
+    { icon: <BookOpen size={18} />, label: 'Glossary', path: '/admin/glossary' },
+    { icon: <BarChart3 size={18} />, label: 'Analytics', path: '/admin/analytics' },
+  ];
+
+  return (
+    <div className="space-y-6 pb-20 lg:hidden">
+      {/* Header Profile Card */}
+      <div className="glass p-5 rounded-3xl border-white/5 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-black text-lg shadow-lg shadow-primary/20">
+            {user?.name?.[0].toUpperCase() || 'A'}
+          </div>
+          <div>
+            <h2 className="text-base font-black">{user?.name || 'Admin'}</h2>
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-primary/10 text-primary">
+              {user?.role || 'ADMIN'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* MANAGE Section */}
+      <div className="space-y-2">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-2">Manage</h3>
+        <div className="glass rounded-3xl border-white/5 overflow-hidden divide-y divide-white/5">
+          {manageLinks.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="flex items-center justify-between px-5 py-4 text-sm font-bold hover:bg-muted/30 transition-all text-slate-200"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-primary">{item.icon}</span>
+                <span>{item.label}</span>
+              </div>
+              <ChevronRight size={18} className="text-muted-foreground opacity-60" />
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* SETTINGS Section */}
+      <div className="space-y-2">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-2">Settings</h3>
+        <div className="glass rounded-3xl border-white/5 overflow-hidden divide-y divide-white/5">
+          <Link
+            to="/admin/settings"
+            className="flex items-center justify-between px-5 py-4 text-sm font-bold hover:bg-muted/30 transition-all text-slate-200"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-primary"><Settings size={18} /></span>
+              <span>Security Center</span>
+            </div>
+            <ChevronRight size={18} className="text-muted-foreground opacity-60" />
+          </Link>
+
+          <div className="flex items-center justify-between px-5 py-4 text-sm font-bold text-slate-200">
+            <div className="flex items-center gap-3">
+              <span className="text-primary"><Gauge size={18} /></span>
+              <div>
+                <p className="leading-none">Developer Mode</p>
+                <p className="text-[9px] text-muted-foreground mt-1">Perf Diagnostics</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDeveloperMode(!isDeveloperMode)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                isDeveloperMode ? 'bg-primary' : 'bg-muted-foreground/30'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  isDeveloperMode ? 'translate-x-4' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <Link
+            to="/"
+            className="flex items-center justify-between px-5 py-4 text-sm font-bold hover:bg-muted/30 transition-all text-slate-200"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-slate-400"><ExternalLink size={18} /></span>
+              <span>View Website</span>
+            </div>
+            <ChevronRight size={18} className="text-muted-foreground opacity-60" />
+          </Link>
+
+          <button
+            onClick={() => logout()}
+            className="flex items-center justify-between w-full px-5 py-4 text-sm font-bold text-destructive hover:bg-destructive/10 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <LogOut size={18} />
+              <span>Sign Out</span>
+            </div>
+          </button>
+        </div>
       </div>
     </div>
   );
