@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../api/client';
 import { motion } from 'framer-motion';
-import { X, Search, Image as ImageIcon, Folder as FolderIcon, Layers, ChevronRight } from 'lucide-react';
+import { X, Search, Image as ImageIcon, Folder as FolderIcon, Layers, ChevronRight, ArrowLeft } from 'lucide-react';
 import { getUploadUrl } from '../../utils/url';
 import { MediaFile } from '../../pages/MediaLibrary';
 
@@ -21,7 +21,8 @@ interface MediaPickerProps {
 
 export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>('all');
+  // Default to 'folders' view so folders are displayed FIRST!
+  const [selectedFolderId, setSelectedFolderId] = useState<string | 'folders' | 'all' | 'null'>('folders');
 
   // Fetch Folders
   const { data: folders = [] } = useQuery<Folder[]>({
@@ -36,7 +37,7 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
   const { data: media = [], isLoading } = useQuery<MediaFile[]>({
     queryKey: ['media', selectedFolderId],
     queryFn: async () => {
-      const endpoint = selectedFolderId && selectedFolderId !== 'all'
+      const endpoint = selectedFolderId && selectedFolderId !== 'all' && selectedFolderId !== 'folders'
         ? `/media?folderId=${selectedFolderId}`
         : '/media';
       const { data } = await api.get(endpoint);
@@ -51,7 +52,7 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
       m.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
       m.path.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (selectedFolderId === 'all') return matchesSearch;
+    if (selectedFolderId === 'all' || selectedFolderId === 'folders') return matchesSearch;
     if (selectedFolderId === 'null') return matchesSearch && !m.folderId;
     return matchesSearch && m.folderId === selectedFolderId;
   });
@@ -81,13 +82,23 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
               <span className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-black uppercase rounded-full border border-primary/30">
                 Media Library
               </span>
+              {selectedFolderId !== 'folders' && (
+                <button
+                  onClick={() => setSelectedFolderId('folders')}
+                  className="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-primary transition-colors"
+                >
+                  <ArrowLeft size={14} /> Back to Folders
+                </button>
+              )}
               {activeFolder && (
-                <span className="flex items-center gap-1 text-xs font-bold text-slate-400">
+                <span className="flex items-center gap-1 text-xs font-bold text-slate-300">
                   <ChevronRight size={14} /> {activeFolder.name}
                 </span>
               )}
             </div>
-            <h2 className="text-2xl font-black mt-1">Select Cover or Post Asset</h2>
+            <h2 className="text-2xl font-black mt-1">
+              {selectedFolderId === 'folders' ? 'Select Blog Folder' : activeFolder ? activeFolder.name : 'Select Image Asset'}
+            </h2>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -95,9 +106,14 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
-                placeholder="Search assets..."
+                placeholder="Search media..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (e.target.value && selectedFolderId === 'folders') {
+                    setSelectedFolderId('all');
+                  }
+                }}
                 className="w-full bg-slate-800/80 border border-white/10 py-2 pl-10 pr-4 rounded-xl text-sm outline-none focus:ring-2 ring-primary/40 text-slate-100"
               />
             </div>
@@ -110,8 +126,19 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
           </div>
         </div>
 
-        {/* Folders Navigation Bar (Shown First!) */}
+        {/* Folder Navigation Bar */}
         <div className="p-4 sm:px-8 border-b border-white/10 bg-slate-950/60 overflow-x-auto flex items-center gap-2">
+          <button
+            onClick={() => setSelectedFolderId('folders')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+              selectedFolderId === 'folders'
+                ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 border border-white/5'
+            }`}
+          >
+            <FolderIcon size={14} className="text-amber-400" /> Blog Folders
+          </button>
+
           <button
             onClick={() => setSelectedFolderId('all')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
@@ -120,7 +147,7 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
                 : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 border border-white/5'
             }`}
           >
-            <Layers size={14} /> All Media
+            <Layers size={14} /> All Assets
           </button>
 
           <button
@@ -153,104 +180,145 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
           ))}
         </div>
 
-        {/* Content Area */}
+        {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-8">
-          {/* Folders Cards View (Shown First when 'All Media' is selected) */}
-          {selectedFolderId === 'all' && !searchTerm && folders.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
-                Blog Folders
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* 1. Folders First View (When opening MediaPicker or selecting Blog Folders) */}
+          {selectedFolderId === 'folders' && !searchTerm && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-white">Select a Blog Folder</h3>
+                  <p className="text-xs text-slate-400">Pick a blog folder below to view and select its image assets.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {folders.map((folder) => (
-                  <div
+                  <motion.div
                     key={folder.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setSelectedFolderId(folder.id)}
-                    className="p-4 rounded-2xl bg-slate-800/40 border border-white/5 hover:border-primary/50 cursor-pointer transition-all hover:scale-[1.02] group flex items-center gap-3"
+                    className="p-6 rounded-3xl bg-slate-800/40 border border-white/10 hover:border-primary/50 cursor-pointer transition-all shadow-xl group flex items-start justify-between"
                   >
-                    <div
-                      className="p-3 rounded-xl flex items-center justify-center text-white"
-                      style={{ backgroundColor: `${folder.color || '#3b82f6'}20`, color: folder.color || '#3b82f6' }}
-                    >
-                      <FolderIcon size={20} />
+                    <div className="space-y-3">
+                      <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg"
+                        style={{ backgroundColor: `${folder.color || '#3b82f6'}20`, color: folder.color || '#3b82f6' }}
+                      >
+                        <FolderIcon size={26} />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-black text-white group-hover:text-primary transition-colors">
+                          {folder.name}
+                        </h4>
+                        <p className="text-xs text-slate-400 font-medium mt-0.5">
+                          {folder._count?.media || 0} Image Assets
+                        </p>
+                      </div>
                     </div>
-                    <div className="overflow-hidden">
-                      <h4 className="text-sm font-bold truncate group-hover:text-primary transition-colors">
-                        {folder.name}
+
+                    <div className="p-2 rounded-xl bg-white/5 group-hover:bg-primary group-hover:text-white transition-all text-slate-400">
+                      <ChevronRight size={18} />
+                    </div>
+                  </motion.div>
+                ))}
+
+                {/* Root / Unassigned Assets Folder Card */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedFolderId('null')}
+                  className="p-6 rounded-3xl bg-slate-800/40 border border-white/10 hover:border-primary/50 cursor-pointer transition-all shadow-xl group flex items-start justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-700/30 text-slate-400 flex items-center justify-center shadow-lg">
+                      <FolderIcon size={26} />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black text-white group-hover:text-primary transition-colors">
+                        Root (Unassigned)
                       </h4>
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        {folder._count?.media || 0} Assets
+                      <p className="text-xs text-slate-400 font-medium mt-0.5">
+                        Uncategorized Assets
                       </p>
                     </div>
                   </div>
-                ))}
+
+                  <div className="p-2 rounded-xl bg-white/5 group-hover:bg-primary group-hover:text-white transition-all text-slate-400">
+                    <ChevronRight size={18} />
+                  </div>
+                </motion.div>
               </div>
             </div>
           )}
 
-          {/* Media Assets Section Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              {activeFolder ? `${activeFolder.name} Assets` : 'Available Media Assets'} ({filteredMedia.length})
-            </h3>
-          </div>
+          {/* 2. Media Assets Grid (Displayed when a folder is selected or searching) */}
+          {(selectedFolderId !== 'folders' || searchTerm) && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  {activeFolder ? `${activeFolder.name} Assets` : selectedFolderId === 'null' ? 'Root Unassigned Assets' : 'All Media Assets'} ({filteredMedia.length})
+                </h3>
+              </div>
 
-          {isLoading ? (
-            <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-3">
-              <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-              <p className="text-xs font-bold uppercase tracking-widest">Loading Media...</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {filteredMedia.map((file) => (
-                <div
-                  key={file.id}
-                  onClick={() => {
-                    onSelect(getFullUrl(file.path));
-                    onClose();
-                  }}
-                  className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer border border-white/10 hover:border-primary transition-all shadow-lg bg-slate-950"
-                  title={`${file.filename} (WEBP)`}
-                >
-                  <img
-                    src={getFullUrl(file.path)}
-                    alt={file.filename}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    onError={(e) => {
-                      // Fallback image handling
-                      (e.target as HTMLImageElement).src = getFullUrl(file.filename);
-                    }}
-                  />
-
-                  <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/80 backdrop-blur-md text-white text-[9px] font-black rounded-md uppercase border border-white/10">
-                    WEBP
-                  </span>
-
-                  {file.folder && (
-                    <span
-                      className="absolute top-2 right-2 px-2 py-0.5 text-white text-[9px] font-black rounded-md uppercase drop-shadow"
-                      style={{ backgroundColor: file.folder.color || '#3b82f6' }}
-                    >
-                      {file.folder.name.slice(0, 10)}...
-                    </span>
-                  )}
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                    <p className="text-[10px] text-white font-bold truncate drop-shadow-md">
-                      {file.filename}
-                    </p>
-                  </div>
+              {isLoading ? (
+                <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-3">
+                  <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                  <p className="text-xs font-bold uppercase tracking-widest">Loading Media Assets...</p>
                 </div>
-              ))}
-            </div>
-          )}
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {filteredMedia.map((file) => (
+                    <div
+                      key={file.id}
+                      onClick={() => {
+                        onSelect(getFullUrl(file.path));
+                        onClose();
+                      }}
+                      className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer border border-white/10 hover:border-primary transition-all shadow-lg bg-slate-950"
+                      title={`${file.filename} (WEBP)`}
+                    >
+                      <img
+                        src={getFullUrl(file.path)}
+                        alt={file.filename}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = getFullUrl(file.filename);
+                        }}
+                      />
 
-          {!isLoading && filteredMedia.length === 0 && (
-            <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-3 border border-dashed border-white/10 rounded-2xl">
-              <ImageIcon size={40} className="opacity-20" />
-              <p className="text-sm font-medium">No media assets found in this folder.</p>
+                      <span className="absolute top-2 left-2 px-2 py-0.5 bg-black/80 backdrop-blur-md text-white text-[9px] font-black rounded-md uppercase border border-white/10">
+                        WEBP
+                      </span>
+
+                      {file.folder && (
+                        <span
+                          className="absolute top-2 right-2 px-2 py-0.5 text-white text-[9px] font-black rounded-md uppercase drop-shadow"
+                          style={{ backgroundColor: file.folder.color || '#3b82f6' }}
+                        >
+                          {file.folder.name.slice(0, 10)}...
+                        </span>
+                      )}
+
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                        <p className="text-[10px] text-white font-bold truncate drop-shadow-md">
+                          {file.filename}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!isLoading && filteredMedia.length === 0 && (
+                <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-3 border border-dashed border-white/10 rounded-2xl">
+                  <ImageIcon size={40} className="opacity-20" />
+                  <p className="text-sm font-medium">No media assets found in this view.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
