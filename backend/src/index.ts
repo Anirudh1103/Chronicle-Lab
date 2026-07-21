@@ -33,10 +33,8 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, Postman, or same-origin)
       if (!origin) return callback(null, true);
 
-      // Match allowed origins array, any Netlify preview subdomain, or dev mode
       if (
         allowedOrigins.includes(origin) ||
         origin.endsWith('.netlify.app') ||
@@ -59,7 +57,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(setSecurityHeaders);
 
-// Serve uploads folder with immutable 1-year browser caching & fallback protection
+// Serve uploads folder with fallback to Supabase Storage & immutable browser caching
 app.get('/uploads/:filename', (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const filename = req.params.filename;
   const uploadsDir = path.join(__dirname, '../uploads');
@@ -67,7 +65,7 @@ app.get('/uploads/:filename', (req: express.Request, res: express.Response, next
 
   res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
 
-  // 1. If exact file exists on disk, serve it
+  // 1. If exact file exists on local disk, serve it directly
   if (fs.existsSync(exactPath)) {
     return res.sendFile(exactPath);
   }
@@ -84,17 +82,12 @@ app.get('/uploads/:filename', (req: express.Request, res: express.Response, next
     // Ignore read errors
   }
 
-  // 3. Fallback: Serve clean SVG branded cover placeholder image
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" fill="none">
-    <rect width="1200" height="675" fill="#090d16"/>
-    <circle cx="600" cy="337" r="300" fill="#06b6d4" fill-opacity="0.08"/>
-    <text x="600" y="320" text-anchor="middle" fill="#38bdf8" font-family="monospace" font-size="32" font-weight="bold" letter-spacing="4">CHRONICLE.LAB</text>
-    <text x="600" y="370" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="18" font-weight="500" letter-spacing="2">CLASSIFIED HISTORICAL ARCHIVE</text>
-  </svg>`;
+  // 3. Fallback: Redirect to Supabase Storage Public Bucket URL
+  const supabaseUrl = process.env.SUPABASE_URL || 'https://espfrijljdzvzfoeuieg.supabase.co';
+  const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'media';
+  const publicStorageUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${filename}`;
 
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.setHeader('Cache-Control', 'public, max-age=86400');
-  return res.send(svg);
+  return res.redirect(302, publicStorageUrl);
 });
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
