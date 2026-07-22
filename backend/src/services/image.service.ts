@@ -80,43 +80,51 @@ export class ImageService {
     const originalFormat = (detectedFormat || mimetype?.split('/')[1] || 'IMAGE').toUpperCase();
 
     // Helper to generate a scaled variant
-    const generateVariant = async (maxSize: number, quality: number, firstFrameOnly: boolean = false): Promise<ImageVariant> => {
+    const generateVariant = async (
+      maxSize: number,
+      quality: number,
+      shouldResize: boolean = true,
+      firstFrameOnly: boolean = false
+    ): Promise<ImageVariant> => {
       const options: SharpOptions = {};
       if (firstFrameOnly && detectedFormat === 'gif') {
         options.page = 0; // Take first frame of GIF
       }
 
-      const pipeline = sharp(inputBuffer, options)
-        .rotate() // Auto-orient EXIF orientation
-        .resize({
+      let pipeline = sharp(inputBuffer, options).rotate(); // Auto-orient EXIF orientation
+
+      if (shouldResize) {
+        pipeline = pipeline.resize({
           width: maxSize,
           height: maxSize,
           fit: 'inside',
           withoutEnlargement: true,
-        })
-        .webp({
-          quality,
-          effort: 2,
-          smartSubsample: true,
         });
+      }
+
+      pipeline = pipeline.webp({
+        quality,
+        effort: 2,
+        smartSubsample: true,
+      });
 
       const buffer = await pipeline.toBuffer();
       const meta = await sharp(buffer).metadata();
 
       return {
         buffer,
-        width: meta.width || maxSize,
-        height: meta.height || maxSize,
+        width: meta.width || (shouldResize ? maxSize : (metadata.width || 0)),
+        height: meta.height || (shouldResize ? maxSize : (metadata.height || 0)),
         size: buffer.length,
       };
     };
 
     // Generate variants concurrently
     const [original, large, medium, small] = await Promise.all([
-      generateVariant(4000, 88, true), // Original WebP
-      generateVariant(1600, 85, true), // Large Preview
-      generateVariant(800, 82, true),  // Medium Thumbnail
-      generateVariant(300, 80, true),  // Small Thumbnail
+      generateVariant(0, 88, false, true),   // Original WebP (NO RESIZE, 88% quality)
+      generateVariant(1600, 85, true, true), // Large Preview
+      generateVariant(800, 82, true, true),  // Medium Thumbnail
+      generateVariant(300, 80, true, true),  // Small Thumbnail
     ]);
 
     return {
