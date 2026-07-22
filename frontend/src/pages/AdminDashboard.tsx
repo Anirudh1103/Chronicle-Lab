@@ -67,6 +67,21 @@ export function AdminDashboard() {
     localStorage.setItem('admin_sidebar_collapsed', String(isCollapsed));
   }, [isCollapsed]);
 
+  useEffect(() => {
+    // Lock body and html scroll on admin dashboard mount to prevent document-level scrolling
+    const origBodyOverflow = document.body.style.overflow;
+    const origHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      // Restore scroll settings on unmount
+      document.body.style.overflow = origBodyOverflow;
+      document.documentElement.style.overflow = origHtmlOverflow;
+    };
+  }, []);
+
   const handleLogout = async () => {
     await logout();
     navigate('/login');
