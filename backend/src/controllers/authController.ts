@@ -319,6 +319,13 @@ export const verifyMfaLogin = async (req: Request, res: Response) => {
 export const setupMfa = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
+    
+    // Fetch latest user details from DB to verify MFA state
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+    if (dbUser?.mfaEnabled) {
+      return res.status(400).json({ message: 'MFA is already enabled on this account. Please disable it first.' });
+    }
+
     const secret = generateSecretBase32();
     const otpAuthUri = getOtpAuthUri(secret, user.email);
 
