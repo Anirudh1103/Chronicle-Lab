@@ -358,3 +358,119 @@ export const getApiConfiguration = async (req: Request, res: Response) => {
     { name: 'OpenAI Artificial Intelligence API', configured: !!process.env.OPENAI_API_KEY }
   ]);
 };
+
+/**
+ * Gets user security preferences.
+ */
+export const getSecuritySettings = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        idleTimeout: true,
+        rememberTrustedDevices: true,
+        maxSimultaneousSessions: true,
+        singleSessionOnly: true,
+        requireMfaEveryLogin: true,
+        requireMfaEveryXDays: true,
+        rememberBrowser: true,
+        sessionLifetime: true,
+        notifyNewLogin: true,
+        notifyUnknownDevice: true,
+        notifyPasswordChanged: true,
+        notifyMfaDisabled: true,
+        notifyTrustedDeviceAdded: true,
+        notifySessionRevoked: true,
+        notifyFailedLoginThreshold: true,
+        notifyMultipleCountries: true,
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    return res.json(user);
+  } catch (error) {
+    console.error('Failed to get security settings:', error);
+    return res.status(500).json({ message: 'Failed to retrieve security settings.' });
+  }
+};
+
+/**
+ * Updates user security preferences.
+ */
+export const updateSecuritySettings = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const {
+      idleTimeout,
+      rememberTrustedDevices,
+      maxSimultaneousSessions,
+      singleSessionOnly,
+      requireMfaEveryLogin,
+      requireMfaEveryXDays,
+      rememberBrowser,
+      sessionLifetime,
+      notifyNewLogin,
+      notifyUnknownDevice,
+      notifyPasswordChanged,
+      notifyMfaDisabled,
+      notifyTrustedDeviceAdded,
+      notifySessionRevoked,
+      notifyFailedLoginThreshold,
+      notifyMultipleCountries,
+    } = req.body;
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        idleTimeout: idleTimeout !== undefined ? Number(idleTimeout) : undefined,
+        rememberTrustedDevices: rememberTrustedDevices !== undefined ? Boolean(rememberTrustedDevices) : undefined,
+        maxSimultaneousSessions: maxSimultaneousSessions !== undefined ? Number(maxSimultaneousSessions) : undefined,
+        singleSessionOnly: singleSessionOnly !== undefined ? Boolean(singleSessionOnly) : undefined,
+        requireMfaEveryLogin: requireMfaEveryLogin !== undefined ? Boolean(requireMfaEveryLogin) : undefined,
+        requireMfaEveryXDays: requireMfaEveryXDays !== undefined ? Number(requireMfaEveryXDays) : undefined,
+        rememberBrowser: rememberBrowser !== undefined ? Boolean(rememberBrowser) : undefined,
+        sessionLifetime: sessionLifetime !== undefined ? Number(sessionLifetime) : undefined,
+        notifyNewLogin: notifyNewLogin !== undefined ? Boolean(notifyNewLogin) : undefined,
+        notifyUnknownDevice: notifyUnknownDevice !== undefined ? Boolean(notifyUnknownDevice) : undefined,
+        notifyPasswordChanged: notifyPasswordChanged !== undefined ? Boolean(notifyPasswordChanged) : undefined,
+        notifyMfaDisabled: notifyMfaDisabled !== undefined ? Boolean(notifyMfaDisabled) : undefined,
+        notifyTrustedDeviceAdded: notifyTrustedDeviceAdded !== undefined ? Boolean(notifyTrustedDeviceAdded) : undefined,
+        notifySessionRevoked: notifySessionRevoked !== undefined ? Boolean(notifySessionRevoked) : undefined,
+        notifyFailedLoginThreshold: notifyFailedLoginThreshold !== undefined ? Boolean(notifyFailedLoginThreshold) : undefined,
+        notifyMultipleCountries: notifyMultipleCountries !== undefined ? Boolean(notifyMultipleCountries) : undefined,
+      }
+    });
+
+    await logSecurityEvent('MFA_SETUP_SUCCESS', (req as any).user.email, req);
+
+    return res.json({
+      success: true,
+      message: 'Security settings successfully updated.',
+      settings: {
+        idleTimeout: updated.idleTimeout,
+        rememberTrustedDevices: updated.rememberTrustedDevices,
+        maxSimultaneousSessions: updated.maxSimultaneousSessions,
+        singleSessionOnly: updated.singleSessionOnly,
+        requireMfaEveryLogin: updated.requireMfaEveryLogin,
+        requireMfaEveryXDays: updated.requireMfaEveryXDays,
+        rememberBrowser: updated.rememberBrowser,
+        sessionLifetime: updated.sessionLifetime,
+        notifyNewLogin: updated.notifyNewLogin,
+        notifyUnknownDevice: updated.notifyUnknownDevice,
+        notifyPasswordChanged: updated.notifyPasswordChanged,
+        notifyMfaDisabled: updated.notifyMfaDisabled,
+        notifyTrustedDeviceAdded: updated.notifyTrustedDeviceAdded,
+        notifySessionRevoked: updated.notifySessionRevoked,
+        notifyFailedLoginThreshold: updated.notifyFailedLoginThreshold,
+        notifyMultipleCountries: updated.notifyMultipleCountries,
+      }
+    });
+  } catch (error) {
+    console.error('Failed to update security settings:', error);
+    return res.status(500).json({ message: 'Failed to save security settings.' });
+  }
+};

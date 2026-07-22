@@ -23,6 +23,26 @@ model User {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   posts               Post[]
+
+  // Security preferences
+  idleTimeout                Int      @default(30) @map("idle_timeout")
+  rememberTrustedDevices     Boolean  @default(true) @map("remember_trusted_devices")
+  maxSimultaneousSessions    Int      @default(5) @map("max_simultaneous_sessions")
+  singleSessionOnly          Boolean  @default(false) @map("single_session_only")
+  requireMfaEveryLogin       Boolean  @default(false) @map("require_mfa_every_login")
+  requireMfaEveryXDays       Int      @default(30) @map("require_mfa_every_x_days")
+  rememberBrowser            Boolean  @default(true) @map("remember_browser")
+  sessionLifetime            Int      @default(30) @map("session_lifetime")
+  
+  // Notification preferences
+  notifyNewLogin             Boolean  @default(true) @map("notify_new_login")
+  notifyUnknownDevice        Boolean  @default(true) @map("notify_unknown_device")
+  notifyPasswordChanged      Boolean  @default(true) @map("notify_password_changed")
+  notifyMfaDisabled          Boolean  @default(true) @map("notify_mfa_disabled")
+  notifyTrustedDeviceAdded   Boolean  @default(true) @map("notify_trusted_device_added")
+  notifySessionRevoked       Boolean  @default(true) @map("notify_session_revoked")
+  notifyFailedLoginThreshold Boolean  @default(true) @map("notify_failed_login_threshold")
+  notifyMultipleCountries    Boolean  @default(true) @map("notify_multiple_countries")
 }
 
 model Post {

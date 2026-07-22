@@ -12,7 +12,9 @@ import {
   getFailedAttempts,
   getSecurityHeadersStatus,
   getDatabaseSecurityStatus,
-  getApiConfiguration
+  getApiConfiguration,
+  getSecuritySettings,
+  updateSecuritySettings
 } from '../controllers/securityController';
 
 const router = Router();
@@ -21,6 +23,8 @@ const router = Router();
 router.use(protect, admin);
 
 router.get('/score', getSecurityScore);
+router.get('/settings', getSecuritySettings);
+router.put('/settings', updateSecuritySettings);
 router.get('/sessions', getSessions);
 router.delete('/sessions/:id', revokeSession);
 router.delete('/sessions', revokeOtherSessions);

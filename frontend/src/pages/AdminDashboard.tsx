@@ -53,6 +53,7 @@ import { CommentsManager } from './CommentsManager';
 import SecurityCenter from './security/SecurityCenter';
 
 import { getUploadUrl } from '../utils/url';
+import { IdleTimer } from '../components/security/IdleTimer';
 
 export function AdminDashboard() {
   const location = useLocation();
@@ -340,6 +341,7 @@ export function AdminDashboard() {
 
       {/* Mobile Fixed Bottom Navigation */}
       <MobileBottomNav />
+      <IdleTimer />
     </div>
   );
 }
