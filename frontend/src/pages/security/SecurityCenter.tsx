@@ -410,7 +410,7 @@ export default function SecurityCenter() {
     setMfaError(null);
     setMfaSuccess(null);
     try {
-      const { data } = await api.post('auth/mfa/verify', { code: mfaCode });
+      const { data } = await api.post('auth/mfa/enable', { code: mfaCode });
       setMfaSuccess('Multi-Factor Authentication enabled successfully.');
       addNotification('MFA configured successfully', 'success');
       setBackupCodes(data.backupCodes || []);
