@@ -250,7 +250,7 @@ export function AdminDashboard() {
           {/* Developer Mode */}
           <div
             className={cn(
-              "flex items-center justify-between px-3 py-2.5 bg-muted/20 rounded-xl border border-white/5 overflow-hidden",
+              "flex items-center justify-between px-3 py-2.5 bg-muted/20 rounded-xl border border-white/5 overflow-hidden relative",
               isCollapsed && "justify-center px-0"
             )}
             title={isCollapsed ? "Toggle Developer Mode" : undefined}
