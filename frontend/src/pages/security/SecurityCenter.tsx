@@ -392,6 +392,12 @@ export default function SecurityCenter() {
     setMfaSuccess(null);
     setMfaSetup(null);
     setIsConfiguringMfa(true);
+
+    // If MFA is already enabled, do not initiate setup API call to prevent secret overwrite
+    if (user?.mfaEnabled) {
+      return;
+    }
+
     try {
       const { data } = await api.post('auth/mfa/setup');
       setMfaSetup(data);
@@ -409,7 +415,7 @@ export default function SecurityCenter() {
       addNotification('MFA configured successfully', 'success');
       setBackupCodes(data.backupCodes || []);
       loadScore();
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
     } catch (err: any) {
       setMfaError(err.response?.data?.message || 'Invalid verification code.');
     }
@@ -425,7 +431,7 @@ export default function SecurityCenter() {
       addNotification('MFA disabled successfully', 'success');
       setDisableCode('');
       loadScore();
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
       setTimeout(() => {
         setIsConfiguringMfa(false);
         setMfaSuccess(null);
