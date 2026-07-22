@@ -302,12 +302,6 @@ export function AdminDashboard() {
   );
 }
 
-      {/* Mobile Fixed Bottom Navigation */}
-      <MobileBottomNav />
-    </div>
-  );
-}
-
 function PlaceholderSection({ title }: { title: string }) {
   return (
     <div className="space-y-8">
