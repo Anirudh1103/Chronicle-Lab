@@ -775,7 +775,7 @@ export default function SecurityCenter() {
               <input
                 type="range"
                 min="0"
-                max="240"
+                max="30"
                 step="5"
                 value={settings.idleTimeout}
                 onChange={(e) => handleUpdateSetting('idleTimeout', Number(e.target.value))}
@@ -783,11 +783,12 @@ export default function SecurityCenter() {
               />
               <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-500">
                 <span>Never</span>
+                <span>5m</span>
+                <span>10m</span>
                 <span>15m</span>
+                <span>20m</span>
+                <span>25m</span>
                 <span>30m</span>
-                <span>1h</span>
-                <span>2h</span>
-                <span>4h</span>
               </div>
             </div>
 
