@@ -77,7 +77,7 @@ export function AdminDashboard() {
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen -mx-6 -mt-24 w-full">
+    <div className="flex flex-col lg:flex-row w-full lg:h-[calc(100vh-96px)] lg:overflow-hidden relative -mx-6 lg:mx-0 -mt-24 lg:mt-0">
       {/* Mobile Navigation Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-slate-950/90 border-b border-white/5 z-[990] px-4 flex items-center justify-between backdrop-blur-md">
         <div className="flex items-center gap-3">
@@ -97,7 +97,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-72 border-r bg-card pt-28 px-6 flex-col justify-between pb-10 flex-shrink-0 h-screen sticky top-0">
+      <aside className="hidden lg:flex w-72 border-r bg-card pt-6 px-6 flex-col justify-between pb-10 flex-shrink-0 h-full overflow-y-auto no-scrollbar">
         <div className="flex flex-col flex-1 min-h-0 space-y-8">
           <div className="space-y-4 flex-shrink-0">
             <div className="px-2 flex items-center gap-3">
@@ -175,7 +175,7 @@ export function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 pt-20 lg:pt-28 pb-28 lg:pb-10 px-4 md:px-12 overflow-y-auto bg-muted/20 w-full min-h-screen">
+      <main className="flex-1 pt-20 lg:pt-6 pb-28 lg:pb-10 px-4 md:px-12 overflow-y-auto bg-muted/20 w-full lg:h-full scrollbar-none">
         <Routes>
           <Route path="/" element={<Overview />} />
           <Route path="/posts" element={<PostsList />} />
