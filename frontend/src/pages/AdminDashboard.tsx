@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -67,10 +67,31 @@ export function AdminDashboard() {
     localStorage.setItem('admin_sidebar_collapsed', String(isCollapsed));
   }, [isCollapsed]);
 
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const logoutTimerRef = useRef<any>(null);
+
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
+
+  const handleLogoutClick = () => {
+    if (confirmLogout) {
+      handleLogout();
+    } else {
+      setConfirmLogout(true);
+      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+      logoutTimerRef.current = setTimeout(() => {
+        setConfirmLogout(false);
+      }, 3000);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+    };
+  }, []);
 
   const sidebarLinks = [
     { icon: <LayoutDashboard size={20} />, label: 'Overview', path: '/admin' },
@@ -261,17 +282,19 @@ export function AdminDashboard() {
           </Link>
 
           <button
-            onClick={handleLogout}
-            title={isCollapsed ? "Sign Out" : undefined}
+            onClick={handleLogoutClick}
+            title={isCollapsed ? (confirmLogout ? "Confirm Exit" : "Sign Out") : undefined}
             className={cn(
-              "flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold transition-all group",
-              "text-destructive hover:bg-destructive/10"
+              "flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold transition-all active:scale-[0.98] duration-150 border outline-none",
+              confirmLogout
+                ? "bg-rose-600 border-rose-600 text-white shadow-lg shadow-rose-600/30"
+                : "border-rose-500/10 text-rose-500 hover:text-white hover:bg-rose-600"
             )}
           >
-            <div className={cn("shrink-0 text-destructive group-hover:scale-110 transition-transform", isCollapsed && "mx-auto")}>
+            <div className={cn("shrink-0 transition-transform", isCollapsed && "mx-auto", confirmLogout ? "animate-bounce" : "group-hover:scale-110")}>
               <LogOut size={20} />
             </div>
-            {!isCollapsed && <span className="text-sm">Sign Out</span>}
+            {!isCollapsed && <span className="text-sm">{confirmLogout ? "Confirm Sign Out" : "Sign Out"}</span>}
           </button>
         </div>
       </motion.aside>
@@ -1348,6 +1371,28 @@ function MobileBottomNav() {
 function MobileMorePage() {
   const { user, logout } = useAuth();
   const { isDeveloperMode, setDeveloperMode } = usePerformanceStore();
+  const navigate = useNavigate();
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const logoutTimerRef = useRef<any>(null);
+
+  const handleLogoutClick = () => {
+    if (confirmLogout) {
+      logout();
+      navigate('/login');
+    } else {
+      setConfirmLogout(true);
+      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+      logoutTimerRef.current = setTimeout(() => {
+        setConfirmLogout(false);
+      }, 3000);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+    };
+  }, []);
 
   const manageLinks = [
     { icon: <FolderTree size={18} />, label: 'Categories', path: '/admin/categories' },
@@ -1446,12 +1491,17 @@ function MobileMorePage() {
           </Link>
 
           <button
-            onClick={() => logout()}
-            className="flex items-center justify-between w-full px-5 py-4 text-sm font-bold text-destructive hover:bg-destructive/10 transition-all"
+            onClick={handleLogoutClick}
+            className={cn(
+              "flex items-center justify-between w-full px-5 py-4 text-sm font-bold transition-all border-t border-rose-500/15 duration-150 outline-none",
+              confirmLogout
+                ? "bg-rose-600 text-white"
+                : "text-rose-500 hover:bg-rose-600 hover:text-white"
+            )}
           >
             <div className="flex items-center gap-3">
-              <LogOut size={18} />
-              <span>Sign Out</span>
+              <LogOut size={18} className={cn(confirmLogout && "animate-bounce")} />
+              <span>{confirmLogout ? "Confirm Sign Out" : "Sign Out"}</span>
             </div>
           </button>
         </div>
