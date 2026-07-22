@@ -131,12 +131,12 @@ function App() {
   const isHideFooterPath = isAdminPath || location.pathname === '/login' || location.pathname === '/register';
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col overflow-x-hidden">
+    <div className={cn("min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col", isAdminPath ? "h-screen overflow-hidden" : "overflow-x-hidden")}>
       <AnimatePresence mode="wait">
         {showIntro ? (
           <IntroScreen key="intro" theme={theme} onComplete={handleIntroComplete} />
         ) : (
-          <div className="flex flex-col min-h-screen">
+          <div className={cn("flex flex-col", isAdminPath ? "h-screen overflow-hidden" : "min-h-screen")}>
             <CommandCenter
               isOpen={isCommandCenterOpen}
               onClose={() => setIsCommandCenterOpen(false)}
@@ -154,7 +154,7 @@ function App() {
             >
               <main className={cn(
                 "pt-24 flex-1 w-full",
-                isAdminPath ? "px-0 max-w-full" : "px-6 max-w-7xl mx-auto"
+                isAdminPath ? "px-0 max-w-full h-[calc(100vh-96px)] overflow-hidden" : "px-6 max-w-7xl mx-auto"
               )}>
                 <Routes>
                   <Route path="/" element={<Home />} />
