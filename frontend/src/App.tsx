@@ -131,12 +131,18 @@ function App() {
   const isHideFooterPath = isAdminPath || location.pathname === '/login' || location.pathname === '/register';
 
   return (
-    <div className={cn("min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col", isAdminPath ? "h-screen overflow-hidden" : "overflow-x-hidden")}>
+    <div className={cn(
+      "min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col",
+      isAdminPath && "h-screen overflow-hidden"
+    )}>
       <AnimatePresence mode="wait">
         {showIntro ? (
           <IntroScreen key="intro" theme={theme} onComplete={handleIntroComplete} />
         ) : (
-          <div className={cn("flex flex-col", isAdminPath ? "h-screen overflow-hidden" : "min-h-screen")}>
+          <div className={cn(
+            "flex flex-col",
+            isAdminPath ? "h-screen overflow-hidden" : "min-h-screen"
+          )}>
             <CommandCenter
               isOpen={isCommandCenterOpen}
               onClose={() => setIsCommandCenterOpen(false)}
@@ -150,7 +156,7 @@ function App() {
               initial={{ opacity: 0, filter: 'blur(10px)' }}
               animate={{ opacity: 1, filter: 'blur(0px)' }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-              className="flex-1 flex flex-col relative z-10"
+              className={cn("flex-1 flex flex-col relative z-10", isAdminPath && "overflow-hidden")}
             >
               <main className={cn(
                 "pt-24 flex-1 w-full",

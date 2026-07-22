@@ -33,7 +33,11 @@ import {
   MoreHorizontal,
   Search,
   ChevronRight,
-  User
+  User,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Globe,
+  Settings2
 } from 'lucide-react';
 import { EditorPage } from './EditorPage';
 import { MediaLibrary } from './MediaLibrary';
@@ -55,7 +59,13 @@ export function AdminDashboard() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const { isDeveloperMode, setDeveloperMode } = usePerformanceStore();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('admin_sidebar_collapsed') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('admin_sidebar_collapsed', String(isCollapsed));
+  }, [isCollapsed]);
 
   const handleLogout = async () => {
     await logout();
@@ -73,11 +83,11 @@ export function AdminDashboard() {
     { icon: <Quote size={20} />, label: 'Quotes', path: '/admin/quotes' },
     { icon: <BookOpen size={20} />, label: 'Glossary', path: '/admin/glossary' },
     { icon: <BarChart3 size={20} />, label: 'Analytics', path: '/admin/analytics' },
-    { icon: <Settings size={20} />, label: 'Security Center', path: '/admin/settings' },
+    { icon: <Settings2 size={20} />, label: 'Security Center', path: '/admin/settings' },
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row w-full lg:h-[calc(100vh-96px)] lg:overflow-hidden relative -mx-6 lg:mx-0 -mt-24 lg:mt-0">
+    <div className="flex flex-col lg:flex-row w-full lg:h-full lg:overflow-hidden relative -mx-6 lg:mx-0 -mt-24 lg:mt-0">
       {/* Mobile Navigation Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-slate-950/90 border-b border-white/5 z-[990] px-4 flex items-center justify-between backdrop-blur-md">
         <div className="flex items-center gap-3">
@@ -97,100 +107,200 @@ export function AdminDashboard() {
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-72 border-r bg-card pt-6 px-6 flex-col justify-between pb-10 flex-shrink-0 h-full overflow-y-auto no-scrollbar">
-        <div className="flex flex-col flex-1 min-h-0 space-y-8">
-          <div className="space-y-4 flex-shrink-0">
-            <div className="px-2 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-black">
-                {user?.name?.[0].toUpperCase()}
-              </div>
-              <div>
-                <p className="text-sm font-black tracking-tight">{user?.name}</p>
-                <p className="text-xs text-muted-foreground">{user?.role}</p>
-              </div>
-            </div>
+      <motion.aside
+        initial={false}
+        animate={{ width: isCollapsed ? 80 : 288 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="hidden lg:flex border-r bg-card flex-col flex-shrink-0 h-full overflow-hidden relative"
+      >
+        {/* Sidebar Header */}
+        <div className="p-6 space-y-6 flex-shrink-0">
+          <div className="flex items-center justify-between h-10 overflow-hidden">
+            <AnimatePresence mode="wait">
+              {!isCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="flex items-center gap-3 min-w-0"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-primary-foreground font-black shadow-lg shadow-primary/20">
+                    {user?.name?.[0].toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black tracking-tight truncate">{user?.name}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{user?.role}</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <Link
-              to="/admin/editor"
-              className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground py-4 rounded-[1.25rem] font-black hover:opacity-90 transition-all shadow-lg shadow-primary/20"
-            >
-              <Plus size={20} /> New Post
-            </Link>
+            {isCollapsed && (
+               <div className="w-10 h-10 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-primary-foreground font-black mx-auto shadow-lg shadow-primary/20">
+                 {user?.name?.[0].toUpperCase()}
+               </div>
+            )}
           </div>
 
-          <nav className="space-y-1 flex-1 overflow-y-auto min-h-0 pr-1 no-scrollbar">
-            {sidebarLinks.map((link) => (
+          <Link
+            to="/admin/editor"
+            title={isCollapsed ? "New Post" : undefined}
+            className={cn(
+              "flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground font-black hover:opacity-90 transition-all shadow-lg shadow-primary/20 overflow-hidden",
+              isCollapsed ? "h-12 rounded-xl" : "py-4 rounded-[1.25rem]"
+            )}
+          >
+            <Plus size={20} className="shrink-0" />
+            {!isCollapsed && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}>New Post</motion.span>}
+          </Link>
+        </div>
+
+        {/* Navigation List (Scrollable) */}
+        <nav className="flex-1 overflow-y-auto px-4 space-y-1 no-scrollbar scroll-smooth">
+          {sidebarLinks.map((link) => {
+            const isActive = location.pathname === link.path;
+            return (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all ${
-                  location.pathname === link.path
-                    ? 'bg-primary/5 text-primary shadow-sm'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
+                title={isCollapsed ? link.label : undefined}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all group relative overflow-hidden",
+                  isActive
+                    ? "bg-primary/5 text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
               >
-                {link.icon}
-                {link.label}
+                <div className={cn("flex-shrink-0 transition-transform", isCollapsed && "mx-auto")}>
+                  {link.icon}
+                </div>
+                {!isCollapsed && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="truncate"
+                  >
+                    {link.label}
+                  </motion.span>
+                )}
+                {isActive && (
+                  <motion.div
+                    layoutId="active-indicator"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full"
+                  />
+                )}
               </Link>
-            ))}
-          </nav>
-        </div>
+            );
+          })}
+        </nav>
 
-        <div className="space-y-3 flex-shrink-0 pt-4 border-t border-white/5">
-          {/* Developer Performance Mode Toggle (Off by Default) */}
-          <div className="flex items-center justify-between px-4 py-3 bg-muted/40 rounded-xl border border-white/5">
-            <div className="flex items-center gap-2.5">
-              <Gauge size={18} className={isDeveloperMode ? 'text-primary' : 'text-muted-foreground'} />
-              <div className="flex flex-col">
-                <span className="text-xs font-bold leading-none">Developer Mode</span>
-                <span className="text-[9px] text-muted-foreground mt-0.5 font-semibold">Perf Diagnostics</span>
-              </div>
+        {/* Pinned Bottom Section */}
+        <div className="p-4 space-y-2 flex-shrink-0 border-t border-white/5 bg-card/50 backdrop-blur-sm">
+          {/* Collapse Toggle */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all group"
+          >
+            <div className={cn("shrink-0", isCollapsed && "mx-auto")}>
+              {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
             </div>
-            <button
-              type="button"
-              onClick={() => setDeveloperMode(!isDeveloperMode)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                isDeveloperMode ? 'bg-primary' : 'bg-muted-foreground/30'
-              }`}
-              title="Toggle Developer Performance HUD"
-            >
-              <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                  isDeveloperMode ? 'translate-x-4' : 'translate-x-0'
-                }`}
+            {!isCollapsed && <span className="text-sm">Collapse Sidebar</span>}
+          </button>
+
+          {/* Developer Mode */}
+          <div
+            className={cn(
+              "flex items-center justify-between px-3 py-2.5 bg-muted/20 rounded-xl border border-white/5 overflow-hidden",
+              isCollapsed && "justify-center px-0"
+            )}
+            title={isCollapsed ? "Toggle Developer Mode" : undefined}
+          >
+            <div className={cn("flex items-center gap-2.5", isCollapsed && "justify-center")}>
+              <Gauge size={18} className={cn("shrink-0", isDeveloperMode ? 'text-primary' : 'text-muted-foreground')} />
+              {!isCollapsed && (
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-black leading-none truncate uppercase tracking-widest">Dev Mode</span>
+                  <span className="text-[8px] text-muted-foreground mt-1 font-black uppercase tracking-tighter">Performance HUD</span>
+                </div>
+              )}
+            </div>
+            {!isCollapsed && (
+              <button
+                type="button"
+                onClick={() => setDeveloperMode(!isDeveloperMode)}
+                className={cn(
+                  "relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                  isDeveloperMode ? 'bg-primary' : 'bg-muted-foreground/30'
+                )}
+              >
+                <span
+                  className={cn(
+                    "pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
+                    isDeveloperMode ? 'translate-x-3' : 'translate-x-0'
+                  )}
+                />
+              </button>
+            )}
+            {isCollapsed && (
+              <button
+                onClick={() => setDeveloperMode(!isDeveloperMode)}
+                className="absolute inset-0 z-10 opacity-0"
               />
-            </button>
+            )}
           </div>
 
-          <Link to="/" className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
-            <ExternalLink size={20} /> View Website
+          <Link
+            to="/"
+            title={isCollapsed ? "View Website" : undefined}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+          >
+            <div className={cn("shrink-0", isCollapsed && "mx-auto")}>
+              <Globe size={20} />
+            </div>
+            {!isCollapsed && <span className="text-sm">View Website</span>}
           </Link>
+
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-3.5 rounded-xl font-bold text-destructive hover:bg-destructive/5 transition-all"
+            title={isCollapsed ? "Sign Out" : undefined}
+            className={cn(
+              "flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold transition-all group",
+              "text-destructive hover:bg-destructive/10"
+            )}
           >
-            <LogOut size={20} /> Sign Out
+            <div className={cn("shrink-0 text-destructive group-hover:scale-110 transition-transform", isCollapsed && "mx-auto")}>
+              <LogOut size={20} />
+            </div>
+            {!isCollapsed && <span className="text-sm">Sign Out</span>}
           </button>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Main Content */}
-      <main className="flex-1 pt-20 lg:pt-6 pb-28 lg:pb-10 px-4 md:px-12 overflow-y-auto bg-muted/20 w-full lg:h-full scrollbar-none">
-        <Routes>
-          <Route path="/" element={<Overview />} />
-          <Route path="/posts" element={<PostsList />} />
-          <Route path="/media" element={<MediaLibrary />} />
-          <Route path="/categories" element={<CategoriesManager />} />
-          <Route path="/tags" element={<PlaceholderSection title="Tags Manager" />} />
-          <Route path="/comments" element={<CommentsManager />} />
-          <Route path="/feedback" element={<FeedbackManager />} />
-          <Route path="/quotes" element={<QuotesPage />} />
-          <Route path="/glossary" element={<GlossaryManager />} />
-          <Route path="/analytics" element={<AnalyticsDashboard />} />
-          <Route path="/settings" element={<SecurityCenter />} />
-          <Route path="/more" element={<MobileMorePage />} />
-        </Routes>
+      <main className="flex-1 overflow-y-auto bg-muted/20 w-full h-full scrollbar-none relative">
+        <div className="pt-20 lg:pt-10 pb-28 lg:pb-20 px-4 md:px-12 max-w-[1600px] mx-auto">
+          <Routes>
+            <Route path="/" element={<Overview />} />
+            <Route path="/posts" element={<PostsList />} />
+            <Route path="/media" element={<MediaLibrary />} />
+            <Route path="/categories" element={<CategoriesManager />} />
+            <Route path="/tags" element={<PlaceholderSection title="Tags Manager" />} />
+            <Route path="/comments" element={<CommentsManager />} />
+            <Route path="/feedback" element={<FeedbackManager />} />
+            <Route path="/quotes" element={<QuotesPage />} />
+            <Route path="/glossary" element={<GlossaryManager />} />
+            <Route path="/analytics" element={<AnalyticsDashboard />} />
+            <Route path="/settings" element={<SecurityCenter />} />
+            <Route path="/more" element={<MobileMorePage />} />
+          </Routes>
+        </div>
       </main>
+
+      {/* Mobile Fixed Bottom Navigation */}
+      <MobileBottomNav />
+    </div>
+  );
+}
 
       {/* Mobile Fixed Bottom Navigation */}
       <MobileBottomNav />
