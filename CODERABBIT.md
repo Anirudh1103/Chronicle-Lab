@@ -1,0 +1,12 @@
+# CodeRabbit Review Guidelines
+
+This repository uses CodeRabbit for automated AI code reviews. Please prioritize reviews and findings in the following order:
+
+1. **Security**: Look for vulnerabilities, insecure endpoints, missing authorization or authentication checks, XSS, CSRF, and SQL injections.
+2. **Bugs**: Identify logical bugs, race conditions, type mismatches, and structural errors.
+3. **Performance**: Recommend optimizations for query execution, frontend rendering, loops, and asset handling.
+4. **Accessibility (a11y)**: Check for ARIA compliance, element semantics, keyboard navigation, and contrast matching WCAG standards.
+5. **Architecture**: Review code modularity, design patterns, separation of concerns, and clean routing.
+6. **Maintainability**: Ensure code is easy to read, variables are named appropriately, and redundancy is avoided.
+7. **UI Consistency**: Ensure styles match the modern dark-themed enterprise UI patterns (rounded-xl/rounded-[2rem], slate text, primary accents).
+8. **Style**: Check formatting, lint rules, and basic code styling.
