@@ -95,6 +95,9 @@ export function AdminDashboard() {
       handleLogout();
     } else {
       setConfirmLogout(true);
+      if (isCollapsed) {
+        setIsCollapsed(false);
+      }
       if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
       logoutTimerRef.current = setTimeout(() => {
         setConfirmLogout(false);
@@ -182,7 +185,7 @@ export function AdminDashboard() {
             to="/admin/editor"
             title={isCollapsed ? "New Post" : undefined}
             className={cn(
-              "flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground font-black hover:opacity-90 transition-all shadow-lg shadow-primary/20 overflow-hidden",
+              "flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground font-black hover:opacity-90 transition-all shadow-lg shadow-primary/20 overflow-hidden whitespace-nowrap",
               isCollapsed ? "h-12 rounded-xl" : "py-4 rounded-[1.25rem]"
             )}
           >
@@ -201,7 +204,7 @@ export function AdminDashboard() {
                 to={link.path}
                 title={isCollapsed ? link.label : undefined}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all group relative overflow-hidden",
+                  "flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all group relative overflow-hidden whitespace-nowrap",
                   isActive
                     ? "bg-primary/5 text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -235,7 +238,8 @@ export function AdminDashboard() {
           {/* Collapse Toggle */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all group"
+            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all group whitespace-nowrap"
           >
             <div className={cn("shrink-0", isCollapsed && "mx-auto")}>
               {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
@@ -288,7 +292,7 @@ export function AdminDashboard() {
           <Link
             to="/"
             title={isCollapsed ? "View Website" : undefined}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all whitespace-nowrap"
           >
             <div className={cn("shrink-0", isCollapsed && "mx-auto")}>
               <Globe size={20} />
@@ -300,7 +304,7 @@ export function AdminDashboard() {
             onClick={handleLogoutClick}
             title={isCollapsed ? (confirmLogout ? "Confirm Exit" : "Sign Out") : undefined}
             className={cn(
-              "flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold transition-all active:scale-[0.98] duration-150 border outline-none",
+              "flex items-center gap-3 w-full px-4 py-3 rounded-xl font-bold transition-all active:scale-[0.98] duration-150 border outline-none whitespace-nowrap",
               confirmLogout
                 ? "bg-rose-600 border-rose-600 text-white shadow-lg shadow-rose-600/30"
                 : "border-rose-500/10 text-rose-500 hover:text-white hover:bg-rose-600"
