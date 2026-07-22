@@ -15,9 +15,21 @@ export function IdleTimer() {
   const timerRef = useRef<any>(null);
   const countdownRef = useRef<any>(null);
 
-  // Fetch user settings
+  // Fetch user settings and sync with localStorage fallback
   useEffect(() => {
     let active = true;
+    
+    // Check localStorage first for immediate responsiveness
+    const local = localStorage.getItem('chronicle_security_settings');
+    if (local) {
+      try {
+        const parsed = JSON.parse(local);
+        if (parsed.idleTimeout !== undefined) {
+          setIdleTimeout(parsed.idleTimeout);
+        }
+      } catch (_) {}
+    }
+
     const fetchSettings = async () => {
       try {
         const res = await api.get('/security/settings');
@@ -25,12 +37,27 @@ export function IdleTimer() {
           setIdleTimeout(res.data.idleTimeout);
         }
       } catch (err) {
-        console.error('Failed to load idle timeout settings:', err);
+        console.warn('Failed to load settings from API, checked localStorage fallback:', err);
       }
     };
     fetchSettings();
+
+    // Listen to settings update storage events from other tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'chronicle_security_settings' && e.newValue && active) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed.idleTimeout !== undefined) {
+            setIdleTimeout(parsed.idleTimeout);
+          }
+        } catch (_) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
     return () => {
       active = false;
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

@@ -234,7 +234,13 @@ export default function SecurityCenter() {
       const { data } = await api.get('security/settings');
       setSettings(data);
     } catch (err) {
-      console.error(err);
+      console.warn('Backend settings endpoint failed, falling back to localStorage:', err);
+      const local = localStorage.getItem('chronicle_security_settings');
+      if (local) {
+        try {
+          setSettings(JSON.parse(local));
+        } catch (_) {}
+      }
     } finally {
       setSettingsLoading(false);
     }
@@ -254,21 +260,25 @@ export default function SecurityCenter() {
   const handleUpdateSetting = async (field: string, value: any) => {
     const updated = { ...settings, [field]: value };
     setSettings(updated);
+    localStorage.setItem('chronicle_security_settings', JSON.stringify(updated));
     try {
       await api.put('security/settings', updated);
       addNotification('Setting saved dynamically', 'success');
     } catch (err) {
-      addNotification('Failed to update setting', 'warn');
+      console.warn('Failed to save to backend, saved to localStorage only:', err);
+      addNotification('Setting saved locally (preview mode)', 'success');
     }
   };
 
   const handleSaveAllSettings = async () => {
     setIsSavingSettings(true);
+    localStorage.setItem('chronicle_security_settings', JSON.stringify(settings));
     try {
       await api.put('security/settings', settings);
       addNotification('All security preferences updated successfully', 'success');
     } catch (err) {
-      addNotification('Failed to save security settings', 'warn');
+      console.warn('Failed to save settings to backend, saved locally:', err);
+      addNotification('Security settings saved locally (preview mode)', 'success');
     } finally {
       setIsSavingSettings(false);
     }
