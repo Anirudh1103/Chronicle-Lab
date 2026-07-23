@@ -19,7 +19,7 @@ import { useEditorStore } from '../../store/useEditorStore';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockRenderer } from './BlockRenderer';
 import { Plus, Upload, Sparkles, BookOpen, Settings, Trash2, Copy, ChevronRight, ChevronDown, MoveUp, MoveDown, BookPlus, FolderPlus } from 'lucide-react';
-import { BlockType, EditorBlock } from '../../types/editor';
+import { BlockType, EditorBlock, BlockTypes } from '../../types/editor';
 import api from '../../api/client';
 import { cn } from '../../utils/cn';
 import { getUploadUrl } from '../../utils/url';
@@ -87,7 +87,7 @@ export const EditorCanvas: React.FC = () => {
           const { data } = await api.post('/media/upload', formData);
           const url = getUploadUrl(data.path);
 
-          addBlock(BlockType.IMAGE, undefined, {
+          addBlock(BlockTypes.IMAGE, undefined, {
             url,
             alt: file.name,
             caption: '',
@@ -111,14 +111,14 @@ export const EditorCanvas: React.FC = () => {
 
     const newPart: EditorBlock = {
       id: partId,
-      type: BlockType.PART,
+      type: BlockTypes.PART,
       content: { title: 'Part I: Background', slug: 'part-i-background', description: '' },
       orderIndex: 0
     };
 
     const newChapter: EditorBlock = {
       id: chapId,
-      type: BlockType.CHAPTER,
+      type: BlockTypes.CHAPTER,
       content: { title: 'Chapter 1: Origins', slug: 'chapter-1-origins', description: '' },
       orderIndex: 0,
       parentId: partId
@@ -126,7 +126,7 @@ export const EditorCanvas: React.FC = () => {
 
     const newHeading: EditorBlock = {
       id: headId,
-      type: BlockType.HEADING,
+      type: BlockTypes.HEADING,
       content: { title: 'Section Overview', slug: 'section-overview', description: '' },
       orderIndex: 0,
       parentId: chapId
@@ -134,7 +134,7 @@ export const EditorCanvas: React.FC = () => {
 
     const newSubheading: EditorBlock = {
       id: subId,
-      type: BlockType.SUBHEADING,
+      type: BlockTypes.SUBHEADING,
       content: { title: 'Introduction & Context', slug: 'introduction-context', description: '' },
       orderIndex: 0,
       parentId: headId
@@ -154,7 +154,7 @@ export const EditorCanvas: React.FC = () => {
   // Add structural nodes
   const addPartNode = () => {
     const id = uuidv4();
-    addBlock(BlockType.PART, undefined, {
+    addBlock(BlockTypes.PART, undefined, {
       title: 'New Part',
       slug: `part-new-part`,
       description: '',
@@ -165,7 +165,7 @@ export const EditorCanvas: React.FC = () => {
 
   const addChapterNode = (partId: string) => {
     const id = uuidv4();
-    addBlock(BlockType.CHAPTER, undefined, {
+    addBlock(BlockTypes.CHAPTER, undefined, {
       title: 'New Chapter',
       slug: `chapter-new-chapter`,
       description: '',
@@ -176,7 +176,7 @@ export const EditorCanvas: React.FC = () => {
   };
 
   const addHeadingNode = (chapterId: string) => {
-    addBlock(BlockType.HEADING, undefined, {
+    addBlock(BlockTypes.HEADING, undefined, {
       title: 'New Heading',
       slug: `heading-new-heading`,
       description: '',
@@ -187,7 +187,7 @@ export const EditorCanvas: React.FC = () => {
 
   const addSubheadingNode = (headingId: string) => {
     const id = uuidv4();
-    addBlock(BlockType.SUBHEADING, undefined, {
+    addBlock(BlockTypes.SUBHEADING, undefined, {
       title: 'New Subheading',
       slug: `subheading-new-subheading`,
       description: '',
@@ -208,7 +208,6 @@ export const EditorCanvas: React.FC = () => {
 
     if (direction === 'up' && siblingIdx > 0) {
       const prevSibling = siblings[siblingIdx - 1];
-      const prevIndex = currentBlocks.findIndex(b => b.id === prevSibling.id);
       
       // Swap orderIndex
       const temp = block.orderIndex;
@@ -216,16 +215,17 @@ export const EditorCanvas: React.FC = () => {
       prevSibling.orderIndex = temp;
 
       // Re-sort currentBlocks array based on raw orderIndex changes
+      currentBlocks.sort((a, b) => a.orderIndex - b.orderIndex);
       setBlocks(currentBlocks);
     } else if (direction === 'down' && siblingIdx < siblings.length - 1) {
       const nextSibling = siblings[siblingIdx + 1];
-      const nextIndex = currentBlocks.findIndex(b => b.id === nextSibling.id);
 
       // Swap orderIndex
       const temp = block.orderIndex;
       block.orderIndex = nextSibling.orderIndex;
       nextSibling.orderIndex = temp;
 
+      currentBlocks.sort((a, b) => a.orderIndex - b.orderIndex);
       setBlocks(currentBlocks);
     }
   };
@@ -261,23 +261,23 @@ export const EditorCanvas: React.FC = () => {
   const activeContentBlocks = blocks.filter(b => b.parentId === activeSubId).sort((a, b) => a.orderIndex - b.orderIndex);
 
   const blockTypes: { type: BlockType; label: string }[] = [
-    { type: BlockType.PARAGRAPH, label: 'Text' },
-    { type: BlockType.IMAGE, label: 'Image' },
-    { type: BlockType.GALLERY, label: 'Gallery' },
-    { type: BlockType.TABLE, label: 'Table' },
-    { type: BlockType.CODE, label: 'Code' },
-    { type: BlockType.QUOTE, label: 'Quote' },
-    { type: BlockType.TRANSLATION_QUOTE, label: 'Translation' },
-    { type: BlockType.CALLOUT, label: 'Callout' },
-    { type: BlockType.TIMELINE, label: 'Timeline' },
-    { type: BlockType.REFERENCE, label: 'Citations' },
-    { type: BlockType.LIST, label: 'List' },
-    { type: BlockType.KEY_INSIGHT, label: 'Key Insight' },
-    { type: BlockType.DIVIDER, label: 'Divider' },
-    { type: BlockType.VIDEO, label: 'Video' },
-    { type: BlockType.BUTTON, label: 'Button' },
-    { type: BlockType.PERSONAL_TOUCH, label: 'Personal Touch' },
-    { type: BlockType.SUMMARY, label: 'Summary' },
+    { type: BlockTypes.PARAGRAPH, label: 'Text' },
+    { type: BlockTypes.IMAGE, label: 'Image' },
+    { type: BlockTypes.GALLERY, label: 'Gallery' },
+    { type: BlockTypes.TABLE, label: 'Table' },
+    { type: BlockTypes.CODE, label: 'Code' },
+    { type: BlockTypes.QUOTE, label: 'Quote' },
+    { type: BlockTypes.TRANSLATION_QUOTE, label: 'Translation' },
+    { type: BlockTypes.CALLOUT, label: 'Callout' },
+    { type: BlockTypes.TIMELINE, label: 'Timeline' },
+    { type: BlockTypes.REFERENCE, label: 'Citations' },
+    { type: BlockTypes.LIST, label: 'List' },
+    { type: BlockTypes.KEY_INSIGHT, label: 'Key Insight' },
+    { type: BlockTypes.DIVIDER, label: 'Divider' },
+    { type: BlockTypes.VIDEO, label: 'Video' },
+    { type: BlockTypes.BUTTON, label: 'Button' },
+    { type: BlockTypes.PERSONAL_TOUCH, label: 'Personal Touch' },
+    { type: BlockTypes.SUMMARY, label: 'Summary' },
   ];
 
   return (

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { EditorBlock, PostMetadata, SEOMetadata, BlockType } from '../types/editor';
+import { EditorBlock, PostMetadata, SEOMetadata, BlockType, BlockTypes } from '../types/editor';
 import { v4 as uuidv4 } from 'uuid';
 
 interface EditorState {
@@ -200,15 +200,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
 function getInitialContent(type: BlockType) {
   switch (type) {
-    case BlockType.PART:
+    case BlockTypes.PART:
       return { title: '', slug: '', description: '', metadata: {} };
-    case BlockType.CHAPTER:
+    case BlockTypes.CHAPTER:
       return { title: '', slug: '', description: '', metadata: {} };
-    case BlockType.HEADING:
+    case BlockTypes.HEADING:
       return { level: 2, text: '', title: '', slug: '', description: '', metadata: {} };
-    case BlockType.SUBHEADING:
+    case BlockTypes.SUBHEADING:
       return { level: 3, text: '', title: '', slug: '', description: '', metadata: {} };
-    case BlockType.PARAGRAPH:
+    case BlockTypes.PARAGRAPH:
       return { text: '' };
     case 'image':
       return { url: '', alt: '', caption: '', alignment: 'center' };

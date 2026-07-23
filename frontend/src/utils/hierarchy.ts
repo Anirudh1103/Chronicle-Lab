@@ -1,8 +1,8 @@
-import { EditorBlock, BlockType } from '../types/editor';
+import { EditorBlock, BlockType, BlockTypes } from '../types/editor';
 
 export interface SubheadingNode {
   id: string;
-  type: BlockType.SUBHEADING;
+  type: 'subheading';
   title: string;
   slug: string;
   description?: string;
@@ -14,7 +14,7 @@ export interface SubheadingNode {
 
 export interface HeadingNode {
   id: string;
-  type: BlockType.HEADING;
+  type: 'heading';
   title: string;
   slug: string;
   description?: string;
@@ -26,7 +26,7 @@ export interface HeadingNode {
 
 export interface ChapterNode {
   id: string;
-  type: BlockType.CHAPTER;
+  type: 'chapter';
   title: string;
   slug: string;
   description?: string;
@@ -39,7 +39,7 @@ export interface ChapterNode {
 
 export interface PartNode {
   id: string;
-  type: BlockType.PART;
+  type: 'part';
   title: string;
   slug: string;
   description?: string;
@@ -60,7 +60,7 @@ export function generateSlug(text: string): string {
 }
 
 export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
-  const hasParts = blocks.some(b => b.type === BlockType.PART);
+  const hasParts = blocks.some(b => b.type === BlockTypes.PART);
   if (!hasParts) return [];
 
   const parts: PartNode[] = [];
@@ -73,10 +73,10 @@ export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
 
   sortedBlocks.forEach(block => {
     const parentId = block.parentId || '';
-    if (block.type === BlockType.PART) {
+    if (block.type === BlockTypes.PART) {
       parts.push({
         id: block.id,
-        type: BlockType.PART,
+        type: 'part',
         title: block.content.title || block.content.text || 'Untitled Part',
         slug: block.content.slug || `part-${generateSlug(block.content.title || block.content.text)}`,
         description: block.content.description || '',
@@ -85,11 +85,11 @@ export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
         parentId: null,
         chapters: []
       });
-    } else if (block.type === BlockType.CHAPTER) {
+    } else if (block.type === BlockTypes.CHAPTER) {
       if (!chaptersMap.has(parentId)) chaptersMap.set(parentId, []);
       chaptersMap.get(parentId)!.push({
         id: block.id,
-        type: BlockType.CHAPTER,
+        type: 'chapter',
         title: block.content.title || block.content.text || 'Untitled Chapter',
         slug: block.content.slug || `chapter-${generateSlug(block.content.title || block.content.text)}`,
         description: block.content.description || '',
@@ -99,11 +99,11 @@ export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
         headings: [],
         chapterNumber: 0
       });
-    } else if (block.type === BlockType.HEADING) {
+    } else if (block.type === BlockTypes.HEADING) {
       if (!headingsMap.has(parentId)) headingsMap.set(parentId, []);
       headingsMap.get(parentId)!.push({
         id: block.id,
-        type: BlockType.HEADING,
+        type: 'heading',
         title: block.content.title || block.content.text || 'Untitled Heading',
         slug: block.content.slug || `heading-${generateSlug(block.content.title || block.content.text)}`,
         description: block.content.description || '',
@@ -112,11 +112,11 @@ export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
         parentId,
         subheadings: []
       });
-    } else if (block.type === BlockType.SUBHEADING) {
+    } else if (block.type === BlockTypes.SUBHEADING) {
       if (!subheadingsMap.has(parentId)) subheadingsMap.set(parentId, []);
       subheadingsMap.get(parentId)!.push({
         id: block.id,
-        type: BlockType.SUBHEADING,
+        type: 'subheading',
         title: block.content.title || block.content.text || 'Untitled Subheading',
         slug: block.content.slug || `subheading-${generateSlug(block.content.title || block.content.text)}`,
         description: block.content.description || '',
@@ -172,7 +172,7 @@ export function flattenHierarchyTree(parts: PartNode[], legacyBlocks: EditorBloc
   parts.forEach((part, partIdx) => {
     result.push({
       id: part.id,
-      type: BlockType.PART,
+      type: BlockTypes.PART,
       content: {
         title: part.title,
         slug: part.slug || `part-${generateSlug(part.title)}`,
@@ -186,7 +186,7 @@ export function flattenHierarchyTree(parts: PartNode[], legacyBlocks: EditorBloc
     part.chapters.forEach((chapter, chapIdx) => {
       result.push({
         id: chapter.id,
-        type: BlockType.CHAPTER,
+        type: BlockTypes.CHAPTER,
         content: {
           title: chapter.title,
           slug: chapter.slug || `chapter-${generateSlug(chapter.title)}`,
@@ -200,7 +200,7 @@ export function flattenHierarchyTree(parts: PartNode[], legacyBlocks: EditorBloc
       chapter.headings.forEach((heading, headIdx) => {
         result.push({
           id: heading.id,
-          type: BlockType.HEADING,
+          type: BlockTypes.HEADING,
           content: {
             title: heading.title,
             slug: heading.slug || `heading-${generateSlug(heading.title)}`,
@@ -214,7 +214,7 @@ export function flattenHierarchyTree(parts: PartNode[], legacyBlocks: EditorBloc
         heading.subheadings.forEach((subheading: SubheadingNode, subIdx: number) => {
           result.push({
             id: subheading.id,
-            type: BlockType.SUBHEADING,
+            type: BlockTypes.SUBHEADING,
             content: {
               title: subheading.title,
               slug: subheading.slug || `subheading-${generateSlug(subheading.title)}`,
@@ -249,7 +249,7 @@ export function flattenHierarchyTree(parts: PartNode[], legacyBlocks: EditorBloc
 }
 
 export function validateHierarchy(blocks: EditorBlock[]): string | null {
-  const hasParts = blocks.some(b => b.type === BlockType.PART);
+  const hasParts = blocks.some(b => b.type === BlockTypes.PART);
   if (!hasParts) return null; // Flat structure is fine for legacy compatibility
 
   const blockMap = new Map<string, EditorBlock>();
@@ -258,25 +258,25 @@ export function validateHierarchy(blocks: EditorBlock[]): string | null {
   for (const block of blocks) {
     const parent = block.parentId ? blockMap.get(block.parentId) : null;
     
-    if (block.type === BlockType.PART) {
+    if (block.type === BlockTypes.PART) {
       if (block.parentId) {
         return `Part block '${block.content.title}' cannot be nested inside another block.`;
       }
-    } else if (block.type === BlockType.CHAPTER) {
-      if (!parent || parent.type !== BlockType.PART) {
+    } else if (block.type === BlockTypes.CHAPTER) {
+      if (!parent || parent.type !== BlockTypes.PART) {
         return `Chapter block '${block.content.title}' must be inside a Part block.`;
       }
-    } else if (block.type === BlockType.HEADING) {
-      if (!parent || parent.type !== BlockType.CHAPTER) {
+    } else if (block.type === BlockTypes.HEADING) {
+      if (!parent || parent.type !== BlockTypes.CHAPTER) {
         return `Heading block '${block.content.title}' must be inside a Chapter block.`;
       }
-    } else if (block.type === BlockType.SUBHEADING) {
-      if (!parent || parent.type !== BlockType.HEADING) {
+    } else if (block.type === BlockTypes.SUBHEADING) {
+      if (!parent || parent.type !== BlockTypes.HEADING) {
         return `Subheading block '${block.content.title}' must be inside a Heading block.`;
       }
     } else {
       // Content blocks
-      if (!parent || parent.type !== BlockType.SUBHEADING) {
+      if (!parent || parent.type !== BlockTypes.SUBHEADING) {
         return `Content blocks must be nested inside a Subheading block. Found floating ${block.type} block.`;
       }
     }
