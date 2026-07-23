@@ -58,7 +58,7 @@ interface BlockNode {
   children: BlockNode[];
 }
 
-function validateAndReindexHierarchy(blocks: BlockInput[]): BlockInput[] {
+export function validateAndReindexHierarchy(blocks: BlockInput[]): BlockInput[] {
   // If there are no structural part blocks, treat it as legacy flat post
   const hasParts = blocks.some(b => b.type === BlockType.PART);
   if (!hasParts) {
@@ -72,9 +72,57 @@ function validateAndReindexHierarchy(blocks: BlockInput[]): BlockInput[] {
       }));
   }
 
+  // 1. Graph Validations
+  const seenIds = new Set<string>();
+  blocks.forEach(b => {
+    if (!b.id) {
+      throw new Error("Invalid Hierarchy: Block is missing an ID.");
+    }
+    const id = b.id as string;
+    if (seenIds.has(id)) {
+      throw new Error(`Invalid Hierarchy: Duplicate block ID detected: '${id}'.`);
+    }
+    seenIds.add(id);
+  });
+
+  const parentMap = new Map<string, string>(); // childId -> parentId
+  blocks.forEach(b => {
+    if (b.parentId) {
+      const id = b.id as string;
+      if (!seenIds.has(b.parentId)) {
+        throw new Error(`Invalid Hierarchy: Block '${id}' refers to an unknown parent block '${b.parentId}'.`);
+      }
+      parentMap.set(id, b.parentId);
+    }
+  });
+
+  // Cycle detection
+  const visited = new Set<string>();
+  const recStack = new Set<string>();
+  const detectCycle = (nodeId: string): boolean => {
+    if (recStack.has(nodeId)) return true;
+    if (visited.has(nodeId)) return false;
+    visited.add(nodeId);
+    recStack.add(nodeId);
+    const parentId = parentMap.get(nodeId);
+    if (parentId && detectCycle(parentId)) return true;
+    recStack.delete(nodeId);
+    return false;
+  };
+
+  blocks.forEach(b => {
+    visited.clear();
+    recStack.clear();
+    const id = b.id as string;
+    if (detectCycle(id)) {
+      throw new Error(`Invalid Hierarchy: A circular reference was detected starting from block '${id}'.`);
+    }
+  });
+
+  // 2. Build the Node Map
   const nodeMap = new Map<string, BlockNode>();
   blocks.forEach(b => {
-    const id = b.id || generateId();
+    const id = b.id as string;
     nodeMap.set(id, {
       id,
       type: b.type,
@@ -96,20 +144,20 @@ function validateAndReindexHierarchy(blocks: BlockInput[]): BlockInput[] {
     }
   });
 
+  // 3. Preorder traversal reindexing
   const resultBlocks: BlockInput[] = [];
-  
+  let globalOrderIndex = 0;
+
   const processNodes = (nodes: BlockNode[], expectedType: string | null, parentNode: BlockNode | null) => {
     nodes.sort((a, b) => a.orderIndex - b.orderIndex);
-    nodes.forEach((node, index) => {
+    nodes.forEach(node => {
       if (expectedType && node.type !== expectedType) {
         throw new Error(`Invalid Hierarchy: Parent block of type '${parentNode?.type}' cannot contain child block of type '${node.type}'. Expected type: '${expectedType}'.`);
       }
-      if (expectedType === null) {
-        if (node.type !== BlockType.PART) {
-          throw new Error(`Invalid Hierarchy: Root-level blocks must be of type 'part'. Found block of type '${node.type}'.`);
-        }
+      if (expectedType === null && node.type !== BlockType.PART) {
+        throw new Error(`Invalid Hierarchy: Root-level blocks must be of type 'part'. Found block of type '${node.type}'.`);
       }
-      
+
       let nextExpectedChild: string | null = null;
       if (node.type === BlockType.PART) nextExpectedChild = BlockType.CHAPTER;
       else if (node.type === BlockType.CHAPTER) nextExpectedChild = BlockType.HEADING;
@@ -131,24 +179,24 @@ function validateAndReindexHierarchy(blocks: BlockInput[]): BlockInput[] {
         }
       }
 
-      node.orderIndex = index;
+      const currentOrder = globalOrderIndex++;
       resultBlocks.push({
         id: node.id,
-        type: node.type,
+        type: node.type as any,
         content: node.content,
-        orderIndex: node.orderIndex,
+        orderIndex: currentOrder,
         parentId: parentNode ? parentNode.id : null
       });
 
       if (node.type === BlockType.SUBHEADING) {
         node.children.sort((a, b) => a.orderIndex - b.orderIndex);
-        node.children.forEach((child, cIdx) => {
-          child.orderIndex = cIdx;
+        node.children.forEach(child => {
+          const childOrder = globalOrderIndex++;
           resultBlocks.push({
             id: child.id,
-            type: child.type,
+            type: child.type as any,
             content: child.content,
-            orderIndex: child.orderIndex,
+            orderIndex: childOrder,
             parentId: node.id
           });
         });
@@ -159,6 +207,11 @@ function validateAndReindexHierarchy(blocks: BlockInput[]): BlockInput[] {
   };
 
   processNodes(rootNodes, null, null);
+
+  if (resultBlocks.length !== blocks.length) {
+    throw new Error(`Invalid Hierarchy: Emitted ${resultBlocks.length} blocks but received ${blocks.length} blocks. Some blocks may be disconnected or form cycles.`);
+  }
+
   return resultBlocks;
 }
 
@@ -271,8 +324,15 @@ export class PostService {
 
   static async updatePost(postId: string, data: PostInput) {
     const { blocks, tagIds, categoryIds, ...postData } = data;
-    const validatedBlocks = Array.isArray(blocks) && blocks.length > 0 ? validateAndReindexHierarchy(blocks) : [];
-    const { wordCount, readingTime } = calculateStats(validatedBlocks.length > 0 ? validatedBlocks : blocks);
+    const blocksSupplied = Array.isArray(blocks);
+    const validatedBlocks = blocksSupplied ? validateAndReindexHierarchy(blocks) : [];
+    
+    let statsUpdate = {};
+    if (blocksSupplied) {
+      const { wordCount, readingTime } = calculateStats(validatedBlocks);
+      statsUpdate = { wordCount, readingTime };
+    }
+    
     const featuredOrder = data.featuredOrder ? parseInt(data.featuredOrder as any, 10) : null;
 
     return await prisma.$transaction(async (tx) => {
@@ -294,27 +354,28 @@ export class PostService {
         where: { id: postId },
         data: {
           ...postData,
+          ...statsUpdate,
           featuredOrder: data.featured ? featuredOrder : null,
-          wordCount,
-          readingTime,
           tags: tagIds ? { set: tagIds.map(id => ({ id })) } : undefined,
           categories: categoryIds ? { set: categoryIds.map(id => ({ id })) } : undefined,
         }
       });
 
-      // 2. Handle Blocks safely (only recreate if blocks are explicitly provided and non-empty)
-      if (validatedBlocks.length > 0) {
+      // 2. Handle Blocks safely
+      if (blocksSupplied) {
         await tx.block.deleteMany({ where: { postId } });
-        await tx.block.createMany({
-          data: validatedBlocks.map(block => ({
-            id: block.id,
-            postId,
-            type: block.type,
-            content: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
-            orderIndex: block.orderIndex,
-            parentId: block.parentId || null
-          }))
-        });
+        if (validatedBlocks.length > 0) {
+          await tx.block.createMany({
+            data: validatedBlocks.map(block => ({
+              id: block.id,
+              postId,
+              type: block.type,
+              content: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
+              orderIndex: block.orderIndex,
+              parentId: block.parentId || null
+            }))
+          });
+        }
       }
 
       // 3. Create Revision

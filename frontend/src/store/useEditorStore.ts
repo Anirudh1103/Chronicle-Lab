@@ -12,7 +12,7 @@ interface EditorState {
 
   // Actions
   setBlocks: (blocks: EditorBlock[]) => void;
-  addBlock: (type: BlockType, index?: number, content?: any, parentId?: string) => void;
+  addBlock: (type: BlockType, index?: number, content?: any, parentId?: string) => string;
   updateBlock: (id: string, content: any) => void;
   removeBlock: (id: string) => void;
   moveBlock: (activeId: string, overId: string) => void;
@@ -58,8 +58,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setBlocks: (blocks) => set({ blocks, isDirty: true }),
 
   addBlock: (type, index, content, parentId) => {
+    const id = uuidv4();
     const newBlock: EditorBlock = {
-      id: uuidv4(),
+      id,
       type,
       content: content || getInitialContent(type),
       orderIndex: 0,
@@ -79,6 +80,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
 
     set({ blocks: updatedBlocks, isDirty: true });
+    return id;
   },
 
   updateBlock: (id, content) => {

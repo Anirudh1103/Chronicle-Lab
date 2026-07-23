@@ -153,8 +153,7 @@ export const EditorCanvas: React.FC = () => {
 
   // Add structural nodes
   const addPartNode = () => {
-    const id = uuidv4();
-    addBlock(BlockTypes.PART, undefined, {
+    const id = addBlock(BlockTypes.PART, undefined, {
       title: 'New Part',
       slug: `part-new-part`,
       description: '',
@@ -164,8 +163,7 @@ export const EditorCanvas: React.FC = () => {
   };
 
   const addChapterNode = (partId: string) => {
-    const id = uuidv4();
-    addBlock(BlockTypes.CHAPTER, undefined, {
+    const id = addBlock(BlockTypes.CHAPTER, undefined, {
       title: 'New Chapter',
       slug: `chapter-new-chapter`,
       description: '',
@@ -186,8 +184,7 @@ export const EditorCanvas: React.FC = () => {
   };
 
   const addSubheadingNode = (headingId: string) => {
-    const id = uuidv4();
-    addBlock(BlockTypes.SUBHEADING, undefined, {
+    const id = addBlock(BlockTypes.SUBHEADING, undefined, {
       title: 'New Subheading',
       slug: `subheading-new-subheading`,
       description: '',
