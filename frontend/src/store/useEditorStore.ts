@@ -180,7 +180,16 @@ function getInitialContent(type: BlockType) {
     case 'list':
       return { type: 'bullet', items: [''] };
     case 'gallery':
-      return { images: [], layout: 'grid' };
+      return {
+        images: [],
+        layout: 'carousel',
+        transitionEffect: 'crossfade',
+        displayDuration: 5,
+        transitionDuration: 1000,
+        autoPlay: true,
+        showCaptions: true,
+        showIndex: true
+      };
     case 'keyInsight':
       return { title: 'The Core Insight', points: [''] };
     case 'divider':

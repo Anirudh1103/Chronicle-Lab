@@ -29,6 +29,7 @@ import { useAuthStore } from '../store/authStore';
 import { X } from 'lucide-react';
 import { getUploadUrl } from '../utils/url';
 import { SimpleLoadingScreen } from '../components/blog/SimpleLoadingScreen';
+import { BlogGallery } from '../components/blog/BlogGallery';
 
 const CodeBlockDetails: React.FC<{ content: any }> = ({ content }) => {
   const [copied, setCopied] = useState(false);
@@ -1162,20 +1163,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void) {
       );
 
     case 'gallery':
-      return (
-        <div className="my-16 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {content.images.map((img: any, i: number) => (
-            <motion.div
-              key={i}
-              whileHover={{ scale: 1.02 }}
-              className="relative aspect-square rounded-3xl overflow-hidden cursor-zoom-in shadow-xl"
-              onClick={() => onImageClick?.({src: getUploadUrl(img.url)})}
-            >
-              <img src={getUploadUrl(img.url)} className="w-full h-full object-cover" />
-            </motion.div>
-          ))}
-        </div>
-      );
+      return <BlogGallery content={content} />;
 
     case 'keyInsight':
       return (

@@ -15,6 +15,7 @@ export type BlockType =
   | 'video'
   | 'button'
   | 'personal-touch'
+  | 'gallery'
   | 'summary';
 
 export interface Block {
