@@ -226,7 +226,7 @@ export const BlogEditorPage: React.FC = () => {
   const readingTime = Math.ceil(wordCount / 200);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden">
       {/* Editor Header */}
       <header className="sticky top-0 z-[60] flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
         <div className="flex items-center gap-4">
@@ -346,7 +346,7 @@ export const BlogEditorPage: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex h-[calc(100vh-64px)] overflow-hidden">
+      <main className="flex-1 flex overflow-hidden">
         {/* Main Editor */}
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
           {/* Hero Section Edit */}

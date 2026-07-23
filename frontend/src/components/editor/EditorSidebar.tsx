@@ -60,7 +60,7 @@ export const EditorSidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-80 border-l border-slate-200 bg-white overflow-y-auto dark:border-slate-800 dark:bg-slate-900 h-[calc(100vh-64px)] sticky top-16">
+    <aside className="w-80 border-l border-slate-200 bg-white overflow-y-auto dark:border-slate-800 dark:bg-slate-900 h-full pb-10">
       {/* Media Picker Modal */}
       <AnimatePresence>
         {showMediaPicker && (
