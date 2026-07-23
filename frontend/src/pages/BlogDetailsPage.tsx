@@ -1219,12 +1219,15 @@ function TableCell({ content, onImageClick }: { content: string, onImageClick?: 
       const src = srcMatch ? srcMatch[1] : '';
       const alt = altMatch ? altMatch[1] : '';
 
+      const resolvedSrc = getUploadUrl(src);
+      const updatedContent = content.replace(src, resolvedSrc);
+
       return (
         <button
-          onClick={() => onImageClick?.({ src, alt })}
+          onClick={() => onImageClick?.({ src: resolvedSrc, alt })}
           className="w-full flex justify-center hover:scale-105 transition-transform duration-300 cursor-zoom-in"
         >
-          <div dangerouslySetInnerHTML={{ __html: content }} className="flex justify-center" />
+          <div dangerouslySetInnerHTML={{ __html: updatedContent }} className="flex justify-center" />
         </button>
       );
     }
