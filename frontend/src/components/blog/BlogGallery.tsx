@@ -111,9 +111,17 @@ export const BlogGallery: React.FC<BlogGalleryProps> = ({ content }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, nextSlide, prevSlide]);
 
+  // Handle index out of bounds if images array shrinks during live editing
+  useEffect(() => {
+    if (currentIndex >= images.length && images.length > 0) {
+      setCurrentIndex(Math.max(0, images.length - 1));
+    }
+  }, [images.length, currentIndex]);
+
   if (images.length === 0) return null;
 
-  const currentImage = images[currentIndex];
+  const currentImage = images[currentIndex] || images[0];
+  if (!currentImage || !currentImage.url) return null;
   
   // Slide animation variants
   const getVariants = () => {
