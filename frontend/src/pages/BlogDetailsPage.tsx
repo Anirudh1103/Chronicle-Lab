@@ -249,6 +249,9 @@ export const BlogDetailsPage: React.FC = () => {
     }
   }, [currentChunkIndex, autoFollow, narrationChunks]);
 
+  const parts = useMemo(() => buildHierarchyTree(post?.blocks || []), [post?.blocks]);
+  const hasParts = parts.length > 0;
+
   const handleGlossaryInteraction = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const isGlossaryTerm = target.classList.contains('glossary-term');
@@ -354,9 +357,6 @@ export const BlogDetailsPage: React.FC = () => {
   const personalInsights = post.blocks.filter((b: any) => b.type === 'personalTouch');
   const mainContentBlocks = post.blocks.filter((b: any) => b.type !== 'personalTouch');
   const hasPersonalInsights = personalInsights.length > 0;
-
-  const parts = useMemo(() => buildHierarchyTree(post.blocks), [post.blocks]);
-  const hasParts = parts.length > 0;
 
   const handleNavigate = (blockId: string, slug: string) => {
     window.location.hash = slug;

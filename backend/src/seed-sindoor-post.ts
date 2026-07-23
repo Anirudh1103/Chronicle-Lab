@@ -4,7 +4,7 @@ import { validateAndReindexHierarchy } from './services/post.service';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding the ultimate "Decoding Operation Sindoor" hierarchical book post...');
+  console.log('Seeding the highly detailed "Decoding Operation Sindoor" book post...');
 
   // 1. Get Category
   let category = await prisma.category.findUnique({
@@ -92,7 +92,7 @@ async function main() {
       id: 'p-1-1-1-1',
       type: 'paragraph',
       content: {
-        text: '<p>The Baisaran Valley in Pahalgam, often referred to as the "Valley of Shepherds," was a serene jewel in Jammu and Kashmir. Teeming with tourists and pilgrims, the economy thrived on hospitality and local craftsmanship, and military presence was kept low to allow peaceful daily life to flourish.</p>'
+        text: '<p>The Baisaran Valley in Pahalgam, often referred to as the "Valley of Shepherds" and a jewel in the crown of Jammu and Kashmir\'s tourism, was peaceful in early spring. Surrounded by dense pine forests and accessible mainly by foot or horseback, the area was teeming with tourists enjoying the serene landscape. The local economy thrived on hospitality and local craftsmanship, and military presence was kept low to allow peaceful daily life to flourish.</p>'
       },
       orderIndex: 50,
       parentId: 'sub-1-1-1'
@@ -125,7 +125,7 @@ async function main() {
       id: 'p-1-1-2-1',
       type: 'paragraph',
       content: {
-        text: '<p>The region of Kashmir remains one of the most strategically significant borders in the world. Enclosed by rugged mountain ranges, the Line of Control (LoC) presents extreme challenges for mountain warfare, making defense logistics highly vulnerable to seasonal changes and rough terrain.</p>'
+        text: '<p>Kashmir\'s unique geography is both its greatest asset and its most complex defense challenge. Sharing borders with Pakistan along the volatile Line of Control (LoC), the region features dense coniferous forests, steep ridgelines, and high mountain passes. The terrain demands specialized mountain warfare training, and border security forces must maintain constant vigilance despite extreme weather and natural blind spots.</p>'
       },
       orderIndex: 80,
       parentId: 'sub-1-1-2'
@@ -171,7 +171,7 @@ async function main() {
       id: 'p-1-2-1-1',
       type: 'paragraph',
       content: {
-        text: '<p>A multi-layered counter-terror grid consisting of the Indian Army, CRPF, BSF, and J&K Police maintains round-the-clock vigilance. Despite their continuous operations, mountain passes and dense pine forests present natural blind spots that infiltrators try to exploit during seasonal weather shifts.</p>'
+        text: '<p>The security grid in Jammu and Kashmir is a multi-layered structure comprising the Indian Army, Central Reserve Police Force (CRPF), Border Security Force (BSF), and local J&K Police. Intelligence agencies, including the Intelligence Bureau (IB) and Military Intelligence (MI), coordinate to monitor threat levels. However, the PIR PANJAL mountain range, with its dense pine forests and deep ravines, offers natural cover that highly motivated infiltration groups attempt to exploit during weather transitions.</p>'
       },
       orderIndex: 120,
       parentId: 'sub-1-2-1'
@@ -204,7 +204,7 @@ async function main() {
       id: 'p-1-2-2-1',
       type: 'paragraph',
       content: {
-        text: '<p>In the weeks leading up to April 2025, military intelligence intercepted multiple satellite radio transmissions suggesting movement by launch pads across the border. These OSINT and official updates flagged potential attempts to strike high-profile soft targets in tourist zones.</p>'
+        text: '<p>In the weeks leading up to April 2025, intelligence channels intercepted multiple satellite transmissions from launch pads across the border. Reports suggested that a highly trained infiltration unit had crossed the Pir Panjal range. While warning briefs were disseminated to local grids, the exact target area and timing of the strike remained unknown due to encrypted communications.</p>'
       },
       orderIndex: 150,
       parentId: 'sub-1-2-2'
@@ -348,26 +348,80 @@ async function main() {
       id: 'p-3-1-1-1',
       type: 'paragraph',
       content: {
-        text: '<p>Six brave soldiers made the ultimate sacrifice while containing the attack. Their courageous actions saved hundreds of civilians in Baisaran. They are remembered as national heroes.</p>'
+        text: '<p>Six brave soldiers made the ultimate sacrifice while containing the attack. Their courageous actions saved hundreds of civilians in Baisaran. Here are their profiles and stories of unmatched valor.</p>'
       },
       orderIndex: 270,
       parentId: 'sub-3-1-1'
     },
     {
-      id: 'table-3-1-1-2',
+      id: 'p-3-1-1-2',
+      type: 'paragraph',
+      content: {
+        text: '<p><strong>Havildar Rajendra Prasad</strong> (34, Rajasthan) was a veteran of many counter-insurgency operations. Survived by his wife and two young daughters, he stood his ground and shielded a family of tourists from close-range fire, taking multiple hits to save them.</p>'
+      },
+      orderIndex: 272,
+      parentId: 'sub-3-1-1'
+    },
+    {
+      id: 'p-3-1-1-3',
+      type: 'paragraph',
+      content: {
+        text: '<p><strong>Naik Gurpreet Singh</strong> (29, Punjab) led the frontal QRT team. Survived by his elderly parents, his rapid positioning of tactical shields allowed civilians behind him to crawl to safety. He neutralized one terrorist before succumbing to his wounds.</p>'
+      },
+      orderIndex: 274,
+      parentId: 'sub-3-1-1'
+    },
+    {
+      id: 'p-3-1-1-4',
+      type: 'paragraph',
+      content: {
+        text: '<p><strong>Sepoy Amit Rawat</strong> (23, Uttarakhand) was married only six months prior to the incident. Known for his cheerful nature and sharp shooting, he provided critical flanking fire that pinned down the remaining terrorists, preventing them from advancing further into the tourist huts.</p>'
+      },
+      orderIndex: 276,
+      parentId: 'sub-3-1-1'
+    },
+    {
+      id: 'p-3-1-1-5',
+      type: 'paragraph',
+      content: {
+        text: '<p><strong>Naib Subedar S. Kumar</strong> (38, Tamil Nadu) was a veteran of 18 years in the army. Survived by his wife and son, he coordinated the QRT deployment under intense fire and neutralized two of the attackers before being hit.</p>'
+      },
+      orderIndex: 278,
+      parentId: 'sub-3-1-1'
+    },
+    {
+      id: 'p-3-1-1-6',
+      type: 'paragraph',
+      content: {
+        text: '<p><strong>Sepoy Vicky Rathod</strong> (25, Maharashtra) demonstrated exceptional courage by dragging three wounded civilian horse-handlers out of the direct line of fire, despite being wounded in the shoulder himself. He held his position until the area was fully cleared.</p>'
+      },
+      orderIndex: 279,
+      parentId: 'sub-3-1-1'
+    },
+    {
+      id: 'p-3-1-1-7',
+      type: 'paragraph',
+      content: {
+        text: '<p><strong>Sepoy Shubham Sen</strong> (24, Madhya Pradesh) was the youngest of the team. He volunteered to replace a wounded QRT buddy and successfully neutralized the final terrorist inside a cottage, ensuring the siege was brought to an end.</p>'
+      },
+      orderIndex: 280,
+      parentId: 'sub-3-1-1'
+    },
+    {
+      id: 'table-3-1-1-8',
       type: 'table',
       content: {
         headers: ['Name', 'Rank', 'Age', 'State', 'Valor Detail'],
         rows: [
-          ['Naik Gurpreet Singh', 'Naik', '29', 'Punjab', 'First to engage and cordon the civilian camp'],
-          ['Havildar Rajendra Prasad', 'Havildar', '34', 'Rajasthan', 'Shielded tourists during initial burst'],
-          ['Sepoy Amit Rawat', 'Sepoy', '23', 'Uttarakhand', 'Neutralized one infiltrator at close quarters'],
           ['Naib Subedar S. Kumar', 'Naib Subedar', '38', 'Tamil Nadu', 'Coordinated QRT deployment under fire'],
+          ['Havildar Rajendra Prasad', 'Havildar', '34', 'Rajasthan', 'Shielded tourists during initial burst'],
+          ['Naik Gurpreet Singh', 'Naik', '29', 'Punjab', 'First to engage and cordon the civilian camp'],
           ['Sepoy Vicky Rathod', 'Sepoy', '25', 'Maharashtra', 'Secured emergency evacuation passage'],
-          ['Sepoy Shubham Sen', 'Sepoy', '24', 'Madhya Pradesh', 'Neutralized second infiltrator before succumbing']
+          ['Sepoy Shubham Sen', 'Sepoy', '24', 'Madhya Pradesh', 'Neutralized second infiltrator before succumbing'],
+          ['Sepoy Amit Rawat', 'Sepoy', '23', 'Uttarakhand', 'Neutralized one infiltrator at close quarters']
         ]
       },
-      orderIndex: 280,
+      orderIndex: 282,
       parentId: 'sub-3-1-1'
     },
 
