@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn';
 import { EditorBlock, PostMetadata } from '../../types/editor';
 import { TableOfContents } from './TableOfContents';
 import { getUploadUrl } from '../../utils/url';
+import { BlogGallery } from '../blog/BlogGallery';
 
 interface PreviewModalProps {
   isOpen: boolean;
@@ -175,6 +176,9 @@ function renderBlockPreview(block: EditorBlock) {
           {content.caption && <figcaption className="mt-3 text-center text-sm text-slate-400 italic">{content.caption}</figcaption>}
         </figure>
       );
+
+    case 'gallery':
+      return <BlogGallery content={content} />;
 
     case 'code':
       return (
