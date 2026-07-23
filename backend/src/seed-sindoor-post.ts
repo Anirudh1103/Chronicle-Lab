@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding "Decoding Operation Sindoor" blog post...');
+  console.log('Seeding the ultimate "Decoding Operation Sindoor" blog post...');
 
   // 1. Get Category
   let category = await prisma.category.findUnique({
@@ -50,13 +50,40 @@ async function main() {
     {
       type: 'paragraph',
       content: JSON.stringify({
-        text: '<p>The tranquility of Pahalgam, often referred to as the "Valley of Shepherds" and a jewel in the crown of Jammu and Kashmir\'s tourism, was shattered on the afternoon of April 22, 2025. A group of five heavily armed terrorists descended upon the Baisaran Valley, a picturesque meadow approximately six kilometers from the main Pahalgam town. This area, surrounded by dense pine forests and accessible mainly by foot or horseback, was teeming with tourists enjoying the serene landscape.</p>'
+        text: '<p><em>Note: This post was originally written shortly after the events. It has been updated at the bottom with the newly released official government data.</em></p>'
+      })
+    },
+    {
+      type: 'heading',
+      content: JSON.stringify({
+        level: 2,
+        text: '<p>Chapter 1: The Preceding Event: The Pahalgam Terror Attack (April 22, 2025)</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>The Baisaran Valley Tragedy</p>'
       })
     },
     {
       type: 'paragraph',
       content: JSON.stringify({
-        text: '<p>Eyewitness accounts painted a horrifying picture of the attack. The militants, clad in military-style uniforms and wielding automatic weapons like AK-47s and possibly M4 carbines, reportedly emerged from the dense foliage and began firing indiscriminately at the unsuspecting tourists. Survivors recounted how the terrorists asked for names and inquired about their religion. Some victims were forced to recite the Islamic Kalima (declaration of faith) to distinguish Muslims from non-Muslims.</p>'
+        text: '<p>The tranquility of Pahalgam, often referred to as the "Valley of Shepherds" and a jewel in the crown of Jammu and Kashmir\'s tourism, was shattered on the afternoon of April 22, 2025. A group of five heavily armed terrorists descended upon the Baisaran Valley, a picturesque meadow approximately six kilometers from the main Pahalgam town. This area, surrounded by dense pine forests and accessible mainly by foot or horseback, was teeming with tourists enjoying the serene landscape.</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>A Horrifying Modus Operandi</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>Eyewitness accounts painted a horrifying picture of the attack. The militants, clad in military-style uniforms and wielding automatic weapons like AK-47s and possibly M4 carbines, reportedly emerged from the dense foliage and began firing indiscriminately at the unsuspecting tourists. Initial reports indicated that the attackers specifically targeted the male Hindu tourists. Survivors recounted how the terrorists asked for names and inquired about their religion. Some victims were forced to recite the Islamic Kalima (declaration of faith) to distinguish Muslims from non-Muslims.</p>'
       })
     },
     {
@@ -80,28 +107,36 @@ async function main() {
     {
       type: 'image',
       content: JSON.stringify({
-        url: 'victim_1_1784649894975_9ab9cd6f.webp',
-        alt: 'A grieving wife mourns her husband, a victim of the Pahalgam attack',
-        caption: 'A grieving wife mourns her husband, a victim of the Pahalgam terror attack, whose life was tragically taken by terrorists.'
+        url: '',
+        alt: 'Placeholder: Pahalgam Incident Site',
+        caption: 'Baisaran Valley meadow, site of the tragic April 22 terror attack.'
+      })
+    },
+    {
+      type: 'heading',
+      content: JSON.stringify({
+        level: 2,
+        text: '<p>Chapter 2: The Claim of Responsibility and the Perpetrators</p>'
       })
     },
     {
       type: 'subheading',
       content: JSON.stringify({
         level: 3,
-        text: '<p>The Claim of Responsibility and the Perpetrators</p>'
+        text: '<p>The TRF Claim</p>'
       })
     },
     {
       type: 'paragraph',
       content: JSON.stringify({
-        text: '<p>Within hours of the attack, a relatively lesser-known terror outfit called "The Resistance Front" (TRF) claimed responsibility through a message on the Telegram messaging app. The TRF, believed to be a front organization for the Pakistan-based Lashkar-e-Taiba (LeT), stated that the attack was in retaliation against the Indian government\'s policies regarding the settlement of non-locals in Kashmir following the abrogation of Article 370.</p>'
+        text: '<p>Within hours of the attack, a relatively lesser-known terror outfit called "The Resistance Front" (TRF) claimed responsibility through a message on the Telegram messaging app. The TRF, believed to be a front organization for the Pakistan-based Lashkar-e-Taiba (LeT), stated that the attack was in retaliation against the Indian government\'s policies regarding the settlement of non-locals in Kashmir following the abrogation of Article 370. However, in a perplexing turn of events a few days later, the TRF denied any involvement, attributing their initial claim to a "coordinated cyber intrusion." This denial was met with skepticism by Indian security agencies, who continued to believe in the TRF\'s and by extension, the LeT\'s involvement.</p>'
       })
     },
     {
-      type: 'paragraph',
+      type: 'subheading',
       content: JSON.stringify({
-        text: '<p>However, in a perplexing turn of events a few days later, the TRF denied any involvement, attributing their initial claim to a "coordinated cyber intrusion." This denial was met with skepticism by Indian security agencies, who continued to believe in the TRF\'s and by extension, the LeT\'s involvement.</p>'
+        level: 3,
+        text: '<p>Intelligence Findings</p>'
       })
     },
     {
@@ -111,10 +146,17 @@ async function main() {
       })
     },
     {
+      type: 'heading',
+      content: JSON.stringify({
+        level: 2,
+        text: '<p>Chapter 3: Immediate Aftermath and India\'s Response</p>'
+      })
+    },
+    {
       type: 'subheading',
       content: JSON.stringify({
         level: 3,
-        text: '<p>Immediate Aftermath and India\'s Response</p>'
+        text: '<p>Diplomatic and Economic Action</p>'
       })
     },
     {
@@ -126,114 +168,104 @@ async function main() {
     {
       type: 'paragraph',
       content: JSON.stringify({
-        text: '<p>In the immediate aftermath, India took several strong diplomatic and economic steps against Pakistan. These punitive measures included: (1) Suspension of the Indus Waters Treaty indefinitely, (2) Expulsion and reduction of Pakistani diplomats in India, (3) Closure of the Wagah-Attari border crossing for civilian movement, and (4) Cancellation of visas for Pakistani nationals.</p>'
+        text: '<p>In the immediate aftermath, India took several strong diplomatic and economic steps against Pakistan, including:</p>'
       })
     },
     {
-      type: 'subheading',
+      type: 'list',
       content: JSON.stringify({
-        level: 3,
-        text: '<p>India\'s Offensive: Operation Sindoor</p>'
-      })
-    },
-    {
-      type: 'paragraph',
-      content: JSON.stringify({
-        text: '<p>Following intelligence gathering and strategic planning, the Indian Armed Forces launched "Operation Sindoor" (also referred to as "Operation Sindhoor") on the night of May 6 and the early morning of May 7, 2025. The operation was a multi-domain offensive involving the Army, Air Force, and Navy, with a clear objective: to dismantle terrorist infrastructure inside Pakistan and Pakistan-occupied Kashmir (PoK) from where attacks against India were being planned and executed.</p>'
-      })
-    },
-    {
-      type: 'paragraph',
-      content: JSON.stringify({
-        text: '<p>India conducted precise air and ground strikes, targeting nine identified high-value terrorist launchpads and training camps linked to Lashkar-e-Taiba, Jaish-e-Mohammed, and Hizbul Mujahideen. These locations were deep inside Pakistan and PoK, including areas like Punjab province and Bahawalpur, which were previously considered beyond reach. Over 80 terrorists were eliminated in these initial strikes.</p>'
-      })
-    },
-    {
-      type: 'image',
-      content: JSON.stringify({
-        url: 'operation_sindhoor_1784649885770_ee9322f6.webp',
-        alt: 'Operation Sindoor precision strikes',
-        caption: 'Indian armed forces conducted precision missile strikes on nine terrorist targets across Pakistan and Pakistan-Occupied Kashmir (PoK)'
-      })
-    },
-    {
-      type: 'paragraph',
-      content: JSON.stringify({
-        text: '<p>Pakistan retaliated to the initial Indian strikes with drone and missile attacks targeting Indian military installations and even civilian areas. India\'s air defense systems, including the Akashteer system, successfully intercepted many of these threats.</p>'
-      })
-    },
-    {
-      type: 'paragraph',
-      content: JSON.stringify({
-        text: '<p>In response to Pakistan\'s aggression, India escalated its actions and conducted strikes on at least eleven Pakistani air bases across the Western Front, including Nur Khan, Rafiqui, and Sargodha. These strikes reportedly caused significant damage to Pakistan\'s air force infrastructure, estimated at around 20%. One Pakistani F-16 was shot down by an Indian surface-to-air missile during the aerial skirmish.</p>'
-      })
-    },
-    {
-      type: 'image',
-      content: JSON.stringify({
-        url: 'f16_1784649892181_73f676ec.webp',
-        alt: 'F-16 Shot Down',
-        caption: 'Pakistan F-16 Shot Down By Indian Surface-To-Air Missile'
-      })
-    },
-    {
-      type: 'paragraph',
-      content: JSON.stringify({
-        text: '<p>The Indian Navy deployed its Carrier Battle Group in the Arabian Sea to deter Pakistani naval movements and maintain operational readiness, demonstrating strong tri-service coordination.</p>'
-      })
-    },
-    {
-      type: 'image',
-      content: JSON.stringify({
-        url: 'post_attack_1784649887983_d0166886.webp',
-        alt: 'Post-attack damage',
-        caption: 'India attacked nine terror camps in Pakistan and PoK, neutralizing key command positions.'
-      })
-    },
-    {
-      type: 'subheading',
-      content: JSON.stringify({
-        level: 3,
-        text: '<p>The Fallen Heroes: Honoring the Martyrs of Operation Sindoor</p>'
-      })
-    },
-    {
-      type: 'paragraph',
-      content: JSON.stringify({
-        text: '<p>While the initial government briefings emphasized precision and non-escalation to prevent panic, the operation did not come without a heavy price. The Indian Armed Forces suffered casualties in the line of duty during the intense border skirmishes and strikes. At the time of the operation, these details were kept classified under operational security to avoid giving tactical advantages to the enemy.</p>'
-      })
-    },
-    {
-      type: 'paragraph',
-      content: JSON.stringify({
-        text: '<p>In June 2026, the government officially declassified the casualties and inscribed the names of these six brave personnel at the National War Memorial in New Delhi, acknowledging their ultimate sacrifice for the nation\'s security.</p>'
-      })
-    },
-    {
-      type: 'table',
-      content: JSON.stringify({
-        headers: ['Rank & Name', 'Regiment / Unit', 'Honor / Award'],
-        rows: [
-          ['Subedar Major Pawan Kumar', 'Headquarters 10 Infantry Brigade', 'Mentioned in Despatches'],
-          ['Rifleman Sunil Kumar, Vir Chakra', '4 Jammu and Kashmir Light Infantry', 'Vir Chakra (Gallantry)'],
-          ['Lance Naik Dinesh Kumar', '5 Field Regiment', 'Sena Medal'],
-          ['Agniveer Mood Muralinaik', '851 Light Regiment', 'Honored at National War Memorial'],
-          ['Havildar Sunil Kumar Singh', '237 Field Workshop Company', 'Honored at National War Memorial'],
-          ['Sergeant Surendra Kumar, Vayu Medal', '39 Wing, Indian Air Force', 'Vayu Medal (Gallantry)']
+        type: 'bullet',
+        items: [
+          '<p><strong>Suspension of the Indus Waters Treaty:</strong> A crucial water-sharing agreement was suspended indefinitely as a punitive measure.</p>',
+          '<p><strong>Expulsion of Pakistani Diplomats:</strong> The number of Pakistani diplomats in India was significantly reduced.</p>',
+          '<p><strong>Closure of Borders:</strong> The Wagah-Attari border crossing was closed for civilian movement.</p>',
+          '<p><strong>Cancellation of Visas:</strong> Visas for Pakistani nationals were canceled.</p>'
         ]
       })
     },
     {
-      type: 'paragraph',
+      type: 'heading',
       content: JSON.stringify({
-        text: '<p>The public inscription of these names at the National War Memorial sparked a national debate over the transparency of casualty reporting, yet it stood as a solemn reminder of the steep cost of defending the borders and responding to cross-border terrorism.</p>'
+        level: 2,
+        text: '<p>Chapter 4: India\'s Response: Operation Sindhoor (Launched May 7, 2025)</p>'
       })
     },
     {
       type: 'subheading',
       content: JSON.stringify({
         level: 3,
-        text: '<p>Ceasefire and Continued Volatility</p>'
+        text: '<p>Strategic Offensive</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>Following intelligence gathering and strategic planning, the Indian Armed Forces launched "Operation Sindhoor" on the night of May 6 and the early morning of May 7, 2025. The operation was a multi-domain offensive involving the Army, Air Force, and Navy, with a clear objective: to dismantle terrorist infrastructure inside Pakistan and Pakistan-occupied Kashmir (PoK) from where attacks against India were being planned and executed.</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>Key Actions by the Indian Army and Air Force</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p><strong>Precision Strikes on Terrorist Infrastructure:</strong> India conducted precise air and ground strikes, targeting nine identified high-value terrorist launchpads and training camps linked to Lashkar-e-Taiba, Jaish-e-Mohammed, and Hizbul Mujahideen. These locations were deep inside Pakistan and PoK, including areas like Punjab province and Bahawalpur, which were previously considered beyond reach.</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p><strong>Targeting Key Terrorist Operatives:</strong> Several high-value terrorist operatives, including those involved in past attacks like the IC814 hijack and the Pulwama bombing, were reportedly eliminated in these strikes. The leadership of multiple terror modules was dismantled.</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p><strong>Retaliation Against Pakistan\'s Military Response:</strong> Pakistan retaliated to the initial Indian strikes with drone and missile attacks targeting Indian military installations and even civilian areas. India\'s air defense systems, including the Akashteer system, successfully intercepted many of these threats.</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p><strong>Strikes on Pakistani Air Bases:</strong> In response to Pakistan\'s aggression, India escalated its actions and conducted strikes on at least eleven Pakistani air bases across the Western Front, including Nur Khan, Rafiqui, and Sargodha. These strikes reportedly caused significant damage to Pakistan\'s air force infrastructure, estimated at around 20%.</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p><strong>Naval Deployment:</strong> The Indian Navy deployed in the Arabian Sea to deter Pakistani naval movements and maintain operational readiness.</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p><strong>Emphasis on Precision and Non-Escalation (Initially):</strong> India initially emphasized that its strikes were targeted solely at terrorist infrastructure to avoid civilian and general military casualties, signaling a measured response. However, the escalation by Pakistan led to a broader targeting of military assets.</p>'
+      })
+    },
+    {
+      type: 'image',
+      content: JSON.stringify({
+        url: '',
+        alt: 'Placeholder: Strike aftermath',
+        caption: 'Ground zero of strategic terror camps targeted by precision strikes.'
+      })
+    },
+    {
+      type: 'heading',
+      content: JSON.stringify({
+        level: 2,
+        text: '<p>Chapter 5: Pakistan Calls for a Ceasefire (May 10, 2025)</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>The Ceasefire Agreement</p>'
       })
     },
     {
@@ -243,60 +275,230 @@ async function main() {
       })
     },
     {
-      type: 'paragraph',
+      type: 'subheading',
       content: JSON.stringify({
-        text: '<p>Despite agreeing to the ceasefire, Pakistan violated it within hours. Cross-border firing and drone intrusions were reported in various sectors of Jammu and Kashmir, as well as in Gujarat. India\'s Foreign Secretary strongly condemned these violations, stating that the Indian armed forces were responding appropriately and were instructed to retaliate firmly to any further breaches.</p>'
-      })
-    },
-    {
-      type: 'image',
-      content: JSON.stringify({
-        url: 'violation_1784649883076_85e3c730.webp',
-        alt: 'Ceasefire violations map/photo',
-        caption: 'Ceasefire violations across Jammu and Kashmir hours after the agreement'
+        level: 3,
+        text: '<p>Pakistan Violates the Ceasefire (Hours After Agreement)</p>'
       })
     },
     {
       type: 'paragraph',
       content: JSON.stringify({
-        text: '<p>Prime Minister Modi, in a public address, stated that India had only "paused" military action and would act decisively if another terror attack occurred. He also ruled out any talks with Pakistan unless they pertained to terrorism or the return of PoK. The international community, particularly the US, played a key role in pushing both sides towards de-escalation, though India maintained that the ceasefire was a bilateral decision.</p>'
+        text: '<p>Despite agreeing to the ceasefire, Pakistan violated it within hours. Cross-border firing and drone intrusions were reported in various sectors of Jammu and Kashmir, as well as in Gujarat.</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>India\'s Foreign Secretary strongly condemned these violations, stating that the Indian armed forces were responding appropriately and were instructed to retaliate firmly to any further breaches.</p>'
+      })
+    },
+    {
+      type: 'heading',
+      content: JSON.stringify({
+        level: 2,
+        text: '<p>Chapter 6: Aftermath and Continued Tensions</p>'
       })
     },
     {
       type: 'subheading',
       content: JSON.stringify({
         level: 3,
-        text: '<p>Indian Military Assets Used During Operation Sindoor</p>'
+        text: '<p>The Geopolitical Landscape</p>'
       })
     },
     {
       type: 'paragraph',
       content: JSON.stringify({
-        text: '<p>The operation was a textbook showcase of modern tri-services integration, utilizing high-end offensive and defensive systems.</p>'
+        text: '<p>India accused Pakistan of bad faith and emphasized that the ceasefire was a pause, and any future provocations would be met with a strong response.</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>Prime Minister Modi, in a public address, stated that India had only "paused" military action and would act decisively if another terror attack occurred. He also ruled out any talks with Pakistan unless they pertained to terrorism or the return of PoK.</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>Despite the ceasefire agreement, tensions along the border remained high, with reports of continued violations and heightened vigilance on the Indian side.</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>The international community, particularly the US, had reportedly played a role in pushing both sides towards de-escalation, although India maintained that the ceasefire was a bilateral decision.</p>'
+      })
+    },
+    {
+      type: 'heading',
+      content: JSON.stringify({
+        level: 2,
+        text: '<p>Chapter 7: Indian Military Assets Used During Operation Sindhoor</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>Aircrafts used by India For Offensive Strikes</p>'
       })
     },
     {
       type: 'table',
       content: JSON.stringify({
-        headers: ['Asset Name & Class', 'Type', 'Description', 'Combat Role & Image'],
+        headers: ['Aircraft', 'Description', 'Image'],
         rows: [
-          ['Dassault Rafale', 'Offensive Fighter', 'Advanced multirole fighter jet used for precision deep strikes.', '<img src="raffale_1784649879680_35c118ee.webp" class="max-h-[60px] rounded-lg" />'],
-          ['Sukhoi Su-30MKI', 'Offensive Fighter', 'Mainstay multirole fighter for air superiority and strike roles.', '<img src="su_30mki_1784649877173_504efecd.webp" class="max-h-[60px] rounded-lg" />'],
-          ['Dassault Mirage 2000', 'Offensive Fighter', 'Used for precision strike missions against specific terrorist infrastructure.', '<img src="mirage2000_1784649874336_98e19f6e.webp" class="max-h-[60px] rounded-lg" />'],
-          ['Boeing AH-64 Apache', 'Attack Helicopter', 'Attack helicopters providing cover for special forces and reconnaissance.', '<img src="ah_64d_apache_longbow_1784649866779_ba652bfd.webp" class="max-h-[60px] rounded-lg" />'],
-          ['IAI Harop', 'Kamikaze Drone', 'Israeli-origin loitering munition used to target air defense radars.', '<img src="harop_1784649872272_ac5b1e36.webp" class="max-h-[60px] rounded-lg" />'],
-          ['SkyStriker', 'Loitering Munition', 'Indigenous loitering munitions that made their combat debut during the operation.', '<img src="skystriker_1784649868874_881bca49.webp" class="max-h-[60px] rounded-lg" />'],
-          ['Mikoyan MiG-29 UPG', 'Defensive Fighter', 'Upgraded air superiority fighter engaged in countering Pakistani aircraft.', '<img src="mikoyan_mig_29_upg_1784649863776_cc2e1c7f.webp" class="max-h-[60px] rounded-lg" />'],
-          ['Akash Missile System', 'Air Defense', 'Indigenous surface-to-air missile system highly effective against drones.', '<img src="akash_1784649861884_b034f450.webp" class="max-h-[60px] rounded-lg" />'],
-          ['L-70 Anti-Aircraft Gun', 'Air Defense', 'Upgraded gun countering low-flying drone swarms with radar tracking.', '<img src="defense_1784649859179_69c1bc51.webp" class="max-h-[60px] rounded-lg" />'],
-          ['ZSU-23-4 Shilka', 'Air Defense', 'Upgraded mobile gun system with modern fire control against drone threats.', '<img src="shilka_1784649857078_afe1a211.webp" class="max-h-[60px] rounded-lg" />'],
-          ['BrahMos', 'Supersonic Missile', 'Supersonic cruise missile used to strike strategic Pakistani bases.', '<img src="bramhos_1784649847471_ee4622f1.webp" class="max-h-[60px] rounded-lg" />'],
-          ['SCALP', 'Cruise Missile', 'Long-range, air-launched cruise missile for deep precision bunker strikes.', '<img src="scalp_1784649853974_2a345aee.webp" class="max-h-[60px] rounded-lg" />'],
-          ['HAMMER', 'Guided Bomb', 'Precision-guided bombs for striking medium-range hardened assets.', '<img src="hammer_1784649851282_1874a892.webp" class="max-h-[60px] rounded-lg" />'],
-          ['D4 Anti-Drone System', 'Drone Shield', 'Indigenous system used to detect and jam Pakistani incursions.', '<img src="d4_1784649834230_9be5f376.webp" class="max-h-[60px] rounded-lg" />'],
-          ['EW Systems', 'Electronic Shield', 'Used to disrupt communication and command links of enemy drones.', '<img src="ews_1784649832370_9b2147f7.webp" class="max-h-[60px] rounded-lg" />'],
-          ['Directed Energy (DEW)', 'Advanced Weapon', 'Tactical lasers deployed in limited numbers to burn drone circuits.', '<img src="dew_1784649828441_445a201b.webp" class="max-h-[60px] rounded-lg" />']
+          ['Dassault Rafale', 'Advanced multirole fighter jet used for precision deep strikes.', '<img alt="Rafale" src="" />'],
+          ['Sukhoi Su-30MKI', 'Mainstay multirole fighter for air superiority and strike roles.', '<img alt="Su-30MKI" src="" />'],
+          ['Dassault Mirage 2000', 'Used for precision strike missions against specific terrorist infrastructure.', '<img alt="Mirage 2000" src="" />']
         ]
+      })
+    },
+    {
+      type: 'heading',
+      content: JSON.stringify({
+        level: 2,
+        text: '<p>Chapter 8: Update: Official Government Casualty Data (June 2026)</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>Honoring the Fallen</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>In late June 2026, the Indian government provided the first official disclosure of military casualties from Operation Sindhoor. The names of six armed forces personnel who made the supreme sacrifice have been permanently inscribed on Wall No. 3D of the Tyag Chakra (Circle of Sacrifice) at the National War Memorial in New Delhi.</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>The Fallen Heroes:</p>'
+      })
+    },
+    {
+      type: 'list',
+      content: JSON.stringify({
+        type: 'bullet',
+        items: [
+          '<p><strong>Subedar Major Pawan Kumar</strong> – Headquarters 10 Infantry Brigade</p>',
+          '<p><strong>Rifleman Sunil Kumar, Vir Chakra</strong> – 4 Jammu and Kashmir Light Infantry</p>',
+          '<p><strong>Lance Naik Dinesh Kumar</strong> – 5 Field Regiment</p>',
+          '<p><strong>Agniveer Mood Muralinaik</strong> – 851 Light Regiment</p>',
+          '<p><strong>Havildar Sunil Kumar Singh</strong> – 237 Field Workshop Company</p>',
+          '<p><strong>Sergeant Surendra Kumar, Vayu Sena Medal</strong> – 39 Wing, Indian Air Force</p>'
+        ]
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>Additionally, the government confirmed that the precision strikes launched across the nine terrorist camps successfully eliminated over 100 terrorists. This included key handlers and trainers affiliated with Jaish-e-Mohammed, Lashkar-e-Taiba, and Hizbul Mujahideen, effectively dismantling major segments of the terror infrastructure.</p>'
+      })
+    },
+    {
+      type: 'heading',
+      content: JSON.stringify({
+        level: 2,
+        text: '<p>Chapter 9: Analysis of Air Defense & Joint-Operations Coordination</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>The Akashteer Tactical Air Defense Shield</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>During the escalation, Pakistan launched several counter-strike attempts employing tactical drones, medium-altitude loitering munitions, and precision glide bombs. The cornerstone of the Indian defense was the deployment of the Akashteer system. An indigenous automated air defense command and control grid, Akashteer linked forward-deployed search radars, flight control computers, and firing batteries. By constructing a real-time integrated air picture, Akashteer enabled Indian surface-to-air units to successfully detect, track, and neutralize hostile intrusions along the border with unprecedented efficiency.</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>Carrier Battle Group Deployment in the Arabian Sea</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>Simultaneous with the strikes, the Indian Navy executed a massive mobilization in the Arabian Sea, deploying a Carrier Battle Group spearheaded by INS Vikrant. The naval fleet established an impenetrable surveillance perimeter and operational screen, restricting the Pakistani Navy\'s freedom of maneuver. This maritime posture acted as a critical strategic deterrent, blockading key shipping lanes and signaling to regional actors that any attempt to widen the conflict would result in an absolute maritime blockade.</p>'
+      })
+    },
+    {
+      type: 'heading',
+      content: JSON.stringify({
+        level: 2,
+        text: '<p>Chapter 10: Electronic Warfare and the Anti-Drone Campaign</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>Neutralizing the Drone Threat</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>The border sectors witnessed an unprecedented volume of unmanned aerial vehicle (UAV) sorties from Pakistan. To counter this threat, Indian forces deployed the D4 Anti-Drone System alongside electronic warfare (EW) jamming clusters. These units successfully jammed the command frequencies, radio control bands, and satellite navigation systems of the incoming drone swarms. Cut off from their operators, the hostile drones were either forced into soft-landings or crashed harmlessly in remote buffer zones, preventing the reconnaissance of Indian positions.</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>Debuts of Loitering Munitions</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>Operation Sindhoor marked a technological leap for the Indian military with the combat debut of indigenous and imported loitering munitions, including the Harop and SkyStriker kamikaze drones. Guided by real-time target identification feeds, these munitions hovered over contested sectors before executing high-precision, vertical dives on hostile radar centers, ammunition depots, and assembly points. The integration of loitering platforms minimized the risk to manned aircraft and ensured that critical tactical targets were neutralized with surgical precision.</p>'
+      })
+    },
+    {
+      type: 'heading',
+      content: JSON.stringify({
+        level: 2,
+        text: '<p>Chapter 11: International Reactions and the Geopolitical Fallout</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>Global Powers Urging Moderation</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>The sudden escalation between two nuclear-armed states sent shockwaves through international diplomatic channels. Washington, Moscow, and Brussels engaged in round-the-clock backchannel negotiations, emphasizing the need for immediate de-escalation. India maintained its stance that Operation Sindhoor was a non-military, pre-emptive counter-terrorism action strictly targeted at active terror camps. This message resonated globally, as multiple countries acknowledged India\'s right to defend its citizens against cross-border incursions.</p>'
+      })
+    },
+    {
+      type: 'subheading',
+      content: JSON.stringify({
+        level: 3,
+        text: '<p>Pakistan\'s Strategic Isolation</p>'
+      })
+    },
+    {
+      type: 'paragraph',
+      content: JSON.stringify({
+        text: '<p>In the wake of the operation, Islamabad attempted to mobilize support at the United Nations Security Council, alleging Indian aggression. However, Pakistan found itself diplomatically isolated. The undeniable proof of Lashkar-e-Taiba (LeT) and Special Service Group (SSG) linked training camps inside Bahawalpur and Punjab province, combined with the brutality of the Pahalgam terror attack, led major global powers to pressure Pakistan to dismantle its proxy warfare infrastructure once and for all.</p>'
       })
     },
     {
