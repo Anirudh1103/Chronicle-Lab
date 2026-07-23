@@ -1,4 +1,6 @@
 export type BlockType =
+  | 'part'
+  | 'chapter'
   | 'heading'
   | 'subheading'
   | 'paragraph'
@@ -23,11 +25,40 @@ export type BlockType =
   | 'keyInsight'
   | 'summary';
 
+export const BlockTypes = {
+  PART: 'part',
+  CHAPTER: 'chapter',
+  HEADING: 'heading',
+  SUBHEADING: 'subheading',
+  PARAGRAPH: 'paragraph',
+  IMAGE: 'image',
+  GALLERY: 'gallery',
+  TABLE: 'table',
+  CODE: 'code',
+  QUOTE: 'quote',
+  TRANSLATION_QUOTE: 'translationQuote',
+  DIVIDER: 'divider',
+  CALLOUT: 'callout',
+  BUTTON: 'button',
+  VIDEO: 'video',
+  FILE: 'file',
+  CHECKLIST: 'checklist',
+  TIMELINE: 'timeline',
+  PERSONAL_TOUCH: 'personalTouch',
+  RELATED_LINKS: 'relatedLinks',
+  EMBED: 'embed',
+  REFERENCE: 'reference',
+  LIST: 'list',
+  KEY_INSIGHT: 'keyInsight',
+  SUMMARY: 'summary'
+} as const;
+
 export interface EditorBlock {
   id: string;
   type: BlockType;
   content: any;
   orderIndex: number;
+  parentId?: string;
   isCollapsed?: boolean;
 }
 

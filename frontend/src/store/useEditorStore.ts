@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { EditorBlock, PostMetadata, SEOMetadata, BlockType } from '../types/editor';
+import { EditorBlock, PostMetadata, SEOMetadata, BlockType, BlockTypes } from '../types/editor';
 import { v4 as uuidv4 } from 'uuid';
 
 interface EditorState {
@@ -12,7 +12,7 @@ interface EditorState {
 
   // Actions
   setBlocks: (blocks: EditorBlock[]) => void;
-  addBlock: (type: BlockType, index?: number, content?: any) => void;
+  addBlock: (type: BlockType, index?: number, content?: any, parentId?: string) => string;
   updateBlock: (id: string, content: any) => void;
   removeBlock: (id: string) => void;
   moveBlock: (activeId: string, overId: string) => void;
@@ -57,12 +57,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   setBlocks: (blocks) => set({ blocks, isDirty: true }),
 
-  addBlock: (type, index, content) => {
+  addBlock: (type, index, content, parentId) => {
+    const id = uuidv4();
     const newBlock: EditorBlock = {
-      id: uuidv4(),
+      id,
       type,
       content: content || getInitialContent(type),
-      orderIndex: 0, // Will be recalculated or handled by index
+      orderIndex: 0,
+      parentId,
     };
 
     const currentBlocks = [...get().blocks];
@@ -72,13 +74,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       currentBlocks.push(newBlock);
     }
 
-    // Update orderIndex based on position
     const updatedBlocks = currentBlocks.map((block, idx) => ({
       ...block,
       orderIndex: idx,
     }));
 
     set({ blocks: updatedBlocks, isDirty: true });
+    return id;
   },
 
   updateBlock: (id, content) => {
@@ -89,10 +91,28 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   removeBlock: (id) => {
-    set((state) => ({
-      blocks: state.blocks.filter((b) => b.id !== id),
-      isDirty: true,
+    const blocks = get().blocks;
+    const idsToRemove = new Set<string>([id]);
+    
+    // Find all descendants recursively
+    let foundNew = true;
+    while (foundNew) {
+      foundNew = false;
+      blocks.forEach(b => {
+        if (b.parentId && idsToRemove.has(b.parentId) && !idsToRemove.has(b.id)) {
+          idsToRemove.add(b.id);
+          foundNew = true;
+        }
+      });
+    }
+
+    const updatedBlocks = blocks.filter((b) => !idsToRemove.has(b.id));
+    const reindexed = updatedBlocks.map((block, idx) => ({
+      ...block,
+      orderIndex: idx,
     }));
+
+    set({ blocks: reindexed, isDirty: true });
   },
 
   moveBlock: (activeId, overId) => {
@@ -114,24 +134,51 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   duplicateBlock: (id) => {
-    const blocks = [...get().blocks];
+    const blocks = get().blocks;
     const index = blocks.findIndex((b) => b.id === id);
-    if (index !== -1) {
-      const blockToDuplicate = blocks[index];
-      const newBlock = {
-        ...blockToDuplicate,
-        id: uuidv4(),
-        orderIndex: index + 0.5,
-      };
-      blocks.splice(index + 1, 0, newBlock);
+    if (index === -1) return;
 
-      const updatedBlocks = blocks.map((block, idx) => ({
-        ...block,
-        orderIndex: idx,
-      }));
+    // Find all descendants recursively and preserve their order
+    const descendants: EditorBlock[] = [];
+    const getDescendants = (parentId: string) => {
+      const children = blocks.filter(b => b.parentId === parentId).sort((a, b) => a.orderIndex - b.orderIndex);
+      children.forEach(c => {
+        descendants.push(c);
+        getDescendants(c.id);
+      });
+    };
+    getDescendants(id);
 
-      set({ blocks: updatedBlocks, isDirty: true });
-    }
+    // Map old IDs to new duplicated IDs
+    const idMap: Record<string, string> = { [id]: uuidv4() };
+    descendants.forEach(d => {
+      idMap[d.id] = uuidv4();
+    });
+
+    const duplicatedBlocks: EditorBlock[] = [
+      {
+        ...blocks[index],
+        id: idMap[id],
+        parentId: blocks[index].parentId, // keep same parent
+        orderIndex: index + 0.1
+      },
+      ...descendants.map(d => ({
+        ...d,
+        id: idMap[d.id],
+        parentId: d.parentId ? idMap[d.parentId] : undefined,
+        orderIndex: index + 0.1
+      }))
+    ];
+
+    const currentBlocks = [...blocks];
+    currentBlocks.splice(index + 1, 0, ...duplicatedBlocks);
+
+    const reindexed = currentBlocks.map((b, idx) => ({
+      ...b,
+      orderIndex: idx
+    }));
+
+    set({ blocks: reindexed, isDirty: true });
   },
 
   toggleCollapse: (id) => {
@@ -155,11 +202,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
 function getInitialContent(type: BlockType) {
   switch (type) {
-    case 'heading':
-      return { level: 2, text: '', subtext: '' };
-    case 'subheading':
-      return { level: 3, text: '' };
-    case 'paragraph':
+    case BlockTypes.PART:
+      return { title: '', slug: '', description: '', metadata: {} };
+    case BlockTypes.CHAPTER:
+      return { title: '', slug: '', description: '', metadata: {} };
+    case BlockTypes.HEADING:
+      return { level: 2, text: '', title: '', slug: '', description: '', metadata: {} };
+    case BlockTypes.SUBHEADING:
+      return { level: 3, text: '', title: '', slug: '', description: '', metadata: {} };
+    case BlockTypes.PARAGRAPH:
       return { text: '' };
     case 'image':
       return { url: '', alt: '', caption: '', alignment: 'center' };

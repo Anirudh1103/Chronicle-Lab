@@ -99,7 +99,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({ isOpen, onClose, met
             <div className="space-y-8">
               {blocks.map((block) => (
                 <div key={block.id} id={block.id}>
-                  {renderBlockPreview(block)}
+                  {renderBlockPreview(block, blocks)}
                 </div>
               ))}
             </div>
@@ -110,18 +110,63 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({ isOpen, onClose, met
   );
 };
 
-function renderBlockPreview(block: EditorBlock) {
+function renderBlockPreview(block: EditorBlock, blocks: EditorBlock[] = []) {
   const { type, content } = block;
   switch (type as string) {
+    case 'part': {
+      const accentColor = content.metadata?.accentColor || '#f97316';
+      return (
+        <div
+          className="relative my-12 w-full text-center py-10 px-4 rounded-3xl bg-slate-950 border border-slate-800 shadow-xl"
+          style={{ borderTopColor: accentColor, borderTopWidth: '4px' }}
+        >
+          <span className="text-[9px] font-black tracking-widest uppercase opacity-60 block mb-2" style={{ color: accentColor }}>
+            Book Section
+          </span>
+          <h2 className="text-2xl md:text-3xl font-editorial font-black text-white leading-tight">
+            {content.title}
+          </h2>
+          {content.description && (
+            <p className="text-slate-400 max-w-md mx-auto mt-4 text-xs leading-relaxed font-medium">
+              {content.description}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    case 'chapter': {
+      const chapIndex = blocks.filter((b) => b.type === 'chapter').findIndex((b) => b.id === block.id) + 1;
+      return (
+        <div className="pt-8 pb-3 border-b border-slate-200 dark:border-slate-800 mb-6 text-left">
+          <span className="text-[9px] font-black uppercase tracking-widest text-[#f97316] block mb-1">
+            Chapter {chapIndex.toString().padStart(2, '0')}
+          </span>
+          <h3 className="text-xl md:text-2xl font-editorial font-black text-slate-900 dark:text-white leading-snug">
+            {content.title}
+          </h3>
+          {content.description && (
+            <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm leading-relaxed font-medium">
+              {content.description}
+            </p>
+          )}
+        </div>
+      );
+    }
+
     case 'heading':
-      const HeadingTag = `h${content.level}` as keyof JSX.IntrinsicElements;
+    case 'subheading': {
+      const level = content.level || (type === 'subheading' ? 3 : 2);
+      const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
       const classes = {
         1: 'text-4xl font-black',
         2: 'text-3xl font-bold',
         3: 'text-2xl font-bold',
         4: 'text-xl font-semibold',
-      }[content.level as 1 | 2 | 3 | 4] || 'text-lg font-semibold';
-      return <HeadingTag className={cn(classes, "text-slate-900 dark:text-white")} dangerouslySetInnerHTML={{ __html: content.text }} />;
+      }[level as 1 | 2 | 3 | 4] || 'text-lg font-semibold';
+      const titleVal = content.title || content.text || '';
+      return <HeadingTag className={cn(classes, "text-slate-900 dark:text-white mt-6")} dangerouslySetInnerHTML={{ __html: titleVal }} />;
+    }
 
     case 'paragraph':
       return (
