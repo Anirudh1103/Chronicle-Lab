@@ -9,19 +9,24 @@ export function useReadingProgress(blocks: EditorBlock[]) {
 
   // Focus navigation on significant structural headings for a cleaner TOC
   const headings = useMemo(() =>
-    blocks.filter(b => (b.type === 'heading' || b.type === 'subheading') && b.content.level > 1 && stripHtml(b.content.text) !== ''),
+    blocks.filter(b =>
+      b.type === 'part' ||
+      b.type === 'chapter' ||
+      b.type === 'heading' ||
+      b.type === 'subheading'
+    ),
     [blocks]
   );
 
   const tree = useMemo(() => {
     return headings.map((h, i) => ({
       id: h.id,
-      text: stripHtml(h.content.text),
-      level: h.content.level,
+      text: stripHtml(h.content.title || h.content.text || ''),
+      level: h.content.level || 2,
       index: i,
       children: [],
-      type: 'heading'
-    } as HeadingNode));
+      type: h.type
+    } as any));
   }, [headings]);
 
   useEffect(() => {

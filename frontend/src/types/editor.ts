@@ -1,33 +1,37 @@
-export type BlockType =
-  | 'heading'
-  | 'subheading'
-  | 'paragraph'
-  | 'image'
-  | 'gallery'
-  | 'table'
-  | 'code'
-  | 'quote'
-  | 'translationQuote'
-  | 'divider'
-  | 'callout'
-  | 'button'
-  | 'video'
-  | 'file'
-  | 'checklist'
-  | 'timeline'
-  | 'personalTouch'
-  | 'relatedLinks'
-  | 'embed'
-  | 'reference'
-  | 'list'
-  | 'keyInsight'
-  | 'summary';
+export enum BlockType {
+  PART = 'part',
+  CHAPTER = 'chapter',
+  HEADING = 'heading',
+  SUBHEADING = 'subheading',
+  PARAGRAPH = 'paragraph',
+  IMAGE = 'image',
+  GALLERY = 'gallery',
+  TABLE = 'table',
+  CODE = 'code',
+  QUOTE = 'quote',
+  TRANSLATION_QUOTE = 'translationQuote',
+  DIVIDER = 'divider',
+  CALLOUT = 'callout',
+  BUTTON = 'button',
+  VIDEO = 'video',
+  FILE = 'file',
+  CHECKLIST = 'checklist',
+  TIMELINE = 'timeline',
+  PERSONAL_TOUCH = 'personalTouch',
+  RELATED_LINKS = 'relatedLinks',
+  EMBED = 'embed',
+  REFERENCE = 'reference',
+  LIST = 'list',
+  KEY_INSIGHT = 'keyInsight',
+  SUMMARY = 'summary'
+}
 
 export interface EditorBlock {
   id: string;
   type: BlockType;
   content: any;
   orderIndex: number;
+  parentId?: string;
   isCollapsed?: boolean;
 }
 

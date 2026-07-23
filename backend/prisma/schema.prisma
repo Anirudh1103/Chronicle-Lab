@@ -103,12 +103,16 @@ model Block {
   type       String
   content    String
   orderIndex Float
+  parentId   String?  @map("parent_id")
+  parent     Block?   @relation("BlockNesting", fields: [parentId], references: [id], onDelete: Cascade)
+  children   Block[]  @relation("BlockNesting")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId])
   @@index([orderIndex])
+  @@index([parentId])
 }
 
 model Revision {

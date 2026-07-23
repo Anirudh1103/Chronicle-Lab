@@ -30,6 +30,8 @@ import { X } from 'lucide-react';
 import { getUploadUrl } from '../utils/url';
 import { SimpleLoadingScreen } from '../components/blog/SimpleLoadingScreen';
 import { BlogGallery } from '../components/blog/BlogGallery';
+import { buildHierarchyTree } from '../utils/hierarchy';
+import { OutlineNavigation } from '../components/blog/OutlineNavigation';
 
 const CodeBlockDetails: React.FC<{ content: any }> = ({ content }) => {
   const [copied, setCopied] = useState(false);
@@ -353,9 +355,31 @@ export const BlogDetailsPage: React.FC = () => {
   const mainContentBlocks = post.blocks.filter((b: any) => b.type !== 'personalTouch');
   const hasPersonalInsights = personalInsights.length > 0;
 
+  const parts = useMemo(() => buildHierarchyTree(post.blocks), [post.blocks]);
+  const hasParts = parts.length > 0;
+
+  const handleNavigate = (blockId: string, slug: string) => {
+    window.location.hash = slug;
+    const element = document.getElementById(blockId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div className={cn("min-h-screen bg-background pb-32 transition-all duration-700", isFocusMode && "pt-0")}>
-      {!isFocusMode && <ReadingNavigator blocks={post.blocks} />}
+      {!isFocusMode && (
+        hasParts ? (
+          <OutlineNavigation
+            postId={post.id}
+            parts={parts}
+            activeBlockId={activeId}
+            onNavigate={handleNavigate}
+          />
+        ) : (
+          <ReadingNavigator blocks={post.blocks} />
+        )
+      )}
 
       {/* Top Progress Bar */}
       <motion.div
@@ -550,7 +574,7 @@ export const BlogDetailsPage: React.FC = () => {
                       : "opacity-90 hover:opacity-100"
                   )}
                 >
-                  {renderBlock(block, setActiveImage)}
+                  {renderBlock(block, setActiveImage, post.blocks)}
                 </div>
               );
             })}
@@ -844,28 +868,76 @@ export const BlogDetailsPage: React.FC = () => {
 
 
 
-function renderBlock(block: any, onImageClick?: (img: any) => void) {
+function renderBlock(block: any, onImageClick?: (img: any) => void, blocks: any[] = []) {
   const { type, content } = block;
   switch (type) {
+    case 'part': {
+      const accentColor = content.metadata?.accentColor || '#f97316';
+      return (
+        <div
+          id={block.id}
+          className="relative my-24 w-full text-center py-20 px-8 rounded-[3.5rem] bg-gradient-to-b from-[#070c1d]/95 to-[#030611]/98 border border-slate-800/80 shadow-2xl select-none"
+          style={{ borderTopColor: accentColor, borderTopWidth: '4px' }}
+        >
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center border shadow-xl bg-[#070c1d]" style={{ borderColor: accentColor }}>
+            <BookOpen className="w-6 h-6" style={{ color: accentColor }} />
+          </div>
+          <span className="text-[10px] font-black tracking-[0.4em] uppercase opacity-60 block mb-3" style={{ color: accentColor }}>
+            Book Section
+          </span>
+          <h2 className="text-4xl md:text-6xl font-editorial italic font-black text-white leading-tight">
+            {content.title}
+          </h2>
+          {content.description && (
+            <p className="text-slate-400 max-w-xl mx-auto mt-6 text-sm md:text-base leading-relaxed font-medium">
+              {content.description}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    case 'chapter': {
+      const chapIndex = blocks.filter((b: any) => b.type === 'chapter').findIndex((b: any) => b.id === block.id) + 1;
+      return (
+        <div id={block.id} className="pt-16 pb-6 border-b border-slate-200/50 dark:border-white/5 mb-12 select-none text-left">
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f97316] block mb-2">
+            Chapter {chapIndex.toString().padStart(2, '0')}
+          </span>
+          <h3 className="text-3xl md:text-5xl font-editorial italic font-black text-slate-900 dark:text-white leading-snug">
+            {content.title}
+          </h3>
+          {content.description && (
+            <p className="text-slate-500 dark:text-slate-400 mt-4 text-base md:text-lg leading-relaxed font-medium max-w-2xl">
+              {content.description}
+            </p>
+          )}
+        </div>
+      );
+    }
+
     case 'heading':
-    case 'subheading':
-      const Tag = `h${content.level}` as any;
+    case 'subheading': {
+      const level = content.level || (type === 'subheading' ? 3 : 2);
+      const Tag = `h${level}` as any;
       const classes = {
         1: 'text-4xl sm:text-5xl md:text-7xl font-black mb-4 md:mb-6',
         2: 'text-3xl sm:text-4xl md:text-6xl font-bold mb-4 md:mb-6 pt-10 md:pt-16',
         3: 'text-2xl sm:text-3xl md:text-5xl font-bold mb-3 md:mb-4 pt-6 md:pt-10',
-      }[content.level as 1 | 2 | 3] || 'text-xl font-bold';
+      }[level as 1 | 2 | 3] || 'text-xl font-bold';
+      const titleText = content.title || content.text || '';
       return (
-        <div className={cn("mb-12", type === 'subheading' && "pl-4 md:pl-8 border-l-4 border-primary/10 ml-2 md:ml-4")}>
-          <Tag className={cn(classes, "font-editorial italic", type === 'subheading' && "text-slate-800 dark:text-slate-200")} dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />
+        <div id={block.id} className={cn("mb-12 scroll-mt-32", type === 'subheading' && "pl-4 md:pl-8 border-l-4 border-primary/10 ml-2 md:ml-4")}>
+          <Tag className={cn(classes, "font-editorial italic", type === 'subheading' && "text-slate-800 dark:text-slate-200")} dangerouslySetInnerHTML={{ __html: highlightGlossary(titleText) }} />
           {content.subtext && (
             <p className="text-xl md:text-2xl text-muted-foreground font-medium border-l-4 border-primary/20 pl-8 py-2 mt-4" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.subtext) }} />
           )}
         </div>
       );
+    }
 
     case 'paragraph':
-      return <div className="text-lg sm:text-xl md:text-2xl leading-[1.6] mb-10 text-slate-700 dark:text-slate-300 text-left" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />;
+      return <div id={block.id} className="text-lg sm:text-xl md:text-2xl leading-[1.6] mb-10 text-slate-700 dark:text-slate-300 text-left scroll-mt-32" dangerouslySetInnerHTML={{ __html: highlightGlossary(content.text) }} />;
 
     case 'image':
       const isWideImage = content.alt?.toLowerCase().includes('map') || 
