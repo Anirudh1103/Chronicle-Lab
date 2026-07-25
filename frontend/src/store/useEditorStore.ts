@@ -62,7 +62,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const newBlock: EditorBlock = {
       id,
       type,
-      content: content || getInitialContent(type),
+      content: content ? { ...getInitialContent(type), ...content } : getInitialContent(type),
       orderIndex: 0,
       parentId,
     };
@@ -116,20 +116,37 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   moveBlock: (activeId, overId) => {
-    const blocks = [...get().blocks];
-    const oldIndex = blocks.findIndex((b) => b.id === activeId);
-    const newIndex = blocks.findIndex((b) => b.id === overId);
+    const blocks = get().blocks;
+    const activeBlock = blocks.find(b => b.id === activeId);
+    const overBlock = blocks.find(b => b.id === overId);
 
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const [movedBlock] = blocks.splice(oldIndex, 1);
-      blocks.splice(newIndex, 0, movedBlock);
+    if (activeBlock && overBlock && activeBlock.parentId === overBlock.parentId) {
+      const parentId = activeBlock.parentId;
+      const siblings = blocks.filter(b => b.parentId === parentId).sort((a, b) => a.orderIndex - b.orderIndex);
+      const oldIndex = siblings.findIndex(b => b.id === activeId);
+      const newIndex = siblings.findIndex(b => b.id === overId);
 
-      const updatedBlocks = blocks.map((block, idx) => ({
-        ...block,
-        orderIndex: idx,
-      }));
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const [moved] = siblings.splice(oldIndex, 1);
+        siblings.splice(newIndex, 0, moved);
 
-      set({ blocks: updatedBlocks, isDirty: true });
+        const siblingUpdates = new Map<string, number>();
+        siblings.forEach((b, idx) => {
+          siblingUpdates.set(b.id, idx);
+        });
+
+        const updatedBlocks = blocks.map(b => {
+          if (siblingUpdates.has(b.id)) {
+            return {
+              ...b,
+              orderIndex: siblingUpdates.get(b.id)!
+            };
+          }
+          return b;
+        });
+
+        set({ blocks: updatedBlocks, isDirty: true });
+      }
     }
   },
 

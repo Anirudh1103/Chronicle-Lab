@@ -654,7 +654,10 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                         <input
                           type="text"
                           value={part.title}
-                          onChange={(e) => updateBlock(part.id, { ...blocks.find(b => b.id === part.id)!.content, title: e.target.value })}
+                          onChange={(e) => {
+                            const b = blocks.find(x => x.id === part.id);
+                            if (b) updateBlock(part.id, { ...b.content, title: e.target.value });
+                          }}
                           className="bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-800 focus:border-[#f97316] font-bold text-[11px] uppercase tracking-wider text-slate-800 dark:text-slate-200 focus:outline-none flex-1 truncate py-0.5"
                           placeholder="Part Name"
                         />
@@ -692,7 +695,10 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                   <input
                                     type="text"
                                     value={chap.title}
-                                    onChange={(e) => updateBlock(chap.id, { ...blocks.find(b => b.id === chap.id)!.content, title: e.target.value })}
+                                    onChange={(e) => {
+                                      const b = blocks.find(x => x.id === chap.id);
+                                      if (b) updateBlock(chap.id, { ...b.content, title: e.target.value });
+                                    }}
                                     className="bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-800 focus:border-blue-500 font-semibold text-[11px] text-slate-700 dark:text-slate-300 focus:outline-none flex-1 truncate py-0.5"
                                     placeholder="Chapter Name"
                                   />
@@ -716,7 +722,10 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                           <input
                                             type="text"
                                             value={heading.title}
-                                            onChange={(e) => updateBlock(heading.id, { ...blocks.find(b => b.id === heading.id)!.content, title: e.target.value })}
+                                            onChange={(e) => {
+                                              const b = blocks.find(x => x.id === heading.id);
+                                              if (b) updateBlock(heading.id, { ...b.content, title: e.target.value });
+                                            }}
                                             className="bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-800 focus:border-blue-500 text-[10px] text-slate-600 dark:text-slate-400 focus:outline-none flex-1 truncate py-0.5"
                                             placeholder="Heading Title"
                                           />

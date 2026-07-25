@@ -348,7 +348,102 @@ export const BlogEditorPage: React.FC = () => {
               <BlocksPanel
                 onClose={() => setShowLeftSidebar(false)}
                 onAddBlock={(type, content) => {
-                  const id = addBlock(type, undefined, content, activeSubId || undefined);
+                  let parentId: string | undefined = undefined;
+                  const allBlocks = useEditorStore.getState().blocks;
+
+                  const getAncestors = (startId: string | null) => {
+                    const path: any[] = [];
+                    let currentId = startId;
+                    while (currentId) {
+                      const block = allBlocks.find(b => b.id === currentId);
+                      if (!block) break;
+                      path.unshift(block);
+                      currentId = block.parentId || null;
+                    }
+                    return path;
+                  };
+
+                  if (type === 'part') {
+                    parentId = undefined;
+                  } else if (type === 'chapter') {
+                    const ancestors = getAncestors(activeSubId);
+                    const partAncestor = ancestors.find(b => b.type === 'part');
+                    if (partAncestor) {
+                      parentId = partAncestor.id;
+                    } else {
+                      const lastPart = [...allBlocks].reverse().find(b => b.type === 'part');
+                      if (lastPart) {
+                        parentId = lastPart.id;
+                      } else {
+                        const newPartId = addBlock('part', undefined, {
+                          title: 'New Part',
+                          slug: 'part-new-part',
+                          description: ''
+                        });
+                        parentId = newPartId;
+                      }
+                    }
+                  } else if (type === 'heading') {
+                    const isStruct = content && content.slug !== undefined;
+                    if (isStruct) {
+                      const ancestors = getAncestors(activeSubId);
+                      const chapterAncestor = ancestors.find(b => b.type === 'chapter');
+                      if (chapterAncestor) {
+                        parentId = chapterAncestor.id;
+                      } else {
+                        const lastChapter = [...allBlocks].reverse().find(b => b.type === 'chapter');
+                        if (lastChapter) {
+                          parentId = lastChapter.id;
+                        } else {
+                          const partId = [...allBlocks].reverse().find(b => b.type === 'part')?.id ||
+                            addBlock('part', undefined, { title: 'New Part', slug: 'part-new-part', description: '' });
+                          parentId = addBlock('chapter', undefined, {
+                            title: 'New Chapter',
+                            slug: 'chapter-new-chapter',
+                            description: ''
+                          }, partId);
+                        }
+                      }
+                    } else {
+                      parentId = activeSubId || undefined;
+                    }
+                  } else if (type === 'subheading') {
+                    const ancestors = getAncestors(activeSubId);
+                    const headingAncestor = ancestors.find(b => b.type === 'heading');
+                    if (headingAncestor) {
+                      parentId = headingAncestor.id;
+                    } else {
+                      const lastHeading = [...allBlocks].reverse().find(b => b.type === 'heading');
+                      if (lastHeading) {
+                        parentId = lastHeading.id;
+                      } else {
+                        const lastChapter = [...allBlocks].reverse().find(b => b.type === 'chapter');
+                        let chapterId = lastChapter?.id;
+                        if (!chapterId) {
+                          const partId = [...allBlocks].reverse().find(b => b.type === 'part')?.id ||
+                            addBlock('part', undefined, { title: 'New Part', slug: 'part-new-part', description: '' });
+                          chapterId = addBlock('chapter', undefined, {
+                            title: 'New Chapter',
+                            slug: 'chapter-new-chapter',
+                            description: ''
+                          }, partId);
+                        }
+                        parentId = addBlock('heading', undefined, {
+                          title: 'New Heading',
+                          slug: 'heading-new-heading',
+                          description: ''
+                        }, chapterId);
+                      }
+                    }
+                  } else {
+                    parentId = activeSubId || undefined;
+                  }
+
+                  const id = addBlock(type, undefined, content, parentId);
+                  if (type === 'subheading') {
+                    setActiveSubId(id);
+                  }
+
                   setTimeout(() => {
                     const el = document.getElementById(id);
                     if (el) {
