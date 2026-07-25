@@ -2,6 +2,11 @@ import { Router } from 'express';
 import { createPost, getPosts, getPostBySlug, getPostById, updatePost, togglePostVisibility, searchPosts, reactToPost, getStats, deletePost, likePost, dislikePost, sharePost, getComments, addComment, getAllComments, deleteComment, toggleCommentVisibility, replyToComment, getRevisions } from '../controllers/postController';
 import { protect, admin } from '../security/middleware/auth.middleware';
 
+/**
+ * Express router for Post-related endpoints.
+ * Includes admin endpoints for post creation, statistics, revisions, and comment moderation,
+ * as well as public endpoints for reading posts, searching, reacting, and commenting.
+ */
 const router = Router();
 
 router.post('/', protect, admin, createPost);
@@ -26,3 +31,4 @@ router.get('/:id/comments', getComments);
 router.post('/:id/comments', addComment);
 
 export default router;
+

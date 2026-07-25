@@ -23,6 +23,10 @@ interface BlockWrapperProps {
   isCollapsed?: boolean;
 }
 
+/**
+ * BlockWrapper functional component wrapping individual canvas block elements.
+ * Hooks into dnd-kit sortable behavior and provides a rich floating hover toolbar.
+ */
 export const BlockWrapper: React.FC<BlockWrapperProps> = ({
   id,
   children,

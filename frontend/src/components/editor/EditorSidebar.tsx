@@ -41,6 +41,12 @@ interface EditorSidebarProps {
   setActiveSubId: (id: string | null) => void;
 }
 
+/**
+ * EditorSidebar functional component representing the right configuration drawer.
+ * Supports metadata settings, categories selection, tag lists creation/deletion,
+ * SEO optimization parameters, social OG preview inputs, structured outline tree navigator,
+ * and post revision history restoration logs.
+ */
 export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   activeTab,
   setActiveTab,

@@ -10,6 +10,10 @@ interface OutlineNavigationProps {
   onNavigate: (blockId: string, slug: string) => void;
 }
 
+/**
+ * OutlineNavigation functional component representing the public-facing floating outline panel.
+ * Toggles between a floating action dot indicator rail and a sidebar menu overlay tree.
+ */
 export const OutlineNavigation: React.FC<OutlineNavigationProps> = ({
   postId,
   parts,

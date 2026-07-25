@@ -13,6 +13,10 @@ interface PartBlockProps {
   };
 }
 
+/**
+ * PartBlock functional component representing a major part/section wrapper in the document.
+ * Rendered with an accented border top, customizable title and description.
+ */
 export const PartBlock: React.FC<PartBlockProps> = ({ id, content }) => {
   const updateBlock = useEditorStore((state) => state.updateBlock);
   const accentColor = content.metadata?.accentColor || '#f97316';

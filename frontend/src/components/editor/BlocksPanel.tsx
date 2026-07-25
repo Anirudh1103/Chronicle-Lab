@@ -46,6 +46,11 @@ interface BlockCategory {
   items: BlockItem[];
 }
 
+/**
+ * BlocksPanel functional component representing the left sidebar toolbox.
+ * Categorizes and list all block items available for user selection.
+ * Handles search filtering across categories and labels/descriptions.
+ */
 export const BlocksPanel: React.FC<BlocksPanelProps> = ({ onClose, onAddBlock }) => {
   const [searchQuery, setSearchQuery] = useState('');
 

@@ -32,6 +32,10 @@ interface EditorCanvasProps {
   setActiveSubId: (id: string | null) => void;
 }
 
+/**
+ * EditorCanvas functional component representing the interactive, drag-and-drop workspace layout.
+ * Houses device size viewports and renders the active subheading nodes list.
+ */
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   activeSubId,
   setActiveSubId

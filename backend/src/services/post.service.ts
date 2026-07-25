@@ -578,6 +578,12 @@ export class PostService {
     });
   }
 
+  /**
+   * Retrieves revision history records for a post up to a maximum of 50 revisions.
+   * Sorted descending by creation time.
+   * @param {string} postId - The ID of the post whose revisions to load.
+   * @returns {Promise<Array>} A promise that resolves to an array of revision headers.
+   */
   static async getRevisions(postId: string) {
     return await prisma.revision.findMany({
       where: { postId },

@@ -9,6 +9,10 @@ interface ChapterBlockProps {
   };
 }
 
+/**
+ * ChapterBlock functional component representing a chapter header wrapper in the document.
+ * Includes a text field for title and description.
+ */
 export const ChapterBlock: React.FC<ChapterBlockProps> = ({ id, content }) => {
   const updateBlock = useEditorStore((state) => state.updateBlock);
 

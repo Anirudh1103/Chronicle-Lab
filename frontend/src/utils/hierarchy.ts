@@ -49,6 +49,12 @@ export interface PartNode {
   chapters: ChapterNode[];
 }
 
+/**
+ * Generates a URL-safe lowercase slug from the given text string.
+ * Strips HTML tags and non-word characters.
+ * @param {string} text - The input text to convert.
+ * @returns {string} The formatted slug.
+ */
 export function generateSlug(text: string): string {
   if (!text) return 'untitled';
   return text
@@ -59,6 +65,12 @@ export function generateSlug(text: string): string {
     .replace(/\s+/g, '-'); // Replace spaces with dashes
 }
 
+/**
+ * Reconstructs a nested tree of structural and content nodes from a flat list of EditorBlocks.
+ * Sorts parts, chapters, headings, subheadings, and content blocks in place.
+ * @param {EditorBlock[]} blocks - The flat array of editor blocks.
+ * @returns {PartNode[]} The hierarchical parts tree.
+ */
 export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
   const hasParts = blocks.some(b => b.type === BlockTypes.PART);
   if (!hasParts) return [];
@@ -166,6 +178,13 @@ export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
   return parts;
 }
 
+/**
+ * Flattens the hierarchical parts tree back into a 1D sequence of blocks.
+ * Preserves order indices and injects any legacy untracked blocks.
+ * @param {PartNode[]} parts - The hierarchical tree to flatten.
+ * @param {EditorBlock[]} legacyBlocks - Legacy/flat blocks list to merge and save.
+ * @returns {EditorBlock[]} The flattened list of EditorBlocks.
+ */
 export function flattenHierarchyTree(parts: PartNode[], legacyBlocks: EditorBlock[]): EditorBlock[] {
   const result: EditorBlock[] = [];
 
@@ -248,6 +267,12 @@ export function flattenHierarchyTree(parts: PartNode[], legacyBlocks: EditorBloc
   return result;
 }
 
+/**
+ * Validates the hierarchical relationships of structural and content blocks.
+ * Returns an error message if relationships are invalid, or null if valid.
+ * @param {EditorBlock[]} blocks - The list of blocks to validate.
+ * @returns {string|null} Validation error message, or null.
+ */
 export function validateHierarchy(blocks: EditorBlock[]): string | null {
   const hasParts = blocks.some(b => b.type === BlockTypes.PART);
   if (!hasParts) return null; // Flat structure is fine for legacy compatibility
@@ -284,3 +309,4 @@ export function validateHierarchy(blocks: EditorBlock[]): string | null {
 
   return null;
 }
+

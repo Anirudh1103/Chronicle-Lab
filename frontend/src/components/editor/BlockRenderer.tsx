@@ -25,6 +25,10 @@ interface BlockRendererProps {
   block: EditorBlock;
 }
 
+/**
+ * BlockRenderer functional component responsible for rendering individual blog content elements
+ * by mapping their type field (e.g. part, chapter, paragraph, image, quote) to the corresponding sub-component.
+ */
 export const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
   const type = block.type.toLowerCase();
 

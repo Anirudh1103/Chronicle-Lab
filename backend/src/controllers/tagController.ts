@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
 import { TagService } from '../services/tag.service';
 
+/**
+ * Controller to handle fetching of all tags.
+ * Sends a JSON list of all tag objects.
+ * @param {Request} req - The HTTP request object.
+ * @param {Response} res - The HTTP response object.
+ */
 export const getTags = async (req: Request, res: Response) => {
   try {
     const tags = await TagService.getAllTags();
@@ -11,6 +17,12 @@ export const getTags = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Controller to handle creation of a new tag.
+ * Validates request payload and checks for uniqueness.
+ * @param {Request} req - The HTTP request object containing name and slug in body.
+ * @param {Response} res - The HTTP response object.
+ */
 export const createTag = async (req: Request, res: Response) => {
   try {
     const { name, slug } = req.body;
@@ -30,6 +42,12 @@ export const createTag = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Controller to handle deletion of a tag by its ID.
+ * Returns confirmation or not found error if tag does not exist.
+ * @param {Request} req - The HTTP request object with tag ID in params.
+ * @param {Response} res - The HTTP response object.
+ */
 export const deleteTag = async (req: Request, res: Response) => {
   try {
     await TagService.deleteTag(req.params.id);
@@ -43,3 +61,4 @@ export const deleteTag = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to delete tag' });
   }
 };
+
