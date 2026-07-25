@@ -284,14 +284,14 @@ export const blogApi = {
   },
 
   createTag: async (data: { name: string; slug: string }) => {
-    invalidateApiCache('tags');
     const response = await api.post('/tags', data);
+    invalidateApiCache('tags');
     return response.data;
   },
 
   deleteTag: async (id: string) => {
-    invalidateApiCache('tags');
     const response = await api.delete(`/tags/${id}`);
+    invalidateApiCache('tags');
     return response.data;
   },
 

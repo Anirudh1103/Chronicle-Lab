@@ -174,7 +174,7 @@ export const BlogEditorPage: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        handleSave(true);
+        handleSave(false);
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
         e.preventDefault();
@@ -204,7 +204,7 @@ export const BlogEditorPage: React.FC = () => {
               "p-2 rounded-lg transition-colors border",
               showLeftSidebar
                 ? "text-blue-600 bg-blue-50 border-blue-100 dark:text-blue-500 dark:bg-blue-500/5 dark:border-blue-500/10"
-                : "text-slate-500 border-transparent hover:text-slate-950 hover:bg-slate-100 dark:hover:text-slate-150 dark:hover:bg-slate-900"
+                : "text-slate-500 border-transparent hover:text-slate-950 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-900"
             )}
           >
             <Menu size={18} />
@@ -226,7 +226,7 @@ export const BlogEditorPage: React.FC = () => {
             ) : (
               <>
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Auto-saved
+                Saved {lastSaved && `at ${new Date(lastSaved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
               </>
             )}
           </div>
@@ -290,7 +290,7 @@ export const BlogEditorPage: React.FC = () => {
           {/* Preview Trigger */}
           <button
             onClick={() => setIsPreviewOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-750 dark:border-slate-900 dark:bg-[#090d16]/30 dark:text-slate-350 dark:hover:bg-slate-900 transition-colors px-3.5 py-1.5 text-xs font-semibold"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 dark:border-slate-900 dark:bg-[#090d16]/30 dark:text-slate-400 dark:hover:bg-slate-900 transition-colors px-3.5 py-1.5 text-xs font-semibold"
           >
             <Eye size={14} />
             Preview
@@ -303,7 +303,7 @@ export const BlogEditorPage: React.FC = () => {
               "flex items-center gap-1.5 rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-colors",
               showRightSidebar
                 ? "border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/5 dark:text-blue-400"
-                : "border-slate-200 bg-white text-slate-750 dark:border-slate-900 dark:bg-[#090d16]/30 dark:text-slate-350 dark:hover:bg-slate-900"
+                : "border-slate-200 bg-white text-slate-700 dark:border-slate-900 dark:bg-[#090d16]/30 dark:text-slate-400 dark:hover:bg-slate-900"
             )}
           >
             <SlidersHorizontal size={14} />
@@ -311,6 +311,15 @@ export const BlogEditorPage: React.FC = () => {
           </button>
 
           <div className="h-4 w-px bg-slate-200 dark:bg-slate-900" />
+
+          {/* Save Draft Button */}
+          <button
+            onClick={() => handleSave(false)}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 dark:border-slate-900 dark:bg-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 px-3.5 py-1.5 text-xs font-semibold disabled:opacity-50 transition-colors cursor-pointer"
+          >
+            Save Draft
+          </button>
 
           {/* Publish Action Button */}
           <button
@@ -355,7 +364,7 @@ export const BlogEditorPage: React.FC = () => {
         </AnimatePresence>
 
         {/* Center Workspace Editor Canvas Container */}
-        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-[#050814] flex flex-col relative scrollbar-thin scrollbar-thumb-slate-350 dark:scrollbar-thumb-slate-950 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-[#050814] flex flex-col relative scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-950 scrollbar-track-transparent">
           {/* Scrollable Outer padding area */}
           <div className="flex-1 p-6 md:p-10 flex flex-col items-center">
             {/* Viewport Frame wrapper for Tablet & Phone preview frames */}
@@ -363,7 +372,7 @@ export const BlogEditorPage: React.FC = () => {
               className={cn(
                 "w-full transition-all duration-300 flex-1 flex flex-col",
                 deviceMode === 'phone' && "max-w-[375px] border border-slate-300 dark:border-slate-800 rounded-[2.5rem] bg-white dark:bg-[#050814] shadow-2xl p-6 relative max-h-[80vh] overflow-y-auto no-scrollbar",
-                deviceMode === 'tablet' && "max-w-[768px] border border-slate-300 dark:border-slate-850 rounded-[2rem] bg-white dark:bg-[#050814] shadow-2xl p-8 relative max-h-[82vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-950",
+                deviceMode === 'tablet' && "max-w-[768px] border border-slate-300 dark:border-slate-800 rounded-[2rem] bg-white dark:bg-[#050814] shadow-2xl p-8 relative max-h-[82vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-950",
                 deviceMode === 'desktop' && "max-w-4xl"
               )}
             >

@@ -56,6 +56,8 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   const [tags, setTags] = useState<{ id: string, name: string }[]>([]);
   const [revisions, setRevisions] = useState<{ id: string, createdAt: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const catRef = useRef<HTMLDivElement>(null);
+  const tagRef = useRef<HTMLDivElement>(null);
 
   // Dropdown states
   const [showCatDropdown, setShowCatDropdown] = useState(false);
@@ -67,6 +69,32 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   const [editingMetadataId, setEditingMetadataId] = useState<string | null>(null);
   const [expandedParts, setExpandedParts] = useState<Record<string, boolean>>({});
   const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        catRef.current && !catRef.current.contains(e.target as Node) &&
+        tagRef.current && !tagRef.current.contains(e.target as Node)
+      ) {
+        setShowCatDropdown(false);
+        setShowTagDropdown(false);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowCatDropdown(false);
+        setShowTagDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchCategoriesAndTags = async () => {
@@ -190,7 +218,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   };
 
   const moveSibling = (blockId: string, direction: 'up' | 'down') => {
-    const currentBlocks = [...blocks];
+    const currentBlocks = blocks.map(b => ({ ...b }));
     const index = currentBlocks.findIndex(b => b.id === blockId);
     if (index === -1) return;
 
@@ -346,10 +374,13 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
             </div>
 
             {/* Categories */}
-            <div className="relative">
+            <div className="relative" ref={catRef}>
               <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5">Categories</span>
               <div
-                onClick={() => setShowCatDropdown(!showCatDropdown)}
+                onClick={() => {
+                  setShowCatDropdown(!showCatDropdown);
+                  setShowTagDropdown(false);
+                }}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-900 rounded-lg p-2 text-xs min-h-[38px] flex flex-wrap gap-1.5 items-center justify-between cursor-pointer select-none"
               >
                 <div className="flex flex-wrap gap-1.5">
@@ -411,10 +442,13 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
             </div>
 
             {/* Tags */}
-            <div className="relative">
+            <div className="relative" ref={tagRef}>
               <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5">Tags</span>
               <div
-                onClick={() => setShowTagDropdown(!showTagDropdown)}
+                onClick={() => {
+                  setShowTagDropdown(!showTagDropdown);
+                  setShowCatDropdown(false);
+                }}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-900 rounded-lg p-2 text-xs min-h-[38px] flex flex-wrap gap-1.5 items-center justify-between cursor-pointer select-none"
               >
                 <div className="flex flex-wrap gap-1.5">
@@ -492,18 +526,6 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                   )} />
                 </button>
               </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Allow Comments</span>
-                <button
-                  onClick={() => setMetadata({ featured: metadata.featured })}
-                  className={cn(
-                    "w-10 h-5 rounded-full relative transition-colors duration-200 bg-blue-600"
-                  )}
-                >
-                  <div className="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full" />
-                </button>
-              </div>
             </div>
 
             {/* Status & Publish Date */}
@@ -527,8 +549,8 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 <input
                   type="date"
                   value={metadata.status === 'PUBLISHED' ? new Date().toISOString().split('T')[0] : ''}
-                  onChange={(e) => {}}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-900 focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-100 outline-none"
+                  disabled
+                  className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-250 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-450 dark:text-slate-500 outline-none cursor-not-allowed"
                 />
               </div>
             </div>

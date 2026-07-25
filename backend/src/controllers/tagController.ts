@@ -14,6 +14,10 @@ export const getTags = async (req: Request, res: Response) => {
 export const createTag = async (req: Request, res: Response) => {
   try {
     const { name, slug } = req.body;
+    if (typeof name !== 'string' || !name.trim() || typeof slug !== 'string' || !slug.trim()) {
+      res.status(400).json({ error: 'name and slug are required' });
+      return;
+    }
     const tag = await TagService.createTag(name, slug);
     res.status(201).json(tag);
   } catch (error: any) {
@@ -30,8 +34,12 @@ export const deleteTag = async (req: Request, res: Response) => {
   try {
     await TagService.deleteTag(req.params.id);
     res.json({ message: 'Tag deleted' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete Tag Error:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Tag not found' });
+      return;
+    }
     res.status(500).json({ error: 'Failed to delete tag' });
   }
 };

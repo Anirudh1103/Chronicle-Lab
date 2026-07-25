@@ -46,7 +46,7 @@ export const BlockWrapper: React.FC<BlockWrapperProps> = ({
   };
 
   const moveSibling = (direction: 'up' | 'down') => {
-    const currentBlocks = [...blocks];
+    const currentBlocks = blocks.map(b => ({ ...b }));
     const index = currentBlocks.findIndex(b => b.id === id);
     if (index === -1) return;
 

@@ -48,7 +48,6 @@ interface BlockCategory {
 
 export const BlocksPanel: React.FC<BlocksPanelProps> = ({ onClose, onAddBlock }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'recent'>('all');
 
   const categories: BlockCategory[] = [
     {
@@ -101,14 +100,15 @@ export const BlocksPanel: React.FC<BlocksPanelProps> = ({ onClose, onAddBlock })
   ];
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value.toLowerCase());
+    setSearchQuery(e.target.value);
   };
 
+  const needle = searchQuery.trim().toLowerCase();
   const filteredCategories = categories.map(cat => ({
     ...cat,
     items: cat.items.filter(item =>
-      item.label.toLowerCase().includes(searchQuery) ||
-      item.description.toLowerCase().includes(searchQuery)
+      item.label.toLowerCase().includes(needle) ||
+      item.description.toLowerCase().includes(needle)
     )
   })).filter(cat => cat.items.length > 0);
 
@@ -138,23 +138,7 @@ export const BlocksPanel: React.FC<BlocksPanelProps> = ({ onClose, onAddBlock })
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-900/60 px-4">
-        {(['all', 'favorites', 'recent'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={cn(
-              "flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors border-b-2 text-center bg-transparent border-none cursor-pointer",
-              activeTab === tab
-                ? "text-blue-600 dark:text-blue-500 border-blue-600 dark:border-blue-500 font-extrabold"
-                : "text-slate-500 border-transparent hover:text-slate-800 dark:hover:text-slate-300"
-            )}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+
 
       {/* Scrollable Blocks List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-950 scrollbar-track-transparent">

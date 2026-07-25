@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -47,7 +47,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     })
   );
 
-  const parts = buildHierarchyTree(blocks);
+  const parts = useMemo(() => buildHierarchyTree(blocks), [blocks]);
   const hasParts = parts.length > 0;
 
   // Auto-select first subheading on load if parts exist

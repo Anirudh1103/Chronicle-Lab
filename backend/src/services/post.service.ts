@@ -582,6 +582,7 @@ export class PostService {
     return await prisma.revision.findMany({
       where: { postId },
       orderBy: { createdAt: 'desc' },
+      take: 50,
       select: {
         id: true,
         createdAt: true
