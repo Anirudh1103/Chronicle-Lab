@@ -8,7 +8,10 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronRight,
-  MoreVertical
+  MoreVertical,
+  Layers,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useEditorStore } from '../../store/useEditorStore';
@@ -35,11 +38,37 @@ export const BlockWrapper: React.FC<BlockWrapperProps> = ({
     isDragging
   } = useSortable({ id });
 
-  const { removeBlock, duplicateBlock, toggleCollapse } = useEditorStore();
+  const { blocks, setBlocks, removeBlock, duplicateBlock, toggleCollapse } = useEditorStore();
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+  };
+
+  const moveSibling = (direction: 'up' | 'down') => {
+    const currentBlocks = [...blocks];
+    const index = currentBlocks.findIndex(b => b.id === id);
+    if (index === -1) return;
+
+    const block = currentBlocks[index];
+    const siblings = currentBlocks.filter(b => b.parentId === block.parentId).sort((a, b) => a.orderIndex - b.orderIndex);
+    const siblingIdx = siblings.findIndex(b => b.id === id);
+
+    if (direction === 'up' && siblingIdx > 0) {
+      const prevSibling = siblings[siblingIdx - 1];
+      const temp = block.orderIndex;
+      block.orderIndex = prevSibling.orderIndex;
+      prevSibling.orderIndex = temp;
+      currentBlocks.sort((a, b) => a.orderIndex - b.orderIndex);
+      setBlocks(currentBlocks);
+    } else if (direction === 'down' && siblingIdx < siblings.length - 1) {
+      const nextSibling = siblings[siblingIdx + 1];
+      const temp = block.orderIndex;
+      block.orderIndex = nextSibling.orderIndex;
+      nextSibling.orderIndex = temp;
+      currentBlocks.sort((a, b) => a.orderIndex - b.orderIndex);
+      setBlocks(currentBlocks);
+    }
   };
 
   return (
@@ -48,60 +77,82 @@ export const BlockWrapper: React.FC<BlockWrapperProps> = ({
       id={id}
       style={style}
       className={cn(
-        'group relative mb-4 rounded-xl border border-transparent bg-white/50 transition-all hover:border-slate-200 hover:shadow-sm dark:bg-slate-900/50 dark:hover:border-slate-700',
-        isDragging && 'z-50 border-blue-500 opacity-50 shadow-xl',
-        isCollapsed && 'mb-2'
+        'group relative mb-6 rounded-2xl border border-transparent bg-[#090d16]/10 p-1.5 transition-all hover:border-slate-900 focus-within:border-blue-500/40 focus-within:bg-[#090d16]/25 hover:shadow-2xl duration-300',
+        isDragging && 'z-50 border-blue-500/80 opacity-55 shadow-2xl bg-slate-950/60Scale-[0.99]',
+        isCollapsed && 'mb-3'
       )}
     >
-      {/* Drag Handle & Controls */}
-      <div className="absolute -left-12 top-2 flex flex-col items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      {/* Floating Dark Toolbar above the block */}
+      <div className="absolute -top-5 left-4 z-40 bg-slate-900 border border-slate-800 rounded-xl px-2 py-1 flex items-center gap-1.5 shadow-2xl opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 select-none scale-90 group-hover:scale-100 origin-left">
+        {/* Grip Handle */}
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          className="cursor-grab p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100"
+          title="Drag block"
         >
-          <GripVertical size={18} />
+          <GripVertical size={13} />
         </div>
-        <button
-          onClick={() => toggleCollapse(id)}
-          className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-        >
-          {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
-        </button>
-      </div>
 
-      {/* Block Type Label & Actions */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-transparent group-hover:border-slate-100 dark:group-hover:border-slate-800">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        {/* Level Moover arrows */}
+        <button
+          onClick={() => moveSibling('up')}
+          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition-colors"
+          title="Move up"
+        >
+          <ArrowUp size={12} />
+        </button>
+        <button
+          onClick={() => moveSibling('down')}
+          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition-colors"
+          title="Move down"
+        >
+          <ArrowDown size={12} />
+        </button>
+
+        <div className="h-3 w-px bg-slate-800 mx-0.5" />
+
+        {/* Label */}
+        <span className="text-[9px] font-black uppercase tracking-wider text-slate-500 px-1 font-mono select-none">
           {type}
         </span>
 
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100">
-          <button
-            onClick={() => duplicateBlock(id)}
-            className="p-1 text-slate-400 hover:text-blue-500"
-            title="Duplicate"
-          >
-            <Copy size={14} />
-          </button>
-          <button
-            onClick={() => removeBlock(id)}
-            className="p-1 text-slate-400 hover:text-red-500"
-            title="Delete"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
+        <div className="h-3 w-px bg-slate-800 mx-0.5" />
+
+        {/* Actions */}
+        <button
+          onClick={() => toggleCollapse(id)}
+          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition-colors"
+          title={isCollapsed ? "Expand block" : "Collapse block"}
+        >
+          {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+        </button>
+
+        <button
+          onClick={() => duplicateBlock(id)}
+          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-blue-400 transition-colors"
+          title="Duplicate block"
+        >
+          <Copy size={12} />
+        </button>
+
+        <button
+          onClick={() => removeBlock(id)}
+          className="p-1 rounded hover:bg-red-950/60 text-slate-450 hover:text-red-400 transition-colors"
+          title="Delete block"
+        >
+          <Trash2 size={12} />
+        </button>
       </div>
 
-      {/* Content */}
-      <div className={cn('p-4', isCollapsed && 'hidden')}>
+      {/* Content wrapper */}
+      <div className={cn('p-2', isCollapsed && 'hidden')}>
         {children}
       </div>
 
       {isCollapsed && (
-        <div className="px-4 py-2 text-sm text-slate-400 italic truncate">
-          Block content hidden...
+        <div className="px-4 py-2 text-xs text-slate-500 italic truncate font-semibold font-mono">
+          Block content collapsed...
         </div>
       )}
     </div>

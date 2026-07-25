@@ -577,4 +577,15 @@ export class PostService {
       where: { id }
     });
   }
+
+  static async getRevisions(postId: string) {
+    return await prisma.revision.findMany({
+      where: { postId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        createdAt: true
+      }
+    });
+  }
 }

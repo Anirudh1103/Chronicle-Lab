@@ -275,4 +275,28 @@ export const blogApi = {
     const response = await api.delete(`/glossary/${id}`);
     return response.data;
   },
+
+  getTags: async () => {
+    return getCachedData('tags', async () => {
+      const response = await api.get('/tags');
+      return response.data;
+    });
+  },
+
+  createTag: async (data: { name: string; slug: string }) => {
+    invalidateApiCache('tags');
+    const response = await api.post('/tags', data);
+    return response.data;
+  },
+
+  deleteTag: async (id: string) => {
+    invalidateApiCache('tags');
+    const response = await api.delete(`/tags/${id}`);
+    return response.data;
+  },
+
+  getRevisions: async (postId: string) => {
+    const response = await api.get(`/posts/${postId}/revisions`);
+    return response.data;
+  },
 };

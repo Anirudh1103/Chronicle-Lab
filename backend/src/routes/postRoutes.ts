@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createPost, getPosts, getPostBySlug, getPostById, updatePost, togglePostVisibility, searchPosts, reactToPost, getStats, deletePost, likePost, dislikePost, sharePost, getComments, addComment, getAllComments, deleteComment, toggleCommentVisibility, replyToComment } from '../controllers/postController';
+import { createPost, getPosts, getPostBySlug, getPostById, updatePost, togglePostVisibility, searchPosts, reactToPost, getStats, deletePost, likePost, dislikePost, sharePost, getComments, addComment, getAllComments, deleteComment, toggleCommentVisibility, replyToComment, getRevisions } from '../controllers/postController';
 import { protect, admin } from '../security/middleware/auth.middleware';
 
 const router = Router();
@@ -16,6 +16,7 @@ router.patch('/admin/comments/:id/reply', protect, admin, replyToComment);
 router.get('/', getPosts);
 router.get('/search', searchPosts);
 router.get('/id/:id', getPostById);
+router.get('/:id/revisions', protect, admin, getRevisions);
 router.get('/:slug', getPostBySlug);
 router.post('/:id/react', reactToPost);
 router.post('/:id/like', likePost);

@@ -218,3 +218,14 @@ export const replyToComment = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message || 'Failed to reply to comment' });
   }
 };
+
+export const getRevisions = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const revisions = await PostService.getRevisions(id);
+    res.json(revisions);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch revisions' });
+  }
+};
+
