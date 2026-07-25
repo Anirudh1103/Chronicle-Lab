@@ -28,22 +28,24 @@ interface PostCardProps {
  */
 const getCategoryStyle = (name: string) => {
   const clean = name.trim().toLowerCase();
+  const words = clean.split(/[\s\-_]+/);
+  const hasWord = (kw: string) => words.includes(kw) || clean === kw;
   
-  if (clean.includes('history')) {
+  if (hasWord('history')) {
     return {
       dot: 'bg-amber-500 dark:bg-amber-400',
       pill: 'bg-amber-500/10 dark:bg-transparent dark:border dark:border-amber-500/30 text-amber-800 dark:text-amber-400'
     };
   }
   
-  if (clean.includes('military') || clean.includes('war') || clean.includes('defense') || clean.includes('army')) {
+  if (['military', 'war', 'defense', 'army'].some(hasWord)) {
     return {
       dot: 'bg-emerald-500 dark:bg-emerald-400',
       pill: 'bg-emerald-500/10 dark:bg-transparent dark:border dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-400'
     };
   }
   
-  if (clean.includes('tech') || clean.includes('science') || clean.includes('dev') || clean.includes('digital')) {
+  if (['tech', 'science', 'dev', 'digital'].some(hasWord)) {
     return {
       dot: 'bg-blue-500 dark:bg-blue-400',
       pill: 'bg-blue-500/10 dark:bg-transparent dark:border dark:border-blue-500/30 text-blue-800 dark:text-blue-400'
@@ -75,8 +77,8 @@ const getCategoryStyle = (name: string) => {
   ];
 
   let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < clean.length; i++) {
+    hash = clean.charCodeAt(i) + ((hash << 5) - hash);
   }
   const idx = Math.abs(hash) % colors.length;
   return colors[idx];
@@ -115,7 +117,7 @@ export function PostCard({ post, index }: PostCardProps) {
         {/* Content Section below the cover image */}
         <div className="space-y-3 px-1 text-left">
           {/* Read Time & Featured Star row */}
-          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-slate-450 dark:text-slate-500">
+          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
             <div className="flex items-center gap-1.5">
               <Clock size={12} className="text-blue-500 dark:text-sky-400" />
               <span>{post.readingTime || 5} min read</span>
