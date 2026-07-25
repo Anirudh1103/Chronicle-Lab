@@ -180,7 +180,8 @@ export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
 
 /**
  * Flattens the hierarchical parts tree back into a 1D sequence of blocks.
- * Preserves order indices and injects any legacy untracked blocks.
+ * Assigns sequential orderIndex values representing their visual hierarchy position,
+ * and appends any legacy untracked blocks.
  * @param {PartNode[]} parts - The hierarchical tree to flatten.
  * @param {EditorBlock[]} legacyBlocks - Legacy/flat blocks list to merge and save.
  * @returns {EditorBlock[]} The flattened list of EditorBlocks.

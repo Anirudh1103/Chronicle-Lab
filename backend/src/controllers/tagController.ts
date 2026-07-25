@@ -30,7 +30,7 @@ export const createTag = async (req: Request, res: Response) => {
       res.status(400).json({ error: 'name and slug are required' });
       return;
     }
-    const tag = await TagService.createTag(name, slug);
+    const tag = await TagService.createTag(name.trim(), slug.trim());
     res.status(201).json(tag);
   } catch (error: any) {
     console.error('Create Tag Error:', error);

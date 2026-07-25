@@ -81,6 +81,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     e.preventDefault();
     setIsDraggingFile(false);
 
+    const targetSubId = activeSubId;
+
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter(f => f.type.startsWith('image/'));
 
@@ -98,7 +100,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             alt: file.name,
             caption: '',
             alignment: 'center'
-          });
+          }, targetSubId || undefined);
         }
       } catch (error) {
         console.error('File upload failed:', error);
@@ -108,8 +110,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     }
   };
 
-  const handleAddBlock = (type: BlockType, content?: any) => {
-    const id = addBlock(type, undefined, content, activeSubId || undefined);
+  const handleAddBlock = (type: BlockType, content?: any, parentId?: string) => {
+    const id = addBlock(type, undefined, content, parentId || activeSubId || undefined);
     setTimeout(() => {
       const el = document.getElementById(id);
       if (el) {
