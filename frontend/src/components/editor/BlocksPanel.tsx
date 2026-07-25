@@ -8,7 +8,7 @@ import {
   Heading3,
   Quote,
   AlertCircle,
-  Image as ImageIcon,
+  ImageIcon,
   Images,
   Video,
   Music,
@@ -74,8 +74,8 @@ export const BlocksPanel: React.FC<BlocksPanelProps> = ({ onClose, onAddBlock })
     {
       title: 'STRUCTURE',
       items: [
-        { id: 'part', type: BlockTypes.PART, label: 'Part', description: 'Create a major part node.', icon: FolderTree, contentOverride: { title: 'New Part', slug: 'part-new-part', description: '' } },
-        { id: 'chapter', type: BlockTypes.CHAPTER, label: 'Chapter', description: 'Create a chapter node.', icon: BookOpen, contentOverride: { title: 'New Chapter', slug: 'chapter-new-chapter', description: '' } },
+        { id: 'part', type: BlockTypes.PART, label: 'Major Part', description: 'Create a level-1 major structural part.', icon: FolderTree, contentOverride: { title: 'New Part', slug: 'part-new-part', description: '' } },
+        { id: 'chapter', type: BlockTypes.CHAPTER, label: 'Part', description: 'Create a level-2 structural part.', icon: BookOpen, contentOverride: { title: 'New Chapter', slug: 'chapter-new-chapter', description: '' } },
         { id: 'heading-struct', type: BlockTypes.HEADING, label: 'Heading/Section', description: 'Create a structural heading.', icon: Folder, contentOverride: { title: 'New Heading', slug: 'heading-new-heading', description: '' } },
         { id: 'subheading-struct', type: BlockTypes.SUBHEADING, label: 'Subheading', description: 'Create a content section.', icon: Layers, contentOverride: { title: 'New Subheading', slug: 'subheading-new-subheading', description: '' } },
         { id: 'timeline', type: BlockTypes.TIMELINE, label: 'Timeline', description: 'Create a historic timeline.', icon: Calendar },
@@ -113,12 +113,12 @@ export const BlocksPanel: React.FC<BlocksPanelProps> = ({ onClose, onAddBlock })
   })).filter(cat => cat.items.length > 0);
 
   return (
-    <div className="flex flex-col h-full bg-[#090d16] border-r border-slate-900 text-slate-300">
+    <div className="flex flex-col h-full bg-white dark:bg-[#090d16] border-r border-slate-200 dark:border-slate-900 text-slate-700 dark:text-slate-300">
       {/* Search Header */}
-      <div className="p-4 border-b border-slate-900/60 flex flex-col gap-3">
+      <div className="p-4 border-b border-slate-200 dark:border-slate-900/60 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-100">Blocks</span>
-          <button onClick={onClose} className="p-1 hover:bg-slate-900/60 rounded text-slate-400 hover:text-white transition-colors">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">Blocks</span>
+          <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900/60 rounded text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors border-none cursor-pointer bg-transparent">
             <X size={14} />
           </button>
         </div>
@@ -130,25 +130,25 @@ export const BlocksPanel: React.FC<BlocksPanelProps> = ({ onClose, onAddBlock })
             value={searchQuery}
             onChange={handleSearch}
             placeholder="Search blocks..."
-            className="w-full bg-slate-950/80 border border-slate-900 rounded-lg pl-9 pr-8 py-1.5 text-xs outline-none text-slate-200 focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/30 transition-all placeholder:text-slate-600"
+            className="w-full bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-900 rounded-lg pl-9 pr-8 py-1.5 text-xs outline-none text-slate-855 dark:text-slate-200 focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/30 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-700 bg-slate-900/40 border border-slate-900 px-1.5 py-0.5 rounded">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 dark:text-slate-700 bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-900 px-1.5 py-0.5 rounded">
             /
           </span>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-900/60 px-4">
+      <div className="flex border-b border-slate-200 dark:border-slate-900/60 px-4">
         {(['all', 'favorites', 'recent'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={cn(
-              "flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors border-b-2 text-center",
+              "flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors border-b-2 text-center bg-transparent border-none cursor-pointer",
               activeTab === tab
-                ? "text-blue-500 border-blue-500"
-                : "text-slate-500 border-transparent hover:text-slate-300"
+                ? "text-blue-600 dark:text-blue-500 border-blue-600 dark:border-blue-500 font-extrabold"
+                : "text-slate-500 border-transparent hover:text-slate-800 dark:hover:text-slate-300"
             )}
           >
             {tab}
@@ -157,10 +157,10 @@ export const BlocksPanel: React.FC<BlocksPanelProps> = ({ onClose, onAddBlock })
       </div>
 
       {/* Scrollable Blocks List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-950 scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-950 scrollbar-track-transparent">
         {filteredCategories.map((category) => (
           <div key={category.title} className="space-y-2">
-            <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase block pl-1">
+            <span className="text-[10px] font-bold tracking-widest text-slate-400 dark:text-slate-500 uppercase block pl-1">
               {category.title}
             </span>
             <div className="grid grid-cols-2 gap-2">
@@ -170,12 +170,12 @@ export const BlocksPanel: React.FC<BlocksPanelProps> = ({ onClose, onAddBlock })
                   <button
                     key={item.id}
                     onClick={() => onAddBlock(item.type, item.contentOverride)}
-                    className="flex flex-col items-start p-3 bg-slate-950/30 border border-slate-900 hover:border-slate-800 hover:bg-slate-900/40 rounded-xl text-left transition-all group duration-200"
+                    className="flex flex-col items-start p-3 bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-slate-100/50 dark:bg-slate-950/30 dark:border-slate-900 dark:hover:border-slate-800 dark:hover:bg-slate-900/40 rounded-xl text-left transition-all group duration-200 cursor-pointer"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-900 group-hover:border-slate-800 flex items-center justify-center text-slate-400 group-hover:text-blue-400 transition-colors mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-900 group-hover:border-slate-300 dark:group-hover:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-450 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-2">
                       <Icon size={16} />
                     </div>
-                    <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-slate-950 dark:group-hover:text-white transition-colors">
                       {item.label}
                     </span>
                     <span className="text-[9px] text-slate-500 leading-normal mt-0.5 max-w-[100px] truncate">
@@ -196,9 +196,9 @@ export const BlocksPanel: React.FC<BlocksPanelProps> = ({ onClose, onAddBlock })
       </div>
 
       {/* Bottom Footer actions */}
-      <div className="p-3 border-t border-slate-900/60 flex items-center justify-between text-slate-500">
-        <button className="p-2 hover:text-slate-300 rounded hover:bg-slate-900/40 transition-all"><HelpCircle size={16} /></button>
-        <button className="p-2 hover:text-slate-300 rounded hover:bg-slate-900/40 transition-all"><Settings size={16} /></button>
+      <div className="p-3 border-t border-slate-200 dark:border-slate-900/60 flex items-center justify-between text-slate-400 dark:text-slate-500">
+        <button className="p-2 hover:text-slate-700 dark:hover:text-slate-300 rounded hover:bg-slate-100 dark:hover:bg-slate-900/40 transition-all border-none cursor-pointer bg-transparent"><HelpCircle size={16} /></button>
+        <button className="p-2 hover:text-slate-700 dark:hover:text-slate-300 rounded hover:bg-slate-100 dark:hover:bg-slate-900/40 transition-all border-none cursor-pointer bg-transparent"><Settings size={16} /></button>
       </div>
     </div>
   );

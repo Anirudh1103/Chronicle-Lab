@@ -89,12 +89,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           const { data } = await api.post('/media/upload', formData);
           const url = getUploadUrl(data.path);
 
-          addBlock(BlockTypes.IMAGE, undefined, {
+          handleAddBlock(BlockTypes.IMAGE, {
             url,
             alt: file.name,
             caption: '',
             alignment: 'center'
-          }, activeSubId || undefined);
+          });
         }
       } catch (error) {
         console.error('File upload failed:', error);
@@ -104,51 +104,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     }
   };
 
-  const initializeHierarchy = () => {
-    const partId = uuidv4();
-    const chapId = uuidv4();
-    const headId = uuidv4();
-    const subId = uuidv4();
-
-    const newPart: EditorBlock = {
-      id: partId,
-      type: BlockTypes.PART,
-      content: { title: 'Part I: Background', slug: 'part-i-background', description: '' },
-      orderIndex: 0
-    };
-
-    const newChapter: EditorBlock = {
-      id: chapId,
-      type: BlockTypes.CHAPTER,
-      content: { title: 'Chapter 1: Origins', slug: 'chapter-1-origins', description: '' },
-      orderIndex: 0,
-      parentId: partId
-    };
-
-    const newHeading: EditorBlock = {
-      id: headId,
-      type: BlockTypes.HEADING,
-      content: { title: 'Section Overview', slug: 'section-overview', description: '' },
-      orderIndex: 0,
-      parentId: chapId
-    };
-
-    const newSubheading: EditorBlock = {
-      id: subId,
-      type: BlockTypes.SUBHEADING,
-      content: { title: 'Introduction & Context', slug: 'introduction-context', description: '' },
-      orderIndex: 0,
-      parentId: headId
-    };
-
-    const nestedExistingBlocks = blocks.map((b, idx) => ({
-      ...b,
-      parentId: subId,
-      orderIndex: idx
-    }));
-
-    setBlocks([newPart, newChapter, newHeading, newSubheading, ...nestedExistingBlocks]);
-    setActiveSubId(subId);
+  const handleAddBlock = (type: BlockType, content?: any) => {
+    const id = addBlock(type, undefined, content, activeSubId || undefined);
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const focusable = el.querySelector('input, textarea, [contenteditable="true"]') as HTMLElement;
+        if (focusable) focusable.focus();
+      }
+    }, 100);
   };
 
   const getBreadcrumbs = () => {
@@ -159,14 +124,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           for (const sub of head.subheadings) {
             if (sub.id === activeSubId) {
               return (
-                <div className="flex flex-wrap items-center gap-2.5 text-[9px] font-black tracking-widest text-slate-400 uppercase bg-[#090d16] border border-slate-900 rounded-full px-4 py-2 mb-8 select-none max-w-max">
-                  <span className="text-orange-500 font-bold hover:text-orange-400 cursor-pointer">{part.title}</span>
-                  <span className="text-slate-700">/</span>
-                  <span className="text-blue-400 font-bold hover:text-blue-300 cursor-pointer">Chapter {chap.chapterNumber}: {chap.title}</span>
-                  <span className="text-slate-700">/</span>
-                  <span className="text-slate-300 hover:text-white cursor-pointer">{head.title}</span>
-                  <span className="text-slate-700">/</span>
-                  <span className="text-white bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">{sub.title}</span>
+                <div className="flex flex-wrap items-center gap-2.5 text-[9px] font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase bg-slate-100 border border-slate-200 dark:bg-[#090d16] dark:border-slate-900 rounded-full px-4 py-2 mb-8 select-none max-w-max">
+                  <span className="text-orange-600 dark:text-orange-500 font-bold hover:opacity-80 cursor-pointer">{part.title}</span>
+                  <span className="text-slate-350 dark:text-slate-700">/</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-bold hover:opacity-80 cursor-pointer">Chapter {chap.chapterNumber}: {chap.title}</span>
+                  <span className="text-slate-355 dark:text-slate-700">/</span>
+                  <span className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer">{head.title}</span>
+                  <span className="text-slate-355 dark:text-slate-700">/</span>
+                  <span className="text-slate-800 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 py-0.5 rounded-full">{sub.title}</span>
                 </div>
               );
             }
@@ -230,9 +195,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[70] bg-slate-900 text-white px-6 py-3 rounded-2xl border border-slate-800 shadow-2xl flex items-center gap-3 font-bold text-xs uppercase tracking-wider"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[70] bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 text-slate-800 dark:text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-xs uppercase tracking-wider"
           >
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 dark:border-white border-t-transparent" />
             Processing Assets...
           </motion.div>
         )}
@@ -241,25 +206,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       {/* 1. LEGACY FLAT POST OR NO PARTS DEFINED */}
       {!hasParts && (
         <div className="mx-auto max-w-4xl">
-          <div className="flex items-center justify-between border border-dashed border-slate-900 bg-[#090d16]/40 backdrop-blur-md rounded-2xl p-6 mb-10 shadow-lg">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-[#f97316]/10 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-[#f97316]" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-100 text-sm">Elevate to Book Structure</h3>
-                <p className="text-[11px] text-slate-400 mt-1 max-w-md">Evolve this post into a nested hierarchy (Parts, Chapters, Headings, Subheadings) to enable premium interactive book navigations.</p>
-              </div>
-            </div>
-            <button
-              onClick={initializeHierarchy}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 hover:opacity-90 text-white font-bold text-xs px-5 py-3 shadow-lg shadow-orange-500/20 transition-all cursor-pointer border-none"
-            >
-              <BookOpen size={14} />
-              Initialize Book Outline
-            </button>
-          </div>
-
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -282,13 +228,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
           {/* Simple flat block adding menu */}
           <div className="mt-12 flex flex-col items-center">
-            <div className="mb-4 h-px w-full bg-slate-900" />
+            <div className="mb-4 h-px w-full bg-slate-200 dark:bg-slate-900" />
             <div className="flex flex-wrap justify-center gap-2">
               {blockTypes.map((bt) => (
                 <button
                   key={bt.type}
-                  onClick={() => addBlock(bt.type)}
-                  className="group flex items-center gap-2 rounded-full border border-slate-900 bg-[#090d16]/30 px-4 py-2 text-xs font-semibold text-slate-400 transition-all hover:border-blue-500 hover:text-white hover:bg-slate-900"
+                  onClick={() => handleAddBlock(bt.type)}
+                  className="group flex items-center gap-2 rounded-full border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-900 dark:bg-[#090d16]/30 dark:text-slate-400 px-4 py-2 text-xs font-semibold transition-all dark:hover:border-blue-500 dark:hover:text-white dark:hover:bg-slate-900"
                 >
                   <Plus size={12} className="group-hover:rotate-90 transition-transform" />
                   {bt.label}
@@ -307,22 +253,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           {activeSubId && activeSubBlock ? (
             <>
               {/* Active Subheading Title & Subtext description */}
-              <div className="mb-8 group/title">
+              <div className="mb-8 group/title select-text">
                 <input
                   type="text"
                   value={activeSubBlock.content.title || ''}
                   onChange={(e) => updateBlock(activeSubBlock.id, { ...activeSubBlock.content, title: e.target.value })}
-                  className="w-full bg-transparent border-none text-4xl md:text-5xl font-black text-slate-100 placeholder:text-slate-800 outline-none p-0 focus:ring-0 leading-tight tracking-tighter"
+                  className="w-full bg-transparent border-none text-4xl md:text-5xl font-black text-slate-800 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-800 outline-none p-0 focus:ring-0 leading-tight tracking-tighter"
                   placeholder="Subheading Title"
                 />
                 <textarea
                   value={activeSubBlock.content.description || ''}
                   onChange={(e) => updateBlock(activeSubBlock.id, { ...activeSubBlock.content, description: e.target.value })}
                   rows={2}
-                  className="w-full bg-transparent border-none text-base text-slate-400 placeholder:text-slate-800 outline-none p-0 mt-3 focus:ring-0 resize-none font-medium italic leading-relaxed"
+                  className="w-full bg-transparent border-none text-base text-slate-500 dark:text-slate-400 placeholder:text-slate-350 dark:placeholder:text-slate-800 outline-none p-0 mt-3 focus:ring-0 resize-none font-medium italic leading-relaxed"
                   placeholder="To understand a leader, one must first understand the land that shaped his spirit..."
                 />
-                <div className="mt-6 h-px w-full bg-slate-900/60" />
+                <div className="mt-6 h-px w-full bg-slate-200 dark:bg-slate-900/60" />
               </div>
 
               {/* Subheading Blocks Dnd canvas */}
@@ -345,9 +291,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                       </BlockWrapper>
                     ))
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-16 border-2 border-dashed border-slate-900 rounded-2xl text-slate-500 mb-6 bg-slate-950/10">
-                      <Sparkles size={24} className="opacity-40 animate-pulse mb-3 text-orange-500" />
-                      <span className="font-bold text-[10px] uppercase tracking-wider text-slate-400">Empty Content Section</span>
+                    <div className="flex flex-col items-center justify-center p-16 border-2 border-dashed border-slate-200 dark:border-slate-900 rounded-2xl text-slate-400 dark:text-slate-500 mb-6 bg-slate-100/30 dark:bg-slate-950/10">
+                      <Sparkles size={24} className="opacity-40 animate-pulse mb-3 text-orange-600 dark:text-orange-500" />
+                      <span className="font-bold text-[10px] uppercase tracking-wider text-slate-700 dark:text-slate-400">Empty Content Section</span>
                       <span className="text-[10px] mt-1 opacity-60 text-center max-w-xs leading-normal">Drag or select block types from the left explorer menu to write content in this section.</span>
                     </div>
                   )}
@@ -356,13 +302,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
               {/* Toolbar */}
               <div className="mt-8 flex flex-col items-center">
-                <div className="mb-4 h-px w-full bg-slate-900/60" />
+                <div className="mb-4 h-px w-full bg-slate-200 dark:bg-slate-900/60" />
                 <div className="flex flex-wrap justify-center gap-1.5">
                   {blockTypes.map((bt) => (
                     <button
                       key={bt.type}
-                      onClick={() => addBlock(bt.type, undefined, undefined, activeSubId)}
-                      className="group flex items-center gap-1.5 rounded-full border border-slate-900 bg-[#090d16]/30 px-3 py-1.5 text-[10px] font-bold text-slate-450 hover:border-blue-500 hover:text-white hover:bg-slate-900 transition-all"
+                      onClick={() => handleAddBlock(bt.type)}
+                      className="group flex items-center gap-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 dark:border-slate-900 dark:bg-[#090d16]/30 dark:text-slate-450 dark:hover:border-blue-500 dark:hover:text-white dark:hover:bg-slate-900 transition-all px-3 py-1.5 text-[10px] font-bold"
                     >
                       <Plus size={10} className="group-hover:rotate-90 transition-transform" />
                       {bt.label}
@@ -372,9 +318,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-24 text-slate-500">
+            <div className="flex flex-col items-center justify-center py-24 text-slate-400 dark:text-slate-500">
               <BookOpen size={48} className="opacity-30 mb-4 text-blue-500" />
-              <span className="font-bold text-xs uppercase tracking-wider text-slate-450">Select a section</span>
+              <span className="font-bold text-xs uppercase tracking-wider text-slate-650 dark:text-slate-450">Select a section</span>
               <span className="text-[11px] mt-1 text-slate-500 max-w-xs text-center leading-normal">
                 Click on any subheading in the Book Navigator outline under the Settings panel to start adding and editing content blocks.
               </span>

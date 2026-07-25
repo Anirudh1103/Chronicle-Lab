@@ -187,35 +187,37 @@ export const BlogEditorPage: React.FC = () => {
   }, [isDirty, isLoading, blocks, metadata, seo]);
 
   return (
-    <div className="h-screen flex flex-col bg-[#050814] text-slate-200 overflow-hidden font-sans select-none">
+    <div className="h-screen flex flex-col bg-slate-50 text-slate-800 dark:bg-[#050814] dark:text-slate-200 overflow-hidden font-sans select-none">
       {/* Editor Header Navigation Bar */}
-      <header className="sticky top-0 z-[60] flex h-16 items-center justify-between border-b border-slate-900 bg-[#090d16] px-6 select-none">
+      <header className="sticky top-0 z-[60] flex h-16 items-center justify-between border-b border-slate-200 dark:border-slate-900 bg-white dark:bg-[#090d16] px-6 select-none">
         {/* Left: Hamburger menu toggle + Logo */}
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/admin/posts')}
-            className="p-2 text-slate-500 hover:text-slate-100 transition-colors"
+            className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
           >
             <ChevronLeft size={18} />
           </button>
           <button
             onClick={() => setShowLeftSidebar(!showLeftSidebar)}
             className={cn(
-              "p-2 rounded-lg transition-colors",
-              showLeftSidebar ? "text-blue-500 bg-blue-500/5 border border-blue-500/10" : "text-slate-500 hover:text-slate-150 hover:bg-slate-900"
+              "p-2 rounded-lg transition-colors border",
+              showLeftSidebar
+                ? "text-blue-600 bg-blue-50 border-blue-100 dark:text-blue-500 dark:bg-blue-500/5 dark:border-blue-500/10"
+                : "text-slate-500 border-transparent hover:text-slate-950 hover:bg-slate-100 dark:hover:text-slate-150 dark:hover:bg-slate-900"
             )}
           >
             <Menu size={18} />
           </button>
-          <div className="h-4 w-px bg-slate-900" />
-          <span className="text-xs font-black uppercase tracking-wider text-slate-100 font-mono">
-            CHRONICLE<span className="text-blue-500">.LAB</span>
+          <div className="h-4 w-px bg-slate-200 dark:bg-slate-900" />
+          <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100 font-mono">
+            CHRONICLE<span className="text-blue-650 dark:text-blue-500">.LAB</span>
           </span>
         </div>
 
         {/* Middle: Save Status + Title Input Renaming */}
         <div className="flex items-center gap-4 select-none">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-950/60 border border-slate-900 px-3 py-1 rounded-full">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-900 px-3 py-1 rounded-full">
             {isDirty ? (
               <>
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
@@ -228,28 +230,30 @@ export const BlogEditorPage: React.FC = () => {
               </>
             )}
           </div>
-          <div className="h-4 w-px bg-slate-900" />
+          <div className="h-4 w-px bg-slate-200 dark:bg-slate-900" />
           <div className="flex items-center gap-2 max-w-xs md:max-w-md">
             <input
               type="text"
               value={metadata.title}
               onChange={handleTitleChange}
-              className="bg-transparent border-none text-slate-200 font-bold text-xs outline-none focus:ring-0 truncate py-0.5"
+              className="bg-transparent border-none text-slate-800 dark:text-slate-200 font-bold text-xs outline-none focus:ring-0 truncate py-0.5"
               placeholder="Untitled blog"
             />
-            <Edit3 size={11} className="text-slate-500" />
+            <Edit3 size={11} className="text-slate-400 dark:text-slate-500" />
           </div>
         </div>
 
         {/* Right: Device View Selection, Preview modal trigger, sidebar toggle, Save/Publish */}
         <div className="flex items-center gap-3">
           {/* Device Toggles */}
-          <div className="flex items-center bg-slate-950/80 rounded-lg border border-slate-900 p-0.5">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-950/80 rounded-lg border border-slate-200 dark:border-slate-900 p-0.5">
             <button
               onClick={() => setDeviceMode('phone')}
               className={cn(
-                "p-1.5 rounded-md transition-colors",
-                deviceMode === 'phone' ? "bg-slate-900 text-blue-500 border border-slate-800" : "text-slate-500 hover:text-slate-300"
+                "p-1.5 rounded-md transition-all",
+                deviceMode === 'phone'
+                  ? "bg-white text-blue-600 border border-slate-200 dark:bg-slate-900 dark:text-blue-500 dark:border-slate-800 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               )}
               title="Mobile Preview"
             >
@@ -258,8 +262,10 @@ export const BlogEditorPage: React.FC = () => {
             <button
               onClick={() => setDeviceMode('tablet')}
               className={cn(
-                "p-1.5 rounded-md transition-colors",
-                deviceMode === 'tablet' ? "bg-slate-900 text-blue-500 border border-slate-800" : "text-slate-500 hover:text-slate-300"
+                "p-1.5 rounded-md transition-all",
+                deviceMode === 'tablet'
+                  ? "bg-white text-blue-600 border border-slate-200 dark:bg-slate-900 dark:text-blue-500 dark:border-slate-800 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               )}
               title="Tablet Preview"
             >
@@ -268,8 +274,10 @@ export const BlogEditorPage: React.FC = () => {
             <button
               onClick={() => setDeviceMode('desktop')}
               className={cn(
-                "p-1.5 rounded-md transition-colors",
-                deviceMode === 'desktop' ? "bg-slate-900 text-blue-500 border border-slate-800" : "text-slate-500 hover:text-slate-300"
+                "p-1.5 rounded-md transition-all",
+                deviceMode === 'desktop'
+                  ? "bg-white text-blue-600 border border-slate-200 dark:bg-slate-900 dark:text-blue-500 dark:border-slate-800 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               )}
               title="Desktop Preview"
             >
@@ -277,12 +285,12 @@ export const BlogEditorPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="h-4 w-px bg-slate-900" />
+          <div className="h-4 w-px bg-slate-200 dark:bg-slate-900" />
 
           {/* Preview Trigger */}
           <button
             onClick={() => setIsPreviewOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-900 bg-[#090d16]/30 px-3.5 py-1.5 text-xs font-semibold text-slate-350 hover:bg-slate-900 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-750 dark:border-slate-900 dark:bg-[#090d16]/30 dark:text-slate-350 dark:hover:bg-slate-900 transition-colors px-3.5 py-1.5 text-xs font-semibold"
           >
             <Eye size={14} />
             Preview
@@ -294,21 +302,21 @@ export const BlogEditorPage: React.FC = () => {
             className={cn(
               "flex items-center gap-1.5 rounded-lg border px-3.5 py-1.5 text-xs font-semibold transition-colors",
               showRightSidebar
-                ? "border-blue-500/20 bg-blue-500/5 text-blue-400"
-                : "border-slate-900 bg-[#090d16]/30 text-slate-350 hover:bg-slate-900"
+                ? "border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/5 dark:text-blue-400"
+                : "border-slate-200 bg-white text-slate-750 dark:border-slate-900 dark:bg-[#090d16]/30 dark:text-slate-350 dark:hover:bg-slate-900"
             )}
           >
             <SlidersHorizontal size={14} />
             More
           </button>
 
-          <div className="h-4 w-px bg-slate-900" />
+          <div className="h-4 w-px bg-slate-200 dark:bg-slate-900" />
 
           {/* Publish Action Button */}
           <button
             onClick={() => handleSave(true)}
             disabled={isLoading}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 text-xs font-black transition-all shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-5 py-1.5 text-xs font-black transition-all shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50 border-none cursor-pointer"
           >
             {isLoading ? <Loader2 size={13} className="animate-spin" /> : null}
             {metadata.status === 'PUBLISHED' ? 'Update' : 'Publish'}
@@ -326,26 +334,36 @@ export const BlogEditorPage: React.FC = () => {
               animate={{ width: 280, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="h-full border-r border-slate-900 bg-[#090d16] flex-shrink-0"
+              className="h-full border-r border-slate-200 dark:border-slate-900 bg-white dark:bg-[#090d16] flex-shrink-0"
             >
               <BlocksPanel
                 onClose={() => setShowLeftSidebar(false)}
-                onAddBlock={(type, content) => addBlock(type, undefined, content, activeSubId || undefined)}
+                onAddBlock={(type, content) => {
+                  const id = addBlock(type, undefined, content, activeSubId || undefined);
+                  setTimeout(() => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      const focusable = el.querySelector('input, textarea, [contenteditable="true"]') as HTMLElement;
+                      if (focusable) focusable.focus();
+                    }
+                  }, 100);
+                }}
               />
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Center Workspace Editor Canvas Container */}
-        <div className="flex-1 overflow-y-auto bg-[#050814] flex flex-col relative scrollbar-thin scrollbar-thumb-slate-950 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-[#050814] flex flex-col relative scrollbar-thin scrollbar-thumb-slate-350 dark:scrollbar-thumb-slate-950 scrollbar-track-transparent">
           {/* Scrollable Outer padding area */}
           <div className="flex-1 p-6 md:p-10 flex flex-col items-center">
             {/* Viewport Frame wrapper for Tablet & Phone preview frames */}
             <div
               className={cn(
                 "w-full transition-all duration-300 flex-1 flex flex-col",
-                deviceMode === 'phone' && "max-w-[375px] border border-slate-800 rounded-[2.5rem] bg-[#050814] shadow-2xl p-6 relative max-h-[80vh] overflow-y-auto no-scrollbar",
-                deviceMode === 'tablet' && "max-w-[768px] border border-slate-850 rounded-[2rem] bg-[#050814] shadow-2xl p-8 relative max-h-[82vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-950",
+                deviceMode === 'phone' && "max-w-[375px] border border-slate-300 dark:border-slate-800 rounded-[2.5rem] bg-white dark:bg-[#050814] shadow-2xl p-6 relative max-h-[80vh] overflow-y-auto no-scrollbar",
+                deviceMode === 'tablet' && "max-w-[768px] border border-slate-300 dark:border-slate-850 rounded-[2rem] bg-white dark:bg-[#050814] shadow-2xl p-8 relative max-h-[82vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-950",
                 deviceMode === 'desktop' && "max-w-4xl"
               )}
             >
@@ -365,7 +383,7 @@ export const BlogEditorPage: React.FC = () => {
               animate={{ width: 340, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="h-full border-l border-slate-900 bg-[#090d16] flex-shrink-0"
+              className="h-full border-l border-slate-200 dark:border-slate-900 bg-white dark:bg-[#090d16] flex-shrink-0"
             >
               <EditorSidebar
                 activeTab={activeTab}
