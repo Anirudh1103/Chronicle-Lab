@@ -246,14 +246,14 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   return (
     <aside className="w-full h-full bg-white dark:bg-[#090d16] border-l border-slate-200 dark:border-slate-900 overflow-y-auto flex flex-col scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-950 scrollbar-track-transparent">
       {/* Tabs list */}
-      <div className="flex border-b border-slate-250 dark:border-slate-900 bg-slate-50 dark:bg-[#090d16]/80 sticky top-0 z-30 backdrop-blur-md">
+      <div className="flex border-b border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-[#090d16]/80 sticky top-0 z-30 backdrop-blur-md">
         {(['settings', 'seo', 'social', 'outline', 'history'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={cn(
               'flex-1 py-3 text-[10px] font-black uppercase tracking-wider transition-colors border-b-2 text-center text-slate-500 border-transparent hover:text-slate-800 dark:hover:text-slate-300',
-              activeTab === tab && 'text-blue-650 dark:text-blue-500 border-blue-600 dark:border-blue-500 font-extrabold'
+              activeTab === tab && 'text-blue-600 dark:text-blue-500 border-blue-600 dark:border-blue-500 font-extrabold'
             )}
           >
             {tab === 'settings' ? 'General' : tab}
@@ -261,7 +261,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
         ))}
       </div>
 
-      <div className="p-4 space-y-6 flex-1 text-slate-650 dark:text-slate-300">
+      <div className="p-4 space-y-6 flex-1 text-slate-600 dark:text-slate-300">
         {activeTab === 'settings' && (
           <div className="space-y-5">
             {/* Title */}
@@ -271,7 +271,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 type="text"
                 value={metadata.title}
                 onChange={(e) => setMetadata({ title: e.target.value })}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 rounded-lg px-3 py-2 text-xs text-slate-850 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-700 outline-none transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-700 outline-none transition-all"
                 placeholder="Colonel Sonam Wangchuk..."
               />
             </div>
@@ -283,7 +283,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 type="text"
                 value={metadata.slug}
                 onChange={(e) => setMetadata({ slug: e.target.value })}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 rounded-lg px-3 py-2 text-xs text-slate-850 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-700 outline-none transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-700 outline-none transition-all"
                 placeholder="colonel-sonam-wangchuk-mvc"
               />
             </div>
@@ -301,7 +301,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 onChange={(e) => setMetadata({ excerpt: e.target.value })}
                 rows={3}
                 maxLength={160}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 rounded-lg px-3 py-2 text-xs text-slate-850 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-700 outline-none transition-all resize-none"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-700 outline-none transition-all resize-none"
                 placeholder="The inspiring story of..."
               />
             </div>
@@ -550,7 +550,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                   type="date"
                   value={metadata.status === 'PUBLISHED' ? new Date().toISOString().split('T')[0] : ''}
                   disabled
-                  className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-250 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-450 dark:text-slate-500 outline-none cursor-not-allowed"
+                  className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-400 dark:text-slate-500 outline-none cursor-not-allowed"
                 />
               </div>
             </div>
@@ -560,7 +560,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
         {activeTab === 'seo' && (
           <div className="space-y-6">
             <div className="space-y-2">
-              <span className="text-[10px] font-black text-blue-650 dark:text-blue-500 uppercase">Google Preview</span>
+              <span className="text-[10px] font-black text-blue-600 dark:text-blue-500 uppercase">Google Preview</span>
               <GooglePreview
                 title={seo.seoTitle || metadata.title}
                 url={metadata.slug}
@@ -575,7 +575,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                   type="text"
                   value={seo.seoTitle || ''}
                   onChange={(e) => setSEO({ seoTitle: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-slate-250 bg-slate-50 dark:bg-slate-950 dark:border-slate-900 px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-850 dark:text-white"
+                  className="mt-1 w-full rounded-md border border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-900 px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-800 dark:text-white"
                 />
               </label>
 
@@ -585,7 +585,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                   value={seo.seoDescription || ''}
                   onChange={(e) => setSEO({ seoDescription: e.target.value })}
                   rows={3}
-                  className="mt-1 w-full rounded-md border border-slate-250 bg-slate-50 dark:bg-slate-950 dark:border-slate-900 px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-850 dark:text-white"
+                  className="mt-1 w-full rounded-md border border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-900 px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-800 dark:text-white"
                 />
               </label>
 
@@ -595,7 +595,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                   type="text"
                   value={seo.seoKeywords || ''}
                   onChange={(e) => setSEO({ seoKeywords: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-slate-250 bg-slate-50 dark:bg-slate-950 dark:border-slate-900 px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-850 dark:text-white"
+                  className="mt-1 w-full rounded-md border border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-900 px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-800 dark:text-white"
                   placeholder="keyword1, keyword2..."
                 />
               </label>
@@ -616,7 +616,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                   type="text"
                   value={seo.ogTitle || ''}
                   onChange={(e) => setSEO({ ogTitle: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-slate-250 bg-slate-50 dark:bg-slate-950 dark:border-slate-900 px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-850 dark:text-white"
+                  className="mt-1 w-full rounded-md border border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-900 px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-800 dark:text-white"
                 />
               </label>
             </section>
@@ -674,6 +674,35 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                       </div>
                     </div>
 
+                    {/* Optional Metadata Editor Panel */}
+                    {isPartEditingMeta && (
+                      <div className="mt-2 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg space-y-2">
+                        <label className="block text-left">
+                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Slug</span>
+                          <input
+                            type="text"
+                            value={part.slug || ''}
+                            onChange={(e) => {
+                              const b = blocks.find(x => x.id === part.id);
+                              if (b) updateBlock(part.id, { ...b.content, slug: e.target.value });
+                            }}
+                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs outline-none text-slate-800 dark:text-white"
+                          />
+                        </label>
+                        <label className="block text-left">
+                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Description</span>
+                          <textarea
+                            value={part.description || ''}
+                            onChange={(e) => {
+                              const b = blocks.find(x => x.id === part.id);
+                              if (b) updateBlock(part.id, { ...b.content, description: e.target.value });
+                            }}
+                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs outline-none text-slate-800 dark:text-white resize-none h-12"
+                          />
+                        </label>
+                      </div>
+                    )}
+
                     {/* Chapters container */}
                     {isPartExpanded && (
                       <div className="mt-2 pl-3 border-l border-slate-200 dark:border-slate-900 ml-1.5 space-y-2">
@@ -706,11 +735,41 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
                                 <div className="flex items-center gap-0.5 opacity-0 group-hover/chap:opacity-100 transition-opacity">
                                   <button onClick={() => addHeadingNode(chap.id)} title="Add Heading" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-white"><Plus size={10} /></button>
+                                  <button onClick={() => setEditingMetadataId(isChapEditingMeta ? null : chap.id)} title="Metadata" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-white"><Settings size={10} /></button>
                                   <button onClick={() => moveSibling(chap.id, 'up')} title="Move Up" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-white"><MoveUp size={10} /></button>
                                   <button onClick={() => moveSibling(chap.id, 'down')} title="Move Down" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-white"><MoveDown size={10} /></button>
                                   <button onClick={() => removeBlock(chap.id)} title="Delete Chapter" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-red-500"><Trash2 size={10} /></button>
                                 </div>
                               </div>
+
+                              {/* Optional Metadata Editor Panel */}
+                              {isChapEditingMeta && (
+                                <div className="mt-2 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg space-y-2">
+                                  <label className="block text-left">
+                                    <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Slug</span>
+                                    <input
+                                      type="text"
+                                      value={chap.slug || ''}
+                                      onChange={(e) => {
+                                        const b = blocks.find(x => x.id === chap.id);
+                                        if (b) updateBlock(chap.id, { ...b.content, slug: e.target.value });
+                                      }}
+                                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs outline-none text-slate-800 dark:text-white"
+                                    />
+                                  </label>
+                                  <label className="block text-left">
+                                    <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Description</span>
+                                    <textarea
+                                      value={chap.description || ''}
+                                      onChange={(e) => {
+                                        const b = blocks.find(x => x.id === chap.id);
+                                        if (b) updateBlock(chap.id, { ...b.content, description: e.target.value });
+                                      }}
+                                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs outline-none text-slate-800 dark:text-white resize-none h-12"
+                                    />
+                                  </label>
+                                </div>
+                              )}
 
                               {/* Headings container */}
                               {isChapExpanded && (
@@ -749,7 +808,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                                   "flex items-center justify-between gap-1 group/sub p-1 rounded transition-all cursor-pointer",
                                                   isSelected
                                                     ? "bg-slate-100 dark:bg-slate-900/60 text-blue-600 dark:text-blue-400 font-bold border-l-2 border-blue-500 pl-1.5"
-                                                    : "text-slate-450 dark:text-slate-500 hover:text-slate-850 dark:hover:text-slate-300"
+                                                    : "text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
                                                 )}
                                               >
                                                 <span className="text-[10px] truncate max-w-[120px] select-none block font-semibold">
@@ -757,9 +816,9 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                                                 </span>
 
                                                 <div className="flex items-center gap-0.5 opacity-0 group-hover/sub:opacity-100 transition-opacity">
-                                                  <button onClick={(e) => { e.stopPropagation(); moveSibling(subheading.id, 'up'); }} title="Move Up" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-450 hover:text-slate-850 dark:hover:text-white"><MoveUp size={8} /></button>
-                                                  <button onClick={(e) => { e.stopPropagation(); moveSibling(subheading.id, 'down'); }} title="Move Down" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-450 hover:text-slate-850 dark:hover:text-white"><MoveDown size={8} /></button>
-                                                  <button onClick={(e) => { e.stopPropagation(); removeBlock(subheading.id); }} title="Delete" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-450 hover:text-red-500"><Trash2 size={8} /></button>
+                                                  <button onClick={(e) => { e.stopPropagation(); moveSibling(subheading.id, 'up'); }} title="Move Up" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"><MoveUp size={8} /></button>
+                                                  <button onClick={(e) => { e.stopPropagation(); moveSibling(subheading.id, 'down'); }} title="Move Down" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"><MoveDown size={8} /></button>
+                                                  <button onClick={(e) => { e.stopPropagation(); removeBlock(subheading.id); }} title="Delete" className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 hover:text-red-500"><Trash2 size={8} /></button>
                                                 </div>
                                               </div>
                                             );
@@ -795,7 +854,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
               {revisions.map((rev) => (
                 <div
                   key={rev.id}
-                  className="p-3 border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-slate-950/20 rounded-xl hover:border-slate-350 dark:hover:border-slate-800 transition-colors flex items-center justify-between cursor-pointer group"
+                  className="p-3 border border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-slate-950/20 rounded-xl hover:border-slate-300 dark:hover:border-slate-800 transition-colors flex items-center justify-between cursor-pointer group"
                 >
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-800 dark:text-slate-200 font-semibold group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
