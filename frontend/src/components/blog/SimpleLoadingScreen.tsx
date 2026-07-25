@@ -15,9 +15,6 @@ interface SimpleLoadingScreenProps {
  * and a thin horizontal laser beam progress animation.
  */
 export function SimpleLoadingScreen({ message = 'Loading...' }: SimpleLoadingScreenProps) {
-  // Format the text message by injecting spaces between characters for monospace styling
-  const formattedMessage = message.split('').join(' ');
-
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-50 dark:bg-[#050814] text-slate-800 dark:text-slate-100 flex flex-col items-center justify-center select-none px-6 transition-colors duration-300">
       <style>{`
@@ -66,9 +63,9 @@ export function SimpleLoadingScreen({ message = 'Loading...' }: SimpleLoadingScr
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 font-semibold select-none pt-2"
+          className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.4em] text-slate-500 dark:text-slate-400 font-semibold select-none pt-2"
         >
-          {formattedMessage}
+          {message}
         </motion.div>
 
         {/* Horizontal Laser Glow Beam Progress Indicator */}
