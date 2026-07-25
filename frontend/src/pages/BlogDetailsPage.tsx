@@ -925,7 +925,7 @@ function renderBlock(block: any, onImageClick?: (img: any) => void, blocks: any[
         2: 'text-3xl sm:text-4xl md:text-6xl font-bold mb-4 md:mb-6 pt-10 md:pt-16',
         3: 'text-2xl sm:text-3xl md:text-5xl font-bold mb-3 md:mb-4 pt-6 md:pt-10',
       }[level as 1 | 2 | 3] || 'text-xl font-bold';
-      const titleText = content.title || content.text || '';
+      const titleText = content.text || content.title || '';
       return (
         <div id={block.id} className={cn("mb-12 scroll-mt-32", type === 'subheading' && "pl-4 md:pl-8 border-l-4 border-primary/10 ml-2 md:ml-4")}>
           <Tag className={cn(classes, "font-editorial italic", type === 'subheading' && "text-slate-800 dark:text-slate-200")} dangerouslySetInnerHTML={{ __html: highlightGlossary(titleText) }} />

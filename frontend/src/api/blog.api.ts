@@ -275,4 +275,50 @@ export const blogApi = {
     const response = await api.delete(`/glossary/${id}`);
     return response.data;
   },
+
+  /**
+   * Fetches all tags. Utilizes in-memory caching.
+   * @returns {Promise<Array>} A promise that resolves to an array of tag objects.
+   */
+  getTags: async () => {
+    return getCachedData('tags', async () => {
+      const response = await api.get('/tags');
+      return response.data;
+    });
+  },
+
+  /**
+   * Creates a new tag. Invalidates the tags cache.
+   * @param {Object} data - The payload containing tag name and slug.
+   * @param {string} data.name - The tag name.
+   * @param {string} data.slug - The tag slug.
+   * @returns {Promise<Object>} A promise that resolves to the created tag object.
+   */
+  createTag: async (data: { name: string; slug: string }) => {
+    const response = await api.post('/tags', data);
+    invalidateApiCache('tags');
+    return response.data;
+  },
+
+  /**
+   * Deletes a tag by its ID. Invalidates the tags cache.
+   * @param {string} id - The ID of the tag to delete.
+   * @returns {Promise<Object>} A promise that resolves to the deletion result.
+   */
+  deleteTag: async (id: string) => {
+    const response = await api.delete(`/tags/${id}`);
+    invalidateApiCache('tags');
+    return response.data;
+  },
+
+  /**
+   * Fetches revision history list headers for a specific post.
+   * @param {string} postId - The unique identifier of the post.
+   * @returns {Promise<Array>} A promise that resolves to an array of revision log headers.
+   */
+  getRevisions: async (postId: string) => {
+    const response = await api.get(`/posts/${postId}/revisions`);
+    return response.data;
+  },
 };
+

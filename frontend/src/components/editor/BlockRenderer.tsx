@@ -18,15 +18,25 @@ import { PersonalTouchBlock } from './blocks/PersonalTouchBlock';
 import { GalleryBlock } from './blocks/GalleryBlock';
 import { KeyInsightBlock } from './blocks/KeyInsightBlock';
 import { SummaryBlock } from './blocks/SummaryBlock';
+import { PartBlock } from './blocks/PartBlock';
+import { ChapterBlock } from './blocks/ChapterBlock';
 
 interface BlockRendererProps {
   block: EditorBlock;
 }
 
+/**
+ * BlockRenderer functional component responsible for rendering individual blog content elements
+ * by mapping their type field (e.g. part, chapter, paragraph, image, quote) to the corresponding sub-component.
+ */
 export const BlockRenderer: React.FC<BlockRendererProps> = ({ block }) => {
   const type = block.type.toLowerCase();
 
   switch (type) {
+    case 'part':
+      return <PartBlock id={block.id} content={block.content} />;
+    case 'chapter':
+      return <ChapterBlock id={block.id} content={block.content} />;
     case 'heading':
       return <HeadingBlock id={block.id} content={block.content} />;
     case 'subheading':

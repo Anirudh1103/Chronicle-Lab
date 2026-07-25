@@ -3,6 +3,13 @@ import { EditorBlock } from '../types/editor';
 import { HeadingNode } from '../types/navigator';
 import { stripHtml } from '../utils/stripHtml';
 
+/**
+ * Custom React hook to track and calculate the reading progress status
+ * of the user while scrolling down the blog page.
+ * Uses IntersectionObserver to track visible sections.
+ * @param {EditorBlock[]} blocks - The list of editor blocks to track.
+ * @returns {Object} Reading progress state including headings tree, active section ID, and completed section IDs.
+ */
 export function useReadingProgress(blocks: EditorBlock[]) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());

@@ -11,19 +11,85 @@ interface EditorState {
   isDirty: boolean;
 
   // Actions
+  /**
+   * Sets the complete list of blocks in the store.
+   * @param {EditorBlock[]} blocks - The new list of blocks.
+   */
   setBlocks: (blocks: EditorBlock[]) => void;
+
+  /**
+   * Appends or inserts a new block of the specified type.
+   * @param {BlockType} type - The type of block to create.
+   * @param {number} [index] - The position to insert the block at.
+   * @param {any} [content] - Optional content override to merge.
+   * @param {string} [parentId] - The ID of the parent structural node.
+   * @returns {string} The auto-generated ID of the new block.
+   */
   addBlock: (type: BlockType, index?: number, content?: any, parentId?: string) => string;
+
+  /**
+   * Updates content of a block by its ID.
+   * Marks state as dirty.
+   * @param {string} id - The ID of the block to update.
+   * @param {any} content - The content fields to update.
+   */
   updateBlock: (id: string, content: any) => void;
+
+  /**
+   * Removes a block and recursively removes all nested children.
+   * Reindexes orderIndex values of remaining sibling blocks.
+   * @param {string} id - The ID of the block to delete.
+   */
   removeBlock: (id: string) => void;
+
+  /**
+   * Moves/reorders a block relative to another block.
+   * Scopes reordering to siblings under the parent ID.
+   * @param {string} activeId - The ID of the block being dragged.
+   * @param {string} overId - The ID of the block being dragged over.
+   */
   moveBlock: (activeId: string, overId: string) => void;
+
+  /**
+   * Duplicates a block and all its nested children.
+   * @param {string} id - The ID of the block to duplicate.
+   */
   duplicateBlock: (id: string) => void;
+
+  /**
+   * Toggles the collapsed state of a structural block.
+   * @param {string} id - The ID of the block.
+   */
   toggleCollapse: (id: string) => void;
 
+  /**
+   * Merges partial metadata changes into the store metadata.
+   * @param {Partial<PostMetadata>} metadata - The fields to update.
+   */
   setMetadata: (metadata: Partial<PostMetadata>) => void;
+
+  /**
+   * Merges partial SEO configuration changes into the store.
+   * @param {Partial<SEOMetadata>} seo - The fields to update.
+   */
   setSEO: (seo: Partial<SEOMetadata>) => void;
 
+  /**
+   * Sets the page loading state.
+   * @param {boolean} isLoading - Loading flag.
+   */
   setLoading: (isLoading: boolean) => void;
+
+  /**
+   * Sets the last saved date timestamp.
+   * @param {Date} date - Timestamp when save completed.
+   */
   setLastSaved: (date: Date) => void;
+
+  /**
+   * Sets the isDirty modification status.
+   * @param {boolean} isDirty - Dirty modification status.
+   */
   setDirty: (isDirty: boolean) => void;
 }
 
@@ -47,6 +113,10 @@ const initialSEO: SEOMetadata = {
   robotsIndex: true,
 };
 
+/**
+ * Zustand store hook for managing the state of the active blog editor session.
+ * Tracks content blocks list, post metadata, SEO configurations, and saved status.
+ */
 export const useEditorStore = create<EditorState>((set, get) => ({
   blocks: [],
   metadata: initialMetadata,
@@ -62,7 +132,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const newBlock: EditorBlock = {
       id,
       type,
-      content: content || getInitialContent(type),
+      content: content ? { ...getInitialContent(type), ...content } : getInitialContent(type),
       orderIndex: 0,
       parentId,
     };
@@ -116,20 +186,37 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   moveBlock: (activeId, overId) => {
-    const blocks = [...get().blocks];
-    const oldIndex = blocks.findIndex((b) => b.id === activeId);
-    const newIndex = blocks.findIndex((b) => b.id === overId);
+    const blocks = get().blocks;
+    const activeBlock = blocks.find(b => b.id === activeId);
+    const overBlock = blocks.find(b => b.id === overId);
 
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const [movedBlock] = blocks.splice(oldIndex, 1);
-      blocks.splice(newIndex, 0, movedBlock);
+    if (activeBlock && overBlock && activeBlock.parentId === overBlock.parentId) {
+      const parentId = activeBlock.parentId;
+      const siblings = blocks.filter(b => b.parentId === parentId).sort((a, b) => a.orderIndex - b.orderIndex);
+      const oldIndex = siblings.findIndex(b => b.id === activeId);
+      const newIndex = siblings.findIndex(b => b.id === overId);
 
-      const updatedBlocks = blocks.map((block, idx) => ({
-        ...block,
-        orderIndex: idx,
-      }));
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const [moved] = siblings.splice(oldIndex, 1);
+        siblings.splice(newIndex, 0, moved);
 
-      set({ blocks: updatedBlocks, isDirty: true });
+        const siblingUpdates = new Map<string, number>();
+        siblings.forEach((b, idx) => {
+          siblingUpdates.set(b.id, idx);
+        });
+
+        const updatedBlocks = blocks.map(b => {
+          if (siblingUpdates.has(b.id)) {
+            return {
+              ...b,
+              orderIndex: siblingUpdates.get(b.id)!
+            };
+          }
+          return b;
+        });
+
+        set({ blocks: updatedBlocks, isDirty: true });
+      }
     }
   },
 

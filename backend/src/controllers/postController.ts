@@ -218,3 +218,21 @@ export const replyToComment = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message || 'Failed to reply to comment' });
   }
 };
+
+/**
+ * Controller to fetch the revision history log headers for a specific post.
+ * Requires post ID parameter in path.
+ * @param {Request} req - The HTTP request containing post ID.
+ * @param {Response} res - The HTTP response returning the list of revision logs.
+ */
+export const getRevisions = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const revisions = await PostService.getRevisions(id);
+    res.json(revisions);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to fetch revisions' });
+  }
+};
+
+

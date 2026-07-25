@@ -8,13 +8,18 @@ interface TableOfContentsProps {
   blocks: EditorBlock[];
 }
 
+/**
+ * TableOfContents functional component that parses headings and subheadings
+ * from a flat list of EditorBlocks and builds an interactive navigator.
+ * Supports smooth scrolling to block coordinates on click.
+ */
 export const TableOfContents: React.FC<TableOfContentsProps> = ({ blocks }) => {
   const headings = blocks
-    .filter((block) => (block.type === 'heading' || block.type === 'subheading') && stripHtml(block.content.text) !== '')
+    .filter((block) => (block.type === 'heading' || block.type === 'subheading') && stripHtml(block.content.text || block.content.title || '') !== '')
     .map((block) => ({
       id: block.id,
-      text: stripHtml(block.content.text),
-      level: block.content.level,
+      text: stripHtml(block.content.text || block.content.title || ''),
+      level: block.content.level || (block.type === 'subheading' ? 3 : 2),
     }));
 
   if (headings.length === 0) return null;
