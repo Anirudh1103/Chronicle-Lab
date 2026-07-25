@@ -373,7 +373,7 @@ export const OutlineNavigation: React.FC<OutlineNavigationProps> = ({
                                             </div>
 
                                             {/* Subheadings List */}
-                                            {isHeadActive && heading.subheadings.length > 0 && (
+                                            {heading.subheadings.length > 0 && (
                                               <div className="pl-3 border-l border-[#f97316]/20 ml-2.5 space-y-1 py-0.5">
                                                 {heading.subheadings.map((subheading) => {
                                                   const isSubActive = activePath.subheadingId === subheading.id;

@@ -85,6 +85,13 @@ export const ReadingNavigator: React.FC<ReadingNavigatorProps> = ({ blocks }) =>
     }
   }, [activeId, hierarchicalTree]);
 
+  // Expand all chapters by default when the TOC sidebar is expanded on desktop
+  useEffect(() => {
+    if (isExpanded) {
+      setExpandedChapters(new Set(hierarchicalTree.map(ch => ch.id)));
+    }
+  }, [isExpanded, hierarchicalTree]);
+
   // Scroll centering for active nodes
   useEffect(() => {
     if (activeId && scrollContainerRef.current) {

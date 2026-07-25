@@ -1,4 +1,28 @@
 import { EditorBlock, BlockType, BlockTypes } from '../types/editor';
+import { stripHtml } from './stripHtml';
+
+/**
+ * Resolves the display title for a block by normalizing text and title fields,
+ * stripping HTML tags, and ignoring default/placeholder values.
+ */
+function resolveBlockTitle(block: EditorBlock, fallback: string): string {
+  const cleanText = block.content.text ? stripHtml(block.content.text) : '';
+  const cleanTitle = block.content.title ? stripHtml(block.content.title) : '';
+  const defaults = [
+    'new part', 'untitled part',
+    'new chapter', 'untitled chapter',
+    'new heading', 'untitled heading',
+    'new subheading', 'untitled subheading'
+  ];
+
+  if (cleanText && !defaults.includes(cleanText.toLowerCase())) {
+    return cleanText;
+  }
+  if (cleanTitle && !defaults.includes(cleanTitle.toLowerCase())) {
+    return cleanTitle;
+  }
+  return cleanText || cleanTitle || fallback;
+}
 
 export interface SubheadingNode {
   id: string;
@@ -86,11 +110,12 @@ export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
   sortedBlocks.forEach(block => {
     const parentId = block.parentId || '';
     if (block.type === BlockTypes.PART) {
+      const title = resolveBlockTitle(block, 'Untitled Part');
       parts.push({
         id: block.id,
         type: 'part',
-        title: block.content.title || block.content.text || 'Untitled Part',
-        slug: block.content.slug || `part-${generateSlug(block.content.title || block.content.text)}`,
+        title,
+        slug: block.content.slug || `part-${generateSlug(title)}`,
         description: block.content.description || '',
         metadata: block.content.metadata || {},
         orderIndex: block.orderIndex,
@@ -99,11 +124,12 @@ export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
       });
     } else if (block.type === BlockTypes.CHAPTER) {
       if (!chaptersMap.has(parentId)) chaptersMap.set(parentId, []);
+      const title = resolveBlockTitle(block, 'Untitled Chapter');
       chaptersMap.get(parentId)!.push({
         id: block.id,
         type: 'chapter',
-        title: block.content.title || block.content.text || 'Untitled Chapter',
-        slug: block.content.slug || `chapter-${generateSlug(block.content.title || block.content.text)}`,
+        title,
+        slug: block.content.slug || `chapter-${generateSlug(title)}`,
         description: block.content.description || '',
         metadata: block.content.metadata || {},
         orderIndex: block.orderIndex,
@@ -113,11 +139,12 @@ export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
       });
     } else if (block.type === BlockTypes.HEADING) {
       if (!headingsMap.has(parentId)) headingsMap.set(parentId, []);
+      const title = resolveBlockTitle(block, 'Untitled Heading');
       headingsMap.get(parentId)!.push({
         id: block.id,
         type: 'heading',
-        title: block.content.title || block.content.text || 'Untitled Heading',
-        slug: block.content.slug || `heading-${generateSlug(block.content.title || block.content.text)}`,
+        title,
+        slug: block.content.slug || `heading-${generateSlug(title)}`,
         description: block.content.description || '',
         metadata: block.content.metadata || {},
         orderIndex: block.orderIndex,
@@ -126,11 +153,12 @@ export function buildHierarchyTree(blocks: EditorBlock[]): PartNode[] {
       });
     } else if (block.type === BlockTypes.SUBHEADING) {
       if (!subheadingsMap.has(parentId)) subheadingsMap.set(parentId, []);
+      const title = resolveBlockTitle(block, 'Untitled Subheading');
       subheadingsMap.get(parentId)!.push({
         id: block.id,
         type: 'subheading',
-        title: block.content.title || block.content.text || 'Untitled Subheading',
-        slug: block.content.slug || `subheading-${generateSlug(block.content.title || block.content.text)}`,
+        title,
+        slug: block.content.slug || `subheading-${generateSlug(title)}`,
         description: block.content.description || '',
         metadata: block.content.metadata || {},
         orderIndex: block.orderIndex,

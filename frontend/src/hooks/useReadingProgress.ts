@@ -26,14 +26,34 @@ export function useReadingProgress(blocks: EditorBlock[]) {
   );
 
   const tree = useMemo(() => {
-    return headings.map((h, i) => ({
-      id: h.id,
-      text: stripHtml(h.content.title || h.content.text || ''),
-      level: h.content.level || 2,
-      index: i,
-      children: [],
-      type: h.type
-    } as any));
+    return headings.map((h, i) => {
+      const cleanText = h.content.text ? stripHtml(h.content.text) : '';
+      const cleanTitle = h.content.title ? stripHtml(h.content.title) : '';
+      const defaults = [
+        'new part', 'untitled part',
+        'new chapter', 'untitled chapter',
+        'new heading', 'untitled heading',
+        'new subheading', 'untitled subheading'
+      ];
+      
+      let displayTitle = '';
+      if (cleanText && !defaults.includes(cleanText.toLowerCase())) {
+        displayTitle = cleanText;
+      } else if (cleanTitle && !defaults.includes(cleanTitle.toLowerCase())) {
+        displayTitle = cleanTitle;
+      } else {
+        displayTitle = cleanText || cleanTitle || 'Untitled';
+      }
+
+      return {
+        id: h.id,
+        text: displayTitle,
+        level: h.content.level || 2,
+        index: i,
+        children: [],
+        type: h.type
+      } as any;
+    });
   }, [headings]);
 
   useEffect(() => {
