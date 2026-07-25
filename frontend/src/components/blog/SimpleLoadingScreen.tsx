@@ -1,78 +1,79 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Lock } from 'lucide-react';
 
-export function SimpleLoadingScreen() {
-  const letters = ['L', 'O', 'A', 'D', 'I', 'N', 'G'];
-  const [activeDots, setActiveDots] = useState(1);
+interface SimpleLoadingScreenProps {
+  /**
+   * Optional loading message to display below the spinner.
+   * Characters will be formatted with spaces to maintain the monospace design layout.
+   */
+  message?: string;
+}
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveDots((prev) => (prev % 3) + 1);
-    }, 400);
-    return () => clearInterval(interval);
-  }, []);
-
+/**
+ * Premium, minimal, and dark/light adaptive full-screen loading overlay.
+ * Renders a circular SVG glowing ring spinner, editorial monospace spaced text,
+ * and a thin horizontal laser beam progress animation.
+ */
+export function SimpleLoadingScreen({ message = 'Loading...' }: SimpleLoadingScreenProps) {
   return (
-    <div className="fixed inset-0 z-[9999] bg-slate-950 text-slate-100 flex flex-col items-center justify-center select-none px-6 font-mono">
-      {/* Subtle Cyan Ambient Radial Glow */}
-      <div className="absolute w-[350px] h-[350px] bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
+    <div className="fixed inset-0 z-[9999] bg-slate-50 dark:bg-[#050814] text-slate-800 dark:text-slate-100 flex flex-col items-center justify-center select-none px-6 transition-colors duration-300">
+      <style>{`
+        @keyframes loading-beam {
+          0% { transform: translateX(-120%); }
+          100% { transform: translateX(250%); }
+        }
+        .animate-loading-beam {
+          animation: loading-beam 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+      `}</style>
 
-      <div className="relative z-10 flex flex-col items-center text-center space-y-6 max-w-sm">
-        {/* Cybersecurity Shield Icon */}
-        <motion.div
-          animate={{ scale: [1, 1.06, 1], opacity: [0.8, 1, 0.8] }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-16 h-16 rounded-2xl bg-slate-900 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_30px_rgba(14,165,233,0.25)] relative"
-        >
-          <ShieldCheck size={32} className="text-cyan-400 drop-shadow-[0_0_10px_rgba(56,189,248,0.8)]" />
-          <div className="absolute -top-1 -right-1 p-1 bg-slate-950 rounded-full border border-emerald-500/40 text-emerald-400">
-            <Lock size={10} />
-          </div>
-        </motion.div>
+      {/* Subtle Cyan/Blue Ambient Radial Backdrop Glow */}
+      <div className="absolute w-[400px] h-[400px] bg-blue-400/5 dark:bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none" />
 
-        {/* Monospace Cybersecurity LOADING... Text */}
-        <div className="flex items-center gap-1.5 font-mono text-2xl sm:text-3xl font-black text-cyan-400 tracking-[0.2em]">
-          {letters.map((char, index) => (
-            <motion.span
-              key={index}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{
-                duration: 0.25,
-                delay: index * 0.06,
-                ease: 'easeOut',
+      <div className="relative z-10 flex flex-col items-center text-center space-y-6">
+        {/* SVG Circular Glowing Spinner */}
+        <div className="relative w-20 h-20">
+          <svg className="w-full h-full animate-spin" viewBox="0 0 50 50" style={{ animationDuration: '1.2s' }}>
+            <circle
+              className="stroke-slate-200/50 dark:stroke-slate-800/40"
+              cx="25"
+              cy="25"
+              r="20"
+              fill="none"
+              strokeWidth="1.5"
+            />
+            <circle
+              className="stroke-blue-500 dark:stroke-sky-400"
+              cx="25"
+              cy="25"
+              r="20"
+              fill="none"
+              strokeWidth="1.5"
+              strokeDasharray="32 150"
+              strokeLinecap="round"
+              style={{
+                filter: 'drop-shadow(0px 0px 4px var(--spinner-glow, rgba(56, 189, 248, 0.7)))',
               }}
-            >
-              {char}
-            </motion.span>
-          ))}
-
-          {/* Sequential Blinking Dots */}
-          <span className="inline-flex ml-1 text-cyan-300 tracking-widest">
-            <motion.span animate={{ opacity: activeDots >= 1 ? 1 : 0.2 }} transition={{ duration: 0.2 }}>
-              .
-            </motion.span>
-            <motion.span animate={{ opacity: activeDots >= 2 ? 1 : 0.2 }} transition={{ duration: 0.2 }}>
-              .
-            </motion.span>
-            <motion.span animate={{ opacity: activeDots >= 3 ? 1 : 0.2 }} transition={{ duration: 0.2 }}>
-              .
-            </motion.span>
-          </span>
+            />
+          </svg>
         </div>
 
-        {/* Cyber Progress Pulse Bar */}
-        <div className="w-32 h-[2px] bg-slate-900 border border-cyan-500/20 rounded-full overflow-hidden relative">
-          <motion.div
-            className="h-full bg-gradient-to-r from-cyan-400 via-sky-400 to-emerald-400 rounded-full shadow-[0_0_10px_rgba(56,189,248,0.8)]"
-            animate={{
-              x: ['-100%', '100%'],
-            }}
-            transition={{
-              duration: 1.3,
-              repeat: Infinity,
-              ease: 'easeInOut',
+        {/* Monospace Editorial Text */}
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.4em] text-slate-500 dark:text-slate-400 font-semibold select-none pt-2"
+        >
+          {message}
+        </motion.div>
+
+        {/* Horizontal Laser Glow Beam Progress Indicator */}
+        <div className="w-48 h-[1px] bg-slate-200 dark:bg-slate-800/40 relative overflow-hidden mt-6">
+          <div
+            className="absolute top-0 bottom-0 w-20 bg-gradient-to-r from-transparent via-blue-500 to-transparent dark:via-sky-400 animate-loading-beam"
+            style={{
+              filter: 'drop-shadow(0px 0px 3px var(--beam-glow, rgba(56, 189, 248, 0.6)))',
             }}
           />
         </div>

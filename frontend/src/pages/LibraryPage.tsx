@@ -5,6 +5,7 @@ import { PostCard } from '../components/PostCard';
 import { blogApi } from '../api/blog.api';
 import { cn } from '../utils/cn';
 import { useSearchParams } from 'react-router-dom';
+import { SimpleLoadingScreen } from '../components/blog/SimpleLoadingScreen';
 
 export function LibraryPage() {
   const [allPosts, setAllPosts] = useState<any[]>([]);
@@ -76,14 +77,7 @@ export function LibraryPage() {
   }, [allPosts, activeCategory, searchQuery]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          <p className="font-black text-xs uppercase tracking-[0.3em] text-slate-400">Accessing Archive...</p>
-        </div>
-      </div>
-    );
+    return <SimpleLoadingScreen message="Accessing Archive..." />;
   }
 
   return (
